@@ -12,7 +12,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL Linux OR CMAKE_SYSTEM_NAME STREQUAL Windows)
     )
     FetchContent_MakeAvailable(glfw)
 elseif(CMAKE_SYSTEM_NAME STREQUAL Android)
-    target_include_directories(${VIVERNA_TARGET_NAME} PRIVATE
+    target_include_directories(${VIVERNA_TARGET_NAME} PUBLIC
         "${CMAKE_ANDROID_NDK}/sources/android/native_app_glue"
     )
     add_library(native_app_glue OBJECT
