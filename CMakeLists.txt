@@ -15,11 +15,7 @@ message(STATUS "C compiler:   ${CMAKE_C_COMPILER}")
 message(STATUS "C++ compiler: ${CMAKE_CXX_COMPILER}")
 message(STATUS "=============================================================================================")
 
-if (CMAKE_SYSTEM_NAME STREQUAL Android)
-    add_library(${VIVERNA_TARGET_NAME} SHARED "")
-elseif(CMAKE_SYSTEM_NAME STREQUAL Linux OR CMAKE_SYSTEM_NAME STREQUAL Windows)
-    add_executable(${VIVERNA_TARGET_NAME} "")
-endif()
+add_library(${VIVERNA_TARGET_NAME} OBJECT "")
 set_target_properties(${VIVERNA_TARGET_NAME} PROPERTIES
     CXX_STANDARD 17
     CXX_STANDARD_REQUIRED ON
