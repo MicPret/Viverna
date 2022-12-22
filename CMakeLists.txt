@@ -44,7 +44,6 @@ add_subdirectory("${PROJECT_SOURCE_DIR}/src")
 if(CMAKE_SYSTEM_NAME STREQUAL Android)
     target_link_libraries(${VIVERNA_TARGET_NAME} PUBLIC
         android
-        native_app_glue
         EGL
         GLESv3
         log
