@@ -1,0 +1,64 @@
+{
+  "version": 4,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 24,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "superConf",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": true,
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "androidConf",
+      "inherits": "superConf",
+      "displayName": "Android config",
+      "description": "Configuration for Android",
+      "toolchainFile": "${sourceDir}/android_toolchain.cmake",
+      "condition": {
+        "type": "notEquals",
+        "lhs": "$env{ANDROID_NDK}",
+        "rhs": ""
+      }
+    },
+    {
+      "name": "desktopConf",
+      "inherits": "superConf",
+      "displayName": "Desktop config",
+      "description": "Configuration for desktop (Windows and Linux)",
+      "condition": {
+        "type": "matches",
+        "string": "${hostSystemName}",
+        "regex": "(Windows)|(Linux)"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "superBuild",
+      "hidden": true,
+      "cleanFirst": true
+    },
+    {
+      "name": "androidBuild",
+      "inherits": "superBuild",
+      "displayName": "Android build",
+      "description": "Configuration for Android",
+      "configurePreset": "androidConf"
+    },
+    {
+      "name": "desktopBuild",
+      "inherits": "superBuild",
+      "displayName": "Desktop build",
+      "description": "Configuration for desktop (Windows and Linux)",
+      "configurePreset": "desktopConf"
+    }
+  ]
+}
