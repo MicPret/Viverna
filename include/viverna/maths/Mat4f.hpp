@@ -2,6 +2,7 @@
 #define VERNA_MAT4F_HPP
 
 #include <array>
+#include <cstddef>
 
 namespace verna {
 
@@ -15,11 +16,8 @@ struct Mat4f {
     std::array<float, NUM_ROWS * NUM_COLUMNS> raw;
 
     static constexpr Mat4f Identity() {
-        return Mat4f({
-            1.0f, 0.0f, 0.0f, 0.0f,
-            0.0f, 1.0f, 0.0f, 0.0f,
-            0.0f, 0.0f, 1.0f, 0.0f,
-            0.0f, 0.0f, 0.0f, 1.0f});
+        return Mat4f({1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f,
+                      0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f});
     }
 };
 
