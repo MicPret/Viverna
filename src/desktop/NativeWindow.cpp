@@ -15,7 +15,7 @@ void* GetNativeWindowPointer() {
     return window;
 }
 
-void SwapBuffers() {
+void SwapNativeWindowBuffers() {
     VERNA_ASSERT(window != nullptr);
     VERNA_ASSERT(window == glfwGetCurrentContext());
     glfwSwapBuffers(window);

@@ -14,7 +14,7 @@ void* GetNativeWindowPointer() {
     return window;
 }
 
-void SwapBuffers() {
+void SwapNativeWindowBuffers() {
     EGLDisplay display = eglGetCurrentDisplay();
     EGLSurface surface = eglGetCurrentSurface(EGL_DRAW);
     VERNA_ASSERT(window != nullptr);

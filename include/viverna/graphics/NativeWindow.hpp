@@ -4,7 +4,7 @@
 namespace verna {
 void SetNativeWindowPointer(void* ptr);
 void* GetNativeWindowPointer();
-void SwapBuffers();
+void SwapNativeWindowBuffers();
 }  // namespace verna
 
 #endif
