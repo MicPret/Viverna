@@ -15,7 +15,7 @@ message(STATUS "C compiler:   ${CMAKE_C_COMPILER}")
 message(STATUS "C++ compiler: ${CMAKE_CXX_COMPILER}")
 message(STATUS "=============================================================================================")
 
-add_library(${VIVERNA_TARGET_NAME} OBJECT "")
+add_library(${VIVERNA_TARGET_NAME} STATIC "")
 set_target_properties(${VIVERNA_TARGET_NAME} PROPERTIES
     CXX_STANDARD 17
     CXX_STANDARD_REQUIRED ON
