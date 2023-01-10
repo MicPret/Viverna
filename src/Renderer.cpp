@@ -162,7 +162,7 @@ void Draw() {
         shader_to_bucket.Get(i, shader, bucket);
         glUseProgram(shader.id);
 #if defined(VERNA_ANDROID)
-        int draw_id_loc = glGetUniformLocation(shader.id, "gl_DrawID");
+        int draw_id_loc = glGetUniformLocation(shader.id, "DRAW_ID");
 #endif
         for (BatchId batch_id : bucket) {
             RenderBatch& batch = render_batches[batch_id];

@@ -27,13 +27,13 @@ std::string InternalVertexCommonCode() {
     Code vertex;
 #if defined(VERNA_DESKTOP)
     vertex.AddLine("#version 460 core");
+    vertex.AddDefine("DRAW_ID", "gl_DrawID");
 #elif defined(VERNA_ANDROID)
     vertex.AddLine("#version 320 es");
-    vertex.AddLine("uniform int gl_DrawID;");
+    vertex.AddLine("uniform int DRAW_ID;");
 #endif
-    vertex.AddDefine("DRAW_ID", "gl_DrawID");
     vertex.AddLine("out float MESH_IDX;");
-    vertex.AddLine("void SetMeshIdx() { MESH_IDX = float(gl_DrawID); }");
+    vertex.AddLine("void SetMeshIdx() { MESH_IDX = float(DRAW_ID); }");
     return vertex.code;
 }
 
@@ -41,11 +41,11 @@ std::string InternalFragmentCommonCode() {
     Code fragment;
 #if defined(VERNA_DESKTOP)
     fragment.AddLine("#version 460 core");
+    fragment.AddDefine("DRAW_ID", "int(MESH_IDX)");
 #elif defined(VERNA_ANDROID)
     fragment.AddLine("#version 320 es");
     fragment.AddLine("precision mediump float;");
 #endif
-    fragment.AddDefine("DRAW_ID", "int(MESH_IDX)");
     fragment.AddLine("in float MESH_IDX;");
     return fragment.code;
 }
