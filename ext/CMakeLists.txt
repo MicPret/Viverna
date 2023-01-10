@@ -11,4 +11,6 @@ if(CMAKE_SYSTEM_NAME STREQUAL Linux OR CMAKE_SYSTEM_NAME STREQUAL Windows)
         GIT_REPOSITORY https://github.com/glfw/glfw.git
     )
     FetchContent_MakeAvailable(glfw)
+    #stb
+    add_subdirectory("${PROJECT_SOURCE_DIR}/stb")
 endif()

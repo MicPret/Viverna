@@ -3,4 +3,5 @@
 BasedOnStyle: Chromium
 IndentWidth: 4
 BreakBeforeBinaryOperators: NonAssignment
+BreakConstructorInitializers: AfterColon
 ...

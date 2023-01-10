@@ -1,85 +1,148 @@
 #include <viverna/core/Debug.hpp>
 #include <viverna/graphics/GraphicsAPIHelper.hpp>
 #include <viverna/graphics/Shader.hpp>
+#include <viverna/graphics/ShaderCommonCode.hpp>
+#include <viverna/graphics/gpu/CameraData.hpp>
+#include <viverna/graphics/gpu/ImplementationInfo.hpp>
+#include <viverna/graphics/gpu/MeshData.hpp>
+#include <viverna/maths/Mat4f.hpp>
+#include "ResourceTracker.hpp"
 
 #include <array>
 #include <string>
-
-#if defined(VERNA_ANDROID)
-#define VERNA_SHADER_VERSION_STRING "#version 320 es\n"
-#define VERNA_SHADER_FRAGMENT_PRECISION "precision mediump float;\n"
-#define VERNA_SHADER_VERTEX_PREFIX VERNA_SHADER_VERSION_STRING
-#define VERNA_SHADER_FRAGMENT_PREFIX \
-    VERNA_SHADER_VERSION_STRING VERNA_SHADER_FRAGMENT_PRECISION
-#elif defined(VERNA_DESKTOP)
-#define VERNA_SHADER_VERSION_STRING "#version 460 core\n"
-#define VERNA_SHADER_VERTEX_PREFIX VERNA_SHADER_VERSION_STRING
-#define VERNA_SHADER_FRAGMENT_PREFIX VERNA_SHADER_VERSION_STRING
-#endif
+#include <vector>
 
 namespace verna {
+
+namespace {
+class ResourceTracker<ShaderId::id_type> shader_tracker("Shader");
+
+bool CompileShaderSource(std::string_view source,
+                         GLenum shader_type,
+                         GLuint& output) {
+    std::vector<std::string> sources;
+    std::vector<const char*> sources_ptr;
+    std::vector<GLint> sources_len;
+
+    switch (shader_type) {
+        case GL_VERTEX_SHADER:
+            sources.push_back(GetCommonVertexCode());
+            break;
+        case GL_FRAGMENT_SHADER:
+            sources.push_back(GetCommonFragmentCode());
+            break;
+        default:
+            VERNA_LOGE("CompileShaderSource(...) failed: invalid shader_type!");
+            return false;
+    }
+    sources.push_back(std::string(source));
+    for (const std::string& s : sources) {
+        sources_ptr.push_back(s.data());
+        sources_len.push_back(s.length());
+    }
+
+    output = glCreateShader(shader_type);
+    glShaderSource(output, sources_ptr.size(), sources_ptr.data(),
+                   sources_len.data());
+    glCompileShader(output);
+    GLint success;
+    std::array<GLchar, 256> log;
+    GLsizei loglen;
+    glGetShaderiv(output, GL_COMPILE_STATUS, &success);
+    if (success == GL_TRUE)
+        return true;
+    glGetShaderInfoLog(output, log.size(), &loglen, log.data());
+    VERNA_LOGE("Vertex shader compilation failed: "
+               + std::string(log.data(), loglen));
+    glDeleteShader(output);
+    return false;
+}
+
+bool LinkShaders(GLuint vertex_shader,
+                 GLuint fragment_shader,
+                 GLuint& output_program) {
+    output_program = glCreateProgram();
+    glAttachShader(output_program, vertex_shader);
+    glAttachShader(output_program, fragment_shader);
+    glLinkProgram(output_program);
+    glDeleteShader(vertex_shader);
+    glDeleteShader(fragment_shader);
+    GLint success;
+    std::array<GLchar, 256> log;
+    GLsizei loglen;
+    glGetProgramiv(output_program, GL_LINK_STATUS, &success);
+    if (success == GL_TRUE)
+        return true;
+    glGetProgramInfoLog(output_program, log.size(), &loglen, log.data());
+    VERNA_LOGE("Shader program linking failed: "
+               + std::string(log.data(), loglen));
+    glDeleteProgram(output_program);
+    return false;
+}
+
+void UniformInit(GLuint program) {
+    GLuint block_loc =
+        glGetUniformBlockIndex(program, gpu::CameraData::BLOCK_NAME);
+    glUniformBlockBinding(program, block_loc, gpu::CameraData::BLOCK_BINDING);
+    block_loc =
+        glGetUniformBlockIndex(program, gpu::MeshDataBuffer::BLOCK_NAME);
+    glUniformBlockBinding(program, block_loc,
+                          gpu::MeshDataBuffer::BLOCK_BINDING);
+
+    for (int i = 0; i < gpu::MaxTextureUnits(); i++) {
+        std::string texture_uniform_name =
+            "_TEXTURES[" + std::to_string(i) + "]";
+        GLint textures_loc =
+            glGetUniformLocation(program, texture_uniform_name.c_str());
+        glUniform1i(textures_loc, i);
+    }
+}
+}  // namespace
 
 ShaderId LoadShaderFromSource(std::string_view vertex_src,
                               std::string_view fragment_src) {
     GLuint vertex, fragment, program;
-    GLint success;
-    std::array<GLchar, 256> log;
-    GLsizei loglen;
+    ShaderId output;  // default constructor makes it invalid
 
-    std::array<const char*, 2> source;
-    std::array<GLint, source.size()> lengths;
-    source[0] = VERNA_SHADER_VERTEX_PREFIX;
-    lengths[0] = std::string_view(source[0]).length();
-    source[1] = vertex_src.data();
-    lengths[1] = vertex_src.length();
-    vertex = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertex, source.size(), source.data(), lengths.data());
-    glCompileShader(vertex);
-    glGetShaderiv(vertex, GL_COMPILE_STATUS, &success);
-    if (success == GL_FALSE) {
-        glGetShaderInfoLog(vertex, log.size(), &loglen, log.data());
-        VERNA_LOGE("Vertex shader compilation failed: "
-                   + std::string(log.data(), loglen));
+    if (!CompileShaderSource(vertex_src, GL_VERTEX_SHADER, vertex)) {
+        return output;
+    }
+    if (!CompileShaderSource(fragment_src, GL_FRAGMENT_SHADER, fragment)) {
         glDeleteShader(vertex);
-        return VERNA_INVALID_SHADER;
+        return output;
+    }
+    if (!LinkShaders(vertex, fragment, program)) {
+        return output;
     }
 
-    source[0] = VERNA_SHADER_FRAGMENT_PREFIX;
-    lengths[0] = std::string_view(source[0]).length();
-    source[1] = fragment_src.data();
-    lengths[1] = fragment_src.length();
-    fragment = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragment, source.size(), source.data(), lengths.data());
-    glCompileShader(fragment);
-    glGetShaderiv(fragment, GL_COMPILE_STATUS, &success);
-    if (success == GL_FALSE) {
-        glGetShaderInfoLog(fragment, log.size(), &loglen, log.data());
-        VERNA_LOGE("Fragment shader compilation failed: "
-                   + std::string(log.data(), loglen));
-        glDeleteShader(vertex);
-        glDeleteShader(fragment);
-        return VERNA_INVALID_SHADER;
-    }
+    glUseProgram(program);
+    UniformInit(program);
 
-    program = glCreateProgram();
-    glAttachShader(program, vertex);
-    glAttachShader(program, fragment);
-    glLinkProgram(program);
-    glDeleteShader(vertex);
-    glDeleteShader(fragment);
-    glGetProgramiv(program, GL_LINK_STATUS, &success);
-    if (success == GL_FALSE) {
-        glGetProgramInfoLog(program, log.size(), &loglen, log.data());
-        VERNA_LOGE("Shader program linking failed: "
-                   + std::string(log.data(), loglen));
-        glDeleteProgram(program);
-        return VERNA_INVALID_SHADER;
-    }
-    return program;
+    shader_tracker.Push(program);
+    output.id = program;
+    return output;
 }
 
 void FreeShader(ShaderId shader_program) {
-    glDeleteProgram(shader_program);
+    if (!shader_program.IsValid())
+        return;
+    glDeleteProgram(shader_program.id);
+    shader_tracker.Remove(shader_program.id);
+}
+
+int32_t GetShaderUniformLocation(ShaderId shader_program,
+                                 std::string_view uniform_name) {
+    glUseProgram(shader_program.id);
+    return glGetUniformLocation(shader_program.id, uniform_name.data());
+}
+
+void SetShaderUniform(ShaderId shader_program,
+                      int32_t location,
+                      const Mat4f& matrix,
+                      bool transpose) {
+    glUseProgram(shader_program.id);
+    glUniformMatrix4fv(location, 1, transpose ? GL_TRUE : GL_FALSE,
+                       matrix.raw.data());
 }
 
 }  // namespace verna

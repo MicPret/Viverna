@@ -72,7 +72,7 @@ bool InitGraphicsAPI() {
         TermGraphicsAPI();
         return false;
     }
-    VERNA_LOGI("Loaded OpenGL" + std::to_string(GLAD_VERSION_MAJOR(version))
+    VERNA_LOGI("Loaded OpenGL " + std::to_string(GLAD_VERSION_MAJOR(version))
                + '.' + std::to_string(GLAD_VERSION_MINOR(version)));
 
 #ifndef NDEBUG
@@ -88,8 +88,8 @@ void TermGraphicsAPI() {
     GLFWwindow* window = glfwGetCurrentContext();
     if (window != nullptr)
         glfwDestroyWindow(window);
-    glfwTerminate();
     SetNativeWindowPointer(nullptr);
+    glfwTerminate();
     initialized = false;
 }
 
@@ -103,14 +103,13 @@ static void OpenGLDebugOutputFunc(GLenum source,
     // TODO better OpenGL error handling
     switch (severity) {
         case GL_DEBUG_SEVERITY_HIGH:
-            VERNA_LOGE("OpenGL error " + std::to_string(id) + ":\n" + message);
+            VERNA_LOGE("OpenGL error " + std::to_string(id) + ": " + message);
             break;
         case GL_DEBUG_SEVERITY_MEDIUM:
-            VERNA_LOGW("OpenGL warning: " + std::to_string(id) + ":\n"
-                       + message);
+            VERNA_LOGW("OpenGL warning " + std::to_string(id) + ": " + message);
             break;
         case GL_DEBUG_SEVERITY_LOW:
-            VERNA_LOGI("OpenGL info: " + std::to_string(id) + ":\n" + message);
+            VERNA_LOGI("OpenGL info " + std::to_string(id) + ": " + message);
             break;
         default:
             break;

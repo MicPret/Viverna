@@ -54,3 +54,13 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL Linux OR CMAKE_SYSTEM_NAME STREQUAL Windows)
         glfw
     )
 endif()
+target_link_libraries(${VIVERNA_TARGET_NAME} PUBLIC
+    stb
+)
+
+#test
+add_executable("${VIVERNA_TARGET_NAME}_test" "")
+add_subdirectory(test)
+target_link_libraries("${VIVERNA_TARGET_NAME}_test" PUBLIC
+    ${VIVERNA_TARGET_NAME}
+)
