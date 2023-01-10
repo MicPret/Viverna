@@ -45,6 +45,7 @@ std::string InternalFragmentCommonCode() {
 #elif defined(VERNA_ANDROID)
     fragment.AddLine("#version 320 es");
     fragment.AddLine("precision mediump float;");
+    fragment.AddLine("precision highp int;");
     fragment.AddLine("uniform int DRAW_ID;");
 #endif
     fragment.AddLine("in float MESH_IDX;");
