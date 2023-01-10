@@ -37,6 +37,9 @@ bool CompileShaderSource(std::string_view source,
     }
     sources.push_back(std::string(source));
     for (const std::string& s : sources) {
+#ifndef NDEBUG
+        VERNA_LOGI(s);
+#endif
         sources_ptr.push_back(s.data());
         sources_len.push_back(s.length());
     }
