@@ -22,7 +22,7 @@ set_target_properties(${VIVERNA_TARGET_NAME} PROPERTIES
     CXX_EXTENSIONS OFF
     COMPILE_WARNING_AS_ERROR ON
 )
-target_compile_options(${VIVERNA_TARGET_NAME} PRIVATE "-Wall;-fno-exceptions;-fno-rtti")
+target_compile_options(${VIVERNA_TARGET_NAME} PRIVATE "-Wall;-fno-exceptions;-fno-rtti;-fPIC")
 if (CMAKE_SYSTEM_NAME STREQUAL Android)
     target_compile_definitions(${VIVERNA_TARGET_NAME} PUBLIC VERNA_ANDROID=1)
 elseif(CMAKE_SYSTEM_NAME STREQUAL Linux OR CMAKE_SYSTEM_NAME STREQUAL Windows)
