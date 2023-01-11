@@ -6,8 +6,8 @@
 #include <viverna/graphics/Mesh.hpp>
 #include <viverna/graphics/Texture.hpp>
 #include <viverna/graphics/Vertex.hpp>
-#include <viverna/graphics/gpu/ImplementationInfo.hpp>
 #include <viverna/graphics/gpu/MeshData.hpp>
+#include "GraphicsAPIHelper.hpp"
 
 namespace verna {
 struct RenderBatch {

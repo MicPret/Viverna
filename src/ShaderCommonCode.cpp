@@ -1,8 +1,8 @@
 #include <string>
 #include <string_view>
 #include <viverna/graphics/ShaderCommonCode.hpp>
-#include <viverna/graphics/gpu/ImplementationInfo.hpp>
 #include <viverna/graphics/gpu/MeshData.hpp>
+#include "GraphicsAPIHelper.hpp"
 
 namespace {
 struct Code {

@@ -14,7 +14,6 @@ target_sources(${VIVERNA_TARGET_NAME} PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/ShaderCommonCode.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Mat4f.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Transform.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/ImplementationInfo.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Texture.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Camera.cpp"
     "${${PROJECT_NAME}_platform_path}/Debug.cpp"

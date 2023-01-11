@@ -1,6 +1,6 @@
 #include <viverna/core/Debug.hpp>
-#include <viverna/graphics/GraphicsAPIHelper.hpp>
 #include <viverna/graphics/NativeWindow.hpp>
+#include "../GraphicsAPIHelper.hpp"
 
 namespace verna {
 

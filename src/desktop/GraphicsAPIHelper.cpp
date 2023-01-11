@@ -1,6 +1,6 @@
 #include <viverna/core/Debug.hpp>
-#include <viverna/graphics/GraphicsAPIHelper.hpp>
 #include <viverna/graphics/NativeWindow.hpp>
+#include "../GraphicsAPIHelper.hpp"
 
 #include <string>
 
@@ -115,4 +115,16 @@ static void OpenGLDebugOutputFunc(GLenum source,
             break;
     }
 }
+
+namespace gpu {
+int MaxTextureUnits() {
+    static GLint max_frag_tus = [] {
+        GLint x;
+        glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &x);
+        return x;
+    }();
+    return max_frag_tus;
+}
+}  // namespace gpu
+
 }  // namespace verna

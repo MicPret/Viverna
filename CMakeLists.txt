@@ -2,6 +2,11 @@ cmake_minimum_required(VERSION 3.24.0)
 
 project(viverna_engine LANGUAGES CXX C)
 set(VIVERNA_TARGET_NAME ${PROJECT_NAME})
+#default standard
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_COMPILE_WARNING_AS_ERROR ON)
 
 message(STATUS "=============================================================================================")
 message(STATUS "Building for ${CMAKE_SYSTEM_NAME}")

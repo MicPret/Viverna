@@ -1,11 +1,10 @@
 #include <viverna/core/Debug.hpp>
-#include <viverna/graphics/GraphicsAPIHelper.hpp>
 #include <viverna/graphics/Shader.hpp>
 #include <viverna/graphics/ShaderCommonCode.hpp>
 #include <viverna/graphics/gpu/CameraData.hpp>
-#include <viverna/graphics/gpu/ImplementationInfo.hpp>
 #include <viverna/graphics/gpu/MeshData.hpp>
 #include <viverna/maths/Mat4f.hpp>
+#include "GraphicsAPIHelper.hpp"
 #include "ResourceTracker.hpp"
 
 #include <array>

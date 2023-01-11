@@ -1,6 +1,6 @@
 #include <viverna/core/Debug.hpp>
-#include <viverna/graphics/GraphicsAPIHelper.hpp>
 #include <viverna/graphics/Texture.hpp>
+#include "GraphicsAPIHelper.hpp"
 #include "ResourceTracker.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION

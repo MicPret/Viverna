@@ -7,11 +7,17 @@
 #elif defined(VERNA_DESKTOP)
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
+#else error Platform not supported!
 #endif
 
 namespace verna {
 bool InitGraphicsAPI();
 void TermGraphicsAPI();
+
+namespace gpu {
+int MaxTextureUnits();
+}  // namespace gpu
+
 }  // namespace verna
 
 #endif

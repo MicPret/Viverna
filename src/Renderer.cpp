@@ -1,14 +1,13 @@
 #include <viverna/core/Debug.hpp>
 #include <viverna/graphics/Camera.hpp>
-#include <viverna/graphics/GraphicsAPIHelper.hpp>
 #include <viverna/graphics/Material.hpp>
 #include <viverna/graphics/NativeWindow.hpp>
 #include <viverna/graphics/Renderer.hpp>
 #include <viverna/graphics/Texture.hpp>
 #include <viverna/graphics/Vertex.hpp>
 #include <viverna/graphics/gpu/CameraData.hpp>
-#include <viverna/graphics/gpu/ImplementationInfo.hpp>
 #include <viverna/graphics/gpu/MeshData.hpp>
+#include "GraphicsAPIHelper.hpp"
 #include "RenderBatch.hpp"
 #include "ShaderBucketMapper.hpp"
 
