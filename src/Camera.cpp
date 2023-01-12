@@ -1,4 +1,5 @@
 #include <viverna/graphics/Camera.hpp>
+#include <viverna/graphics/NativeWindow.hpp>
 
 namespace verna {
 
@@ -6,7 +7,10 @@ static Camera* active_camera;
 
 Camera& Camera::GetActive() {
     // TODO better default cam
-    static Camera c(0.785398f, 16.0f / 10.0f, 0.15f, 1000.0f);
+    static Camera c(
+        0.785398f,
+        static_cast<float>(WindowWidth()) / static_cast<float>(WindowHeight()),
+        0.15f, 1000.0f);
     if (active_camera == nullptr)  // only first call
         active_camera = &c;
     return *active_camera;

@@ -10,6 +10,8 @@ namespace verna {
 static EGLDisplay display = EGL_NO_DISPLAY;
 static EGLSurface surface = EGL_NO_SURFACE;
 static EGLContext context = EGL_NO_CONTEXT;
+static EGLint width;
+static EGLint height;
 
 static bool InitEGL();
 static bool CheckEGLError(std::string& codename);
@@ -22,7 +24,7 @@ bool InitGraphicsAPI() {
     if (!InitEGL())
         return false;
     // Check openGL on the system
-    std::string info =
+    [[maybe_unused]] std::string info =
         reinterpret_cast<const char*>(glGetString(GL_VENDOR))
         + std::to_string(' ')
         + reinterpret_cast<const char*>(glGetString(GL_RENDERER));
@@ -149,19 +151,18 @@ static bool InitEGL() {
         return false;
     }
 
-    EGLint w, h;
-    if (eglQuerySurface(display, surface, EGL_WIDTH, &w) == EGL_FALSE) {
+    if (eglQuerySurface(display, surface, EGL_WIDTH, &width) == EGL_FALSE) {
         CheckEGLError(error);
         VERNA_LOGE("eglQuerySurface failed: " + error);
         return false;
     }
-    if (eglQuerySurface(display, surface, EGL_HEIGHT, &h) == EGL_FALSE) {
+    if (eglQuerySurface(display, surface, EGL_HEIGHT, &height) == EGL_FALSE) {
         CheckEGLError(error);
         VERNA_LOGE("eglQuerySurface failed: " + error);
         return false;
     }
-    VERNA_LOGI("Display width:  " + std::to_string(w));
-    VERNA_LOGI("Display height: " + std::to_string(h));
+    VERNA_LOGI("Display width:  " + std::to_string(width));
+    VERNA_LOGI("Display height: " + std::to_string(height));
     return true;
 }
 
@@ -214,6 +215,13 @@ static bool CheckEGLError(std::string& codename) {
             break;
     }
     return false;
+}
+
+int ContextWidth() {
+    return width;
+}
+int ContextHeight() {
+    return height;
 }
 
 namespace gpu {

@@ -24,4 +24,11 @@ void SwapNativeWindowBuffers() {
     VERNA_ASSERT(eglGetError() == EGL_SUCCESS);
 }
 
+int WindowWidth() {
+    return ContextWidth();
+}
+int WindowHeight() {
+    return ContextHeight();
+}
+
 }  // namespace verna

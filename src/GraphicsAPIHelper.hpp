@@ -13,6 +13,8 @@
 namespace verna {
 bool InitGraphicsAPI();
 void TermGraphicsAPI();
+int ContextWidth();
+int ContextHeight();
 
 namespace gpu {
 int MaxTextureUnits();

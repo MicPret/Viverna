@@ -116,6 +116,17 @@ static void OpenGLDebugOutputFunc(GLenum source,
     }
 }
 
+int ContextWidth() {
+    int x;
+    glfwGetWindowSize(glfwGetCurrentContext(), &x, nullptr);
+    return x;
+}
+int ContextHeight() {
+    int y;
+    glfwGetWindowSize(glfwGetCurrentContext(), &y, nullptr);
+    return y;
+}
+
 namespace gpu {
 int MaxTextureUnits() {
     static GLint max_frag_tus = [] {

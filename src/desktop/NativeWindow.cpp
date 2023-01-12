@@ -22,4 +22,11 @@ void SwapNativeWindowBuffers() {
     glfwPollEvents();
 }
 
+int WindowWidth() {
+    return ContextWidth();
+}
+int WindowHeight() {
+    return ContextHeight();
+}
+
 }  // namespace verna

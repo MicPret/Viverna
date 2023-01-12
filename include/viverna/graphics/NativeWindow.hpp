@@ -5,6 +5,8 @@ namespace verna {
 void SetNativeWindowPointer(void* ptr);
 void* GetNativeWindowPointer();
 void SwapNativeWindowBuffers();
+int WindowWidth();
+int WindowHeight();
 }  // namespace verna
 
 #endif
