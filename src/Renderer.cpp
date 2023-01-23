@@ -272,8 +272,8 @@ void Draw() {
             draw_command.indices = indices_offsets.data();
             draw_command.count = batch.indices_count.data();
 #if defined(VERNA_ANDROID)
-            for (j = 0; i < draw_command.drawcount; i++) {
-                glUniform1i(draw_id_loc, i);
+            for (j = 0; j < draw_command.drawcount; j++) {
+                glUniform1i(draw_id_loc, j);
                 glDrawElementsBaseVertex(
                     GL_TRIANGLES, draw_command.count[j], GL_UNSIGNED_INT,
                     draw_command.indices[j], draw_command.basevertex[j]);
