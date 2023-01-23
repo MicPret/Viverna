@@ -200,6 +200,7 @@ void InitializeWindow(VivernaState& state) {
     }
     VERNA_LOGI("Display width:  " + std::to_string(width));
     VERNA_LOGI("Display height: " + std::to_string(height));
+    VERNA_LOGI("Window initialized!");
 }
 
 void TerminateWindow(VivernaState& state) {
@@ -224,6 +225,7 @@ void TerminateWindow(VivernaState& state) {
     surface = EGL_NO_SURFACE;
     width = 0;
     height = 0;
+    VERNA_LOGI("Window terminated!");
 }
 
 int WindowWidth() {

@@ -29,6 +29,7 @@ void InitializeRendererAPI(VivernaState& state) {
     VERNA_LOGI("API: " + info);
 
     state.SetFlag(VivernaState::RENDERER_API_INITIALIZED_FLAG, true);
+    VERNA_LOGI("Renderer API initialized!");
 }
 
 void TerminateRendererAPI(VivernaState& state) {
@@ -42,5 +43,6 @@ void TerminateRendererAPI(VivernaState& state) {
         return;
     }
     state.SetFlag(VivernaState::RENDERER_API_INITIALIZED_FLAG, false);
+    VERNA_LOGI("Renderer API terminated!");
 }
 }  // namespace verna

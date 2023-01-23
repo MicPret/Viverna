@@ -55,6 +55,7 @@ void InitializeInput(VivernaState& state) {
         static_cast<struct android_app*>(state.native_app);
     app->onInputEvent = HandleInput;
     state.SetFlag(VivernaState::INPUT_INITIALIZED_FLAG, true);
+    VERNA_LOGI("Input initialized!")
 }
 
 void TerminateInput(VivernaState& state) {
@@ -69,6 +70,7 @@ void TerminateInput(VivernaState& state) {
         static_cast<struct android_app*>(state.native_app);
     app->onInputEvent = nullptr;
     state.SetFlag(VivernaState::INPUT_INITIALIZED_FLAG, false);
+    VERNA_LOGI("Input terminated!")
 }
 
 bool ClickListener::Pressed(unsigned& pos_x, unsigned& pos_y) const {
