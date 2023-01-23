@@ -44,14 +44,31 @@ int32_t HandleInput(struct android_app* app, AInputEvent* event) {
 }
 
 void InitializeInput(VivernaState& state) {
-    // TODO state flags
+    if (state.GetFlag(VivernaState::INPUT_INITIALIZED_FLAG))
+        return;
     if (state.native_app == nullptr) {
         VERNA_LOGE("InitializeInput must be called after InitializeWindow!");
+        state.SetFlag(VivernaState::ERROR_FLAG, true);
         return;
     }
     struct android_app* app =
         static_cast<struct android_app*>(state.native_app);
     app->onInputEvent = HandleInput;
+    state.SetFlag(VivernaState::INPUT_INITIALIZED_FLAG, true);
+}
+
+void TerminateInput(VivernaState& state) {
+    if (!state.GetFlag(VivernaState::INPUT_INITIALIZED_FLAG))
+        return;
+    if (state.native_app == nullptr) {
+        VERNA_LOGE("TerminateInput must be called before TerminateWindow!");
+        state.SetFlag(VivernaState::ERROR_FLAG, true);
+        return;
+    }
+    struct android_app* app =
+        static_cast<struct android_app*>(state.native_app);
+    app->onInputEvent = nullptr;
+    state.SetFlag(VivernaState::INPUT_INITIALIZED_FLAG, false);
 }
 
 bool ClickListener::Pressed(unsigned& pos_x, unsigned& pos_y) const {
