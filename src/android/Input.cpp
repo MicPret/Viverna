@@ -30,11 +30,21 @@ static void GetTouchPos(unsigned& x, unsigned& y) {
 
 static int32_t HandleInput(struct android_app* app, AInputEvent* event) {
     float x, y;
-    auto event_type = AInputEvent_getType(event);
+    int32_t event_type = AInputEvent_getType(event);
+    int32_t action;
     switch (event_type) {
         case AINPUT_EVENT_TYPE_MOTION:
-            SetTouch((AMotionEvent_getAction(event) & AMOTION_EVENT_ACTION_MASK)
-                     == AMOTION_EVENT_ACTION_DOWN);
+            action = AMotionEvent_getAction(event) & AMOTION_EVENT_ACTION_MASK;
+            switch (action) {
+                case AMOTION_EVENT_ACTION_DOWN:
+                    SetTouch(true);
+                    break;
+                case AMOTION_EVENT_ACTION_UP:
+                    SetTouch(false);
+                    break;
+                default:
+                    break;
+            }
             x = AMotionEvent_getX(event, 0);
             y = AMotionEvent_getY(event, 0);
             SetTouchPos(static_cast<uint32_t>(x), static_cast<uint32_t>(y));
