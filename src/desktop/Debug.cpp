@@ -4,16 +4,20 @@
 
 namespace verna::detail {
 
+static void Log(std::string_view priority, std::string_view msg) {
+    std::cout << '[' << priority << "] " << msg << std::endl;
+}
+
 void LogInfo(std::string_view message) {
-    std::cout << "[INFO] " << message << '\n';
+    Log("INFO", message);
 }
 
 void LogWarning(std::string_view message) {
-    std::cout << "[WARN] " << message << '\n';
+    Log("WARN", message);
 }
 
 void LogError(std::string_view message) {
-    std::cout << "[ERROR] " << message << '\n';
+    Log("ERROR", message);
 }
 
 }  // namespace verna::detail

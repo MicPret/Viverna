@@ -12,9 +12,9 @@ struct Mesh {
     std::vector<uint32_t> indices;
 };
 
-// TODO Mesh LoadMeshFromFile(std::string_view filename)
+// TODO Mesh LoadMeshFromFile(const std::filesystem::path& filename)
 
-enum class PrimitiveMeshType { Cube };
+enum class PrimitiveMeshType : uint8_t { Cube, Pyramid };
 
 Mesh LoadPrimitiveMesh(PrimitiveMeshType type);
 

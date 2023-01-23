@@ -15,8 +15,8 @@ struct Quaternion {
     float w;
 
     constexpr Quaternion() : x(0.0f), y(0.0f), z(0.0f), w(1.0f) {}
-    constexpr Quaternion(float x_, float y_, float z_, float w_)
-        : x(x_), y(y_), z(z_), w(w_) {}
+    constexpr Quaternion(float x_, float y_, float z_, float w_) :
+        x(x_), y(y_), z(z_), w(w_) {}
     Quaternion(const Vec3f& unit_axis, float radians);
 
     constexpr float SquaredMagnitude() const {
@@ -63,6 +63,14 @@ struct Quaternion {
      * @return The rotated vector
      */
     constexpr Vec3f Rotate(const Vec3f& vec) const;
+
+    static constexpr Quaternion Lerp(const Quaternion& a,
+                                     const Quaternion& b,
+                                     float t) {
+        float t_m = 1.0f - t;
+        return Quaternion(t_m * a.x + t * b.x, t_m * a.y + t * b.y,
+                          t_m * a.z + t_m * b.z, t_m * a.w + t * b.w);
+    }
 };
 
 /**

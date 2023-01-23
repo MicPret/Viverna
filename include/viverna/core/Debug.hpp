@@ -13,6 +13,15 @@ void LogError(std::string_view message);
 #define VERNA_LOGI(x) verna::detail::LogInfo(x)
 #define VERNA_LOGW(x) verna::detail::LogWarning(x)
 #define VERNA_LOGE(x) verna::detail::LogError(x)
+#define VERNA_LOGI_IF(cond, x) \
+    if (cond)                  \
+    VERNA_LOGI(x)
+#define VERNA_LOGW_IF(cond, x) \
+    if (cond)                  \
+    VERNA_LOGW(x)
+#define VERNA_LOGE_IF(cond, x) \
+    if (cond)                  \
+    VERNA_LOGE(x)
 #include <cassert>
 #include <string>
 #define VERNA_ASSERT(x)                                      \
@@ -25,6 +34,9 @@ void LogError(std::string_view message);
 #define VERNA_LOGI(x)
 #define VERNA_LOGW(x)
 #define VERNA_LOGE(x)
+#define VERNA_LOGI_IF(cond, x)
+#define VERNA_LOGW_IF(cond, x)
+#define VERNA_LOGE_IF(cond, x)
 #define VERNA_ASSERT(x)
 #endif
 

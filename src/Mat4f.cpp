@@ -1,5 +1,5 @@
-#include <viverna/core/Debug.hpp>
 #include <viverna/maths/Mat4f.hpp>
+#include <viverna/core/Debug.hpp>
 #include <viverna/maths/Vec3f.hpp>
 
 #include <cmath>

@@ -22,14 +22,19 @@ struct Camera {
         near_plane(near_plane_),
         far_plane(far_plane_) {}
 
-    constexpr Mat4f GetViewMatrix() const {
-        Vec3f forward = rotation.Rotate(-Vec3f::UnitZ()).Normalized();
-        Vec3f right = forward.Cross(Vec3f::UnitY()).Normalized();
-        Vec3f up = right.Cross(forward).Normalized();
+    constexpr Vec3f Forward() const {
+        return rotation.Rotate(Vec3f::UnitZ()).Normalized();
+    }
 
-        return Mat4f::LookAt(position, right, up, forward);
+    constexpr Mat4f GetViewMatrix() const {
+        Vec3f forward = Forward();
+        Vec3f up = forward.Cross(Vec3f::UnitX());
+        return Mat4f::LookAt(position, position + forward, up);
     }
     Mat4f GetProjectionMatrix() const;
+    Vec3f ToWorldCoords(unsigned screen_x,
+                        unsigned screen_y,
+                        float camera_dist) const;
 
     static Camera& GetActive();
     static void SetActive(Camera& camera);

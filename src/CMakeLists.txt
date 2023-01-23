@@ -16,7 +16,10 @@ target_sources(${VIVERNA_TARGET_NAME} PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/Transform.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Texture.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Camera.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Quaternion.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/VivernaInitializer.cpp"
     "${${PROJECT_NAME}_platform_path}/Debug.cpp"
-    "${${PROJECT_NAME}_platform_path}/GraphicsAPIHelper.cpp"
-    "${${PROJECT_NAME}_platform_path}/NativeWindow.cpp"
+    "${${PROJECT_NAME}_platform_path}/Input.cpp"
+    "${${PROJECT_NAME}_platform_path}/RendererAPI.cpp"
+    "${${PROJECT_NAME}_platform_path}/Window.cpp"
 )

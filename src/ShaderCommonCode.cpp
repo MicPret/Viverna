@@ -1,8 +1,17 @@
+#include <viverna/graphics/ShaderCommonCode.hpp>
+#include <viverna/graphics/Renderer.hpp>
+#include <viverna/graphics/gpu/MeshData.hpp>
+
+#if defined(VERNA_DESKTOP)
+#include <glad/gl.h>
+#elif defined(VERNA_ANDROID)
+#include <GLES3/gl32.h>
+#else
+#error Platform not supported!
+#endif
+
 #include <string>
 #include <string_view>
-#include <viverna/graphics/ShaderCommonCode.hpp>
-#include <viverna/graphics/gpu/MeshData.hpp>
-#include "GraphicsAPIHelper.hpp"
 
 namespace {
 struct Code {
@@ -57,7 +66,7 @@ std::string InternalLaterCommonCode() {
     commons.AddDefine("_MAX_MESHES",
                       std::to_string(verna::gpu::MeshDataBuffer::BUFFER_SIZE));
     commons.AddDefine("_MAX_TEXTURES",
-                      std::to_string(verna::gpu::MaxTextureUnits()));
+                      std::to_string(verna::RendererInfo::MaxTextureUnits()));
     commons.AddLine(
         "struct MeshData {\n"
         "  int texture_idx0;\n"

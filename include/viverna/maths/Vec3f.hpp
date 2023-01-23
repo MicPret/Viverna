@@ -1,9 +1,13 @@
 #ifndef VERNA_VEC3F_HPP
 #define VERNA_VEC3F_HPP
 
-#include "MathDefines.hpp"
+#include "MathUtils.hpp"
 
 namespace verna {
+struct Vec3f;
+constexpr Vec3f operator*(float scalar, const Vec3f& vector);
+constexpr Vec3f operator+(const Vec3f& a, const Vec3f& b);
+
 struct Vec3f {
     float x;
     float y;
@@ -30,6 +34,9 @@ struct Vec3f {
     static constexpr Vec3f UnitX() { return Vec3f(1.0f, 0.0f, 0.0f); }
     static constexpr Vec3f UnitY() { return Vec3f(0.0f, 1.0f, 0.0f); }
     static constexpr Vec3f UnitZ() { return Vec3f(0.0f, 0.0f, 1.0f); }
+    static constexpr Vec3f Lerp(const Vec3f& a, const Vec3f& b, float t) {
+        return (1.0f - t) * a + t * b;
+    }
 };
 
 constexpr Vec3f operator*(float scalar, const Vec3f& vector) {

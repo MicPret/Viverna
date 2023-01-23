@@ -1,19 +1,21 @@
-#ifndef VERNA_DEMOS_HPP
-#define VERNA_DEMOS_HPP
+#ifndef VERNA_TEST_SPINNING_CUBE_HPP
+#define VERNA_TEST_SPINNING_CUBE_HPP
 
+#include <viverna/core/Debug.hpp>
+#include <viverna/core/VivernaInitializer.hpp>
 #include <viverna/graphics/Camera.hpp>
 #include <viverna/graphics/Material.hpp>
 #include <viverna/graphics/Mesh.hpp>
 #include <viverna/graphics/Renderer.hpp>
+#include <viverna/graphics/RendererAPI.hpp>
 #include <viverna/graphics/Shader.hpp>
-#include "Debug.hpp"
+#include <viverna/graphics/Window.hpp>
 
-#include <chrono>
+inline void SpinningCube(int seconds) {
+    VERNA_LOGI("Running SpinningCube demo for " + std::to_string(seconds)
+               + " seconds...");
+    verna::VivernaInitializerRAII initializer;
 
-namespace verna {
-
-inline void SpinningCubeDemo() {
-    verna::InitializeRenderer();
     std::string_view vertex_src =
         "layout(location = 0) in vec3 vPosition;\n"
         "layout(location = 1) in vec2 vTexCoords;\n"
@@ -42,22 +44,19 @@ inline void SpinningCubeDemo() {
     verna::Camera& camera = verna::Camera::GetActive();
     camera.position.z = -3.0f;
 
-    auto now = std::chrono::steady_clock::now();
-    auto end = now + std::chrono::seconds(10);
+    auto now = verna::Clock::now();
+    auto end = now + verna::Seconds(seconds);
 
     while (now < end) {
-        std::chrono::duration<float, std::chrono::seconds::period> remaining =
-            end - now;
+        verna::DeltaTime<float, verna::Seconds> remaining = end - now;
         verna::Mat4f transform = verna::Mat4f::Rotation(
             verna::Vec3f(0.0f, 1.0f, 0.0f), remaining.count());
         verna::Render(cube, material, transform, shader);
         verna::Draw();
-        now = std::chrono::steady_clock::now();
+        now = verna::Clock::now();
     }
     verna::FreeShader(shader);
     verna::FreeTexture(cyan);
-    verna::TerminateRenderer();
 }
-}  // namespace verna
 
 #endif

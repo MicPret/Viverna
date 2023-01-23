@@ -1,13 +1,11 @@
+#include <viverna/graphics/Renderer.hpp>
 #include <viverna/core/Debug.hpp>
 #include <viverna/graphics/Camera.hpp>
 #include <viverna/graphics/Material.hpp>
-#include <viverna/graphics/NativeWindow.hpp>
-#include <viverna/graphics/Renderer.hpp>
 #include <viverna/graphics/Texture.hpp>
 #include <viverna/graphics/Vertex.hpp>
 #include <viverna/graphics/gpu/CameraData.hpp>
 #include <viverna/graphics/gpu/MeshData.hpp>
-#include "GraphicsAPIHelper.hpp"
 #include "RenderBatch.hpp"
 #include "ShaderBucketMapper.hpp"
 
@@ -15,8 +13,19 @@
 #include <utility>
 #include <vector>
 
+#if defined(VERNA_DESKTOP)
+#include <glad/gl.h>
+#include <GLFW/glfw3.h>
+#elif defined(VERNA_ANDROID)
+#include <GLES3/gl32.h>
+#include <EGL/egl.h>
+#else
+#error Platform not supported!
+#endif
+
 namespace verna {
 
+namespace {
 struct GlDrawCommand {
     // indices counts
     GLsizei* count;
@@ -28,12 +37,11 @@ struct GlDrawCommand {
     const GLint* basevertex;
 };
 
-namespace {
+void* native_window = nullptr;
 ShaderBucketMapper shader_to_bucket;
 std::vector<RenderBatch> render_batches;
 
 GLuint vao, vbo, ebo, ubo;
-bool initialized = false;
 
 void GenBuffers() {
     glGenVertexArrays(1, &vao);
@@ -76,62 +84,119 @@ void DeleteBuffers() {
     glDeleteBuffers(1, &ebo);
     glDeleteBuffers(1, &ubo);
 }
-}  // namespace
 
-void InitializeRenderer() {
-    if (initialized)
-        return;
-    if (!InitGraphicsAPI()) {
-        VERNA_LOGE("InitGraphicsAPI() failed!");
-        return;
-    }
-    GenBuffers();
-
-    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-
-    initialized = true;
+void ClearBatches() {
+    /*
+    for (auto& batch : render_batches)
+        batch.Clear();
+    */
+    shader_to_bucket.Clear();
+    render_batches.clear();
 }
 
-void TerminateRenderer() {
-    if (!initialized)
+void SwapBuffers() {
+    VERNA_LOGE_IF(native_window == nullptr,
+                  "SwapBuffers called with nullptr native_window");
+#if defined(VERNA_DESKTOP)
+    GLFWwindow* window = static_cast<GLFWwindow*>(native_window);
+    VERNA_LOGE_IF(window != glfwGetCurrentContext(),
+                  "Renderer error: no access to current context window!");
+    glfwSwapBuffers(window);
+    glfwPollEvents();
+#elif defined(VERNA_ANDROID)
+    EGLDisplay display = eglGetCurrentDisplay();
+    EGLSurface surface = eglGetCurrentSurface(EGL_DRAW);
+    VERNA_LOGE_IF(display == EGL_NO_DISPLAY,
+                  "SwapBuffers called with EGL_NO_DISPLAY");
+    VERNA_LOGE_IF(surface == EGL_NO_SURFACE,
+                  "SwapBuffers called with EGL_NO_SURFACE");
+    eglSwapBuffers(display, surface);
+    VERNA_LOGE_IF(eglGetError() != EGL_SUCCESS,
+                  "Error found calling eglSwapBuffers");
+#endif
+}
+
+void RendererError(VivernaState& state,
+                   [[maybe_unused]] std::string_view message) {
+    VERNA_LOGE(message);
+    state.SetFlag(VivernaState::ERROR_FLAG, true);
+}
+
+BatchId NewBatchInExistingBucket(Bucket& bucket) {
+    BatchId output = static_cast<BatchId>(render_batches.size());
+    bucket.push_back(output);
+    render_batches.push_back(RenderBatch());
+    return output;
+}
+
+BatchId NewBatchInNewBucket(ShaderId shader) {
+    Bucket& bucket = shader_to_bucket.NewBucket(shader);
+    return NewBatchInExistingBucket(bucket);
+}
+}  // namespace
+
+void InitializeRenderer(VivernaState& state) {
+    if (state.GetFlag(VivernaState::RENDERER_INITIALIZED_FLAG))
         return;
+    if (!state.GetFlag(VivernaState::RENDERER_API_INITIALIZED_FLAG)) {
+        RendererError(state,
+                      "InitializeRendererAPI() should be called before "
+                      "InitializeRenderer()!");
+        return;
+    }
+
+    GenBuffers();
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
+
+    state.SetFlag(VivernaState::RENDERER_INITIALIZED_FLAG, true);
+    native_window = state.native_window;
+    VERNA_LOGI("Renderer initialized!");
+}
+
+void TerminateRenderer(VivernaState& state) {
+    if (!state.GetFlag(VivernaState::RENDERER_INITIALIZED_FLAG))
+        return;
+
     DeleteBuffers();
 
-    initialized = false;
-
-    TermGraphicsAPI();
+    state.SetFlag(VivernaState::RENDERER_INITIALIZED_FLAG, false);
+    native_window = nullptr;
+    VERNA_LOGI("Renderer terminated!");
 }
 
 void Render(const Mesh& mesh,
             const Material& material,
             const Mat4f& transform_matrix,
             ShaderId shader_id) {
-    VERNA_ASSERT(initialized);
-    VERNA_ASSERT(shader_id.IsValid());
-    VERNA_ASSERT(!mesh.vertices.empty() && !mesh.indices.empty());
+    VERNA_LOGE_IF(!shader_id.IsValid(), "Called Render() with invalid shader!");
+    VERNA_LOGE_IF(mesh.vertices.empty() || mesh.indices.empty(),
+                  "Called Render() on empty Mesh!");
 
     auto bucket = shader_to_bucket.FindBucket(shader_id);
 
     BatchId last_batch_id;
     if (shader_to_bucket.NotFound(bucket)) {
-        last_batch_id = static_cast<BatchId>(render_batches.size());
-        shader_to_bucket.NewBucket(shader_id).push_back(last_batch_id);
-        render_batches.push_back(RenderBatch());
+        last_batch_id = NewBatchInNewBucket(shader_id);
     } else {
         last_batch_id = bucket->back();
     }
-    RenderBatch& last_batch = render_batches[last_batch_id];
-    if (!last_batch.CanContain(mesh)
-        || !last_batch.TryAddMeshData(material, transform_matrix)) {
-        last_batch_id = static_cast<BatchId>(render_batches.size());
-        bucket->push_back(last_batch_id);
-        render_batches.push_back(RenderBatch());
+    RenderBatch* last_batch = &render_batches[last_batch_id];
+    if (!last_batch->CanContain(mesh)) {
+        last_batch_id = NewBatchInExistingBucket(*bucket);
+        last_batch = &render_batches[last_batch_id];
+    }
+    if (!last_batch->TryAddMeshData(material, transform_matrix)) {
+        last_batch_id = NewBatchInExistingBucket(*bucket);
+        last_batch = &render_batches[last_batch_id];
         [[maybe_unused]] bool added =
-            last_batch.TryAddMeshData(material, transform_matrix);
-        VERNA_ASSERT(added);
+            last_batch->TryAddMeshData(material, transform_matrix);
+        VERNA_LOGE_IF(!added,
+                      "Renderer error: failed to material/transform data");
     }
 
-    RenderBatch& batch = render_batches[last_batch_id];
+    RenderBatch& batch = *last_batch;
     batch.vertices_count[batch.num_meshes] =
         static_cast<int32_t>(mesh.vertices.size());
     batch.indices_count[batch.num_meshes] = mesh.indices.size();
@@ -143,12 +208,20 @@ void Render(const Mesh& mesh,
 }
 
 void Draw() {
-    VERNA_ASSERT(initialized);
+    if (native_window == nullptr) {
+        VERNA_LOGE(
+            "Called Draw() before Renderer could access current context!");
+        ClearBatches();
+        return;
+    }
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    if (shader_to_bucket.Empty())
+    if (shader_to_bucket.Empty()) {
+        SwapBuffers();
         return;
-    VERNA_ASSERT(!render_batches.empty());
+    }
+    VERNA_LOGE_IF(render_batches.empty(),
+                  "There are render buckets but no render batches!");
 
     Camera& cam = Camera::GetActive();
     gpu::CameraData cam_data;
@@ -163,17 +236,20 @@ void Draw() {
 #if defined(VERNA_ANDROID)
         int draw_id_loc = glGetUniformLocation(shader.id, "DRAW_ID");
 #endif
+        std::array<const GLvoid*, RenderBatch::MAX_MESHES> indices_offsets;
+        std::array<GLint, RenderBatch::MAX_MESHES> vertices_offsets;
+        indices_offsets[0] = static_cast<const GLvoid*>(0);
+        vertices_offsets[0] = 0;
         for (BatchId batch_id : bucket) {
             RenderBatch& batch = render_batches[batch_id];
-            std::array<const GLvoid*, RenderBatch::MAX_MESHES> indices_offsets;
-            std::array<GLint, RenderBatch::MAX_MESHES> vertices_offsets;
-            indices_offsets[0] = static_cast<const GLvoid*>(0);
-            vertices_offsets[0] = 0;
             size_t j;
-            for (j = 1; j < RenderBatch::MAX_MESHES; j++) {
-                indices_offsets[j] =
-                    reinterpret_cast<const GLvoid*>(batch.indices_count[j - 1]);
-                vertices_offsets[j] = batch.vertices_count[j - 1];
+            for (j = 1; j < batch.num_meshes; j++) {
+                size_t n = reinterpret_cast<size_t>(indices_offsets[j - 1]);
+                n += static_cast<size_t>(batch.indices_count[j - 1])
+                     * sizeof(uint32_t);
+                indices_offsets[j] = reinterpret_cast<const GLvoid*>(n);
+                vertices_offsets[j] =
+                    vertices_offsets[j - 1] + batch.vertices_count[j - 1];
             }
 
             glBufferSubData(GL_ARRAY_BUFFER, 0,
@@ -196,11 +272,11 @@ void Draw() {
             draw_command.indices = indices_offsets.data();
             draw_command.count = batch.indices_count.data();
 #if defined(VERNA_ANDROID)
-            for (i = 0; i < draw_command.drawcount; i++) {
+            for (j = 0; i < draw_command.drawcount; i++) {
                 glUniform1i(draw_id_loc, i);
                 glDrawElementsBaseVertex(
-                    GL_TRIANGLES, draw_command.count[i], GL_UNSIGNED_INT,
-                    draw_command.indices[i], draw_command.basevertex[i]);
+                    GL_TRIANGLES, draw_command.count[j], GL_UNSIGNED_INT,
+                    draw_command.indices[j], draw_command.basevertex[j]);
             }
 #elif defined(VERNA_DESKTOP)
             glMultiDrawElementsBaseVertex(GL_TRIANGLES, draw_command.count,
@@ -210,10 +286,19 @@ void Draw() {
 #endif
         }
     }
-    SwapNativeWindowBuffers();
+    SwapBuffers();
 
-    for (auto& batch : render_batches)
-        batch.Clear();
-    shader_to_bucket.Clear();
+    ClearBatches();
 }
+
+namespace RendererInfo {
+int MaxTextureUnits() {
+    static GLint max_frag_tus = [] {
+        GLint x;
+        glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &x);
+        return x;
+    }();
+    return max_frag_tus;
+}
+}  // namespace RendererInfo
 }  // namespace verna

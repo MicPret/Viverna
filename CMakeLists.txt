@@ -27,8 +27,9 @@ set_target_properties(${VIVERNA_TARGET_NAME} PROPERTIES
     CXX_EXTENSIONS OFF
     COMPILE_WARNING_AS_ERROR ON
 )
-target_compile_options(${VIVERNA_TARGET_NAME} PRIVATE "-Wall;-fno-exceptions;-fno-rtti;-fPIC")
+target_compile_options(${VIVERNA_TARGET_NAME} PRIVATE "-Wall;-fno-exceptions;-fno-rtti")
 if (CMAKE_SYSTEM_NAME STREQUAL Android)
+    target_compile_options(${VIVERNA_TARGET_NAME} PRIVATE "-fPIC")
     target_compile_definitions(${VIVERNA_TARGET_NAME} PUBLIC VERNA_ANDROID=1)
 elseif(CMAKE_SYSTEM_NAME STREQUAL Linux OR CMAKE_SYSTEM_NAME STREQUAL Windows)
     target_compile_definitions(${VIVERNA_TARGET_NAME} PUBLIC VERNA_DESKTOP=1)
@@ -37,7 +38,7 @@ endif()
 # external includes and sources
 add_subdirectory("${PROJECT_SOURCE_DIR}/ext")
 
-# includes
+# includes  
 target_include_directories(${VIVERNA_TARGET_NAME} PUBLIC
     "${PROJECT_SOURCE_DIR}/include"
 )
@@ -52,6 +53,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL Android)
         EGL
         GLESv3
         log
+        native_app_glue
     )
 elseif(CMAKE_SYSTEM_NAME STREQUAL Linux OR CMAKE_SYSTEM_NAME STREQUAL Windows)
     target_link_libraries(${VIVERNA_TARGET_NAME} PUBLIC
@@ -64,8 +66,10 @@ target_link_libraries(${VIVERNA_TARGET_NAME} PUBLIC
 )
 
 #test
-add_executable("${VIVERNA_TARGET_NAME}_test" "")
-add_subdirectory(test)
-target_link_libraries("${VIVERNA_TARGET_NAME}_test" PUBLIC
-    ${VIVERNA_TARGET_NAME}
-)
+if (CMAKE_SYSTEM_NAME STREQUAL Linux OR CMAKE_SYSTEM_NAME STREQUAL Windows)
+    add_executable("${VIVERNA_TARGET_NAME}_test" "")
+    add_subdirectory(test)
+    target_link_libraries("${VIVERNA_TARGET_NAME}_test" PUBLIC
+        ${VIVERNA_TARGET_NAME}
+    )
+endif()

@@ -1,17 +1,18 @@
 #include <viverna/graphics/Camera.hpp>
-#include <viverna/graphics/NativeWindow.hpp>
+#include <viverna/graphics/Window.hpp>
+#include <viverna/maths/Vec4f.hpp>
 
 namespace verna {
 
 static Camera* active_camera;
 
 Camera& Camera::GetActive() {
-    // TODO better default cam
     static Camera c(
-        0.785398f,
+        maths::Radians(45.0f),
         static_cast<float>(WindowWidth()) / static_cast<float>(WindowHeight()),
         0.15f, 1000.0f);
-    if (active_camera == nullptr)  // only first call
+
+    if (active_camera == nullptr)
         active_camera = &c;
     return *active_camera;
 }
@@ -22,5 +23,27 @@ void Camera::SetActive(Camera& camera) {
 
 Mat4f Camera::GetProjectionMatrix() const {
     return Mat4f::Perspective(fovy, aspect_ratio, near_plane, far_plane);
+}
+
+Vec3f Camera::ToWorldCoords(unsigned screen_x,
+                            unsigned screen_y,
+                            float camera_dist) const {
+    unsigned reverse_y = WindowHeight() - screen_y;
+    unsigned center_x = WindowWidth() / 2;
+    unsigned center_y = WindowHeight() / 2;
+    float ndc_x =
+        static_cast<float>(screen_x) / static_cast<float>(center_x) - 1.0f;
+    float ndc_y =
+        static_cast<float>(reverse_y) / static_cast<float>(center_y) - 1.0f;
+    Vec4f ndc_origin = Vec4f(ndc_x, ndc_y, -1.0f, 1.0f);
+    Mat4f proj = GetProjectionMatrix();
+    Mat4f view = GetViewMatrix();
+    Mat4f proj_view = proj * view;
+    Mat4f i_pv = proj_view.Inverted();
+    Vec4f result = i_pv * ndc_origin;
+    float inverse_w = 1.0f / result.w;
+    Vec3f origin = inverse_w * Vec3f(result.x, result.y, result.z);
+    Vec3f ray_dir = (origin - position).Normalized();
+    return origin + (camera_dist * ray_dir);
 }
 }  // namespace verna

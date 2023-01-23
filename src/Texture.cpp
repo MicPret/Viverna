@@ -1,10 +1,16 @@
-#include <viverna/core/Debug.hpp>
 #include <viverna/graphics/Texture.hpp>
-#include "GraphicsAPIHelper.hpp"
+#include <viverna/core/Debug.hpp>
 #include "ResourceTracker.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
+#if defined(VERNA_DESKTOP)
+#include <glad/gl.h>
+#elif defined(VERNA_ANDROID)
+#include <GLES3/gl32.h>
+#else
+#error Platform not supported!
+#endif
 
 #include <array>
 #include <cstdint>
@@ -34,17 +40,26 @@ TextureId LoadTextureFromColor(float red,
                                float green,
                                float blue,
                                float alpha) {
-    // TODO implement
     uint8_t r8 = static_cast<uint8_t>(red * 255.0f);
     uint8_t g8 = static_cast<uint8_t>(green * 255.0f);
     uint8_t b8 = static_cast<uint8_t>(blue * 255.0f);
     uint8_t a8 = static_cast<uint8_t>(alpha * 255.0f);
-    struct col8 {
-        uint8_t r, g, b, a;
-    };
-    col8 pixel{r8, g8, b8, a8};
-    std::array<col8, 4> data = {pixel, pixel, pixel, pixel};
-    GLuint texture = GenTexture(data.data(), 2, 2);
+    return LoadTextureFromColor(r8, g8, b8, a8);
+}
+
+TextureId LoadTextureFromColor(uint8_t red,
+                               uint8_t green,
+                               uint8_t blue,
+                               uint8_t alpha) {
+    constexpr int size = 2;
+    std::array<uint8_t, 4 * size * size> data;
+    for (int i = 0; i < size * size; i++) {
+        data[i * size * size] = red;
+        data[i * size * size + 1] = green;
+        data[i * size * size + 2] = blue;
+        data[i * size * size + 3] = alpha;
+    }
+    GLuint texture = GenTexture(data.data(), size, size);
     texture_tracker.Push(texture);
     return TextureId(texture);
 }
@@ -55,6 +70,10 @@ void FreeTexture(TextureId texture) {
 }
 
 static GLuint GenTexture(const void* pixels, int width, int height) {
+    if (width <= 0 || height <= 0) {
+        VERNA_LOGE("Invalid width or height for GenTexture!");
+        return 0u;
+    }
     GLuint texture;
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);

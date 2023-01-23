@@ -2,6 +2,8 @@
 #define VERNA_MAT4F_HPP
 
 #include "Vec3f.hpp"
+#include "Vec4f.hpp"
+#include <viverna/core/Debug.hpp>
 
 #include <array>
 #include <cstddef>
@@ -14,36 +16,44 @@ struct Mat4f {
     constexpr Mat4f(std::array<float, 16> matrix) : raw(matrix) {}
     constexpr Mat4f(float diagonal) :
         raw{
-            diagonal, 0.0f,     0.0f,     0.0f,     // first
+            diagonal, 0.0f,     0.0f,     0.0f,     // first column
             0.0f,     diagonal, 0.0f,     0.0f,     // second
             0.0f,     0.0f,     diagonal, 0.0f,     // third
             0.0f,     0.0f,     0.0f,     diagonal  // fourth
         } {}
     constexpr const float& operator[](size_t index) const { return raw[index]; }
     constexpr float& operator[](size_t index) { return raw[index]; }
+    constexpr Mat4f Inverted() const;
+    constexpr Mat4f Transposed() const;
 
     static constexpr Mat4f Identity() { return Mat4f(1.0f); }
     static Mat4f Rotation(const Vec3f& unit_axis, float radians);
     static Mat4f Perspective(float fovy, float aspect, float near, float far);
     static constexpr Mat4f LookAt(const Vec3f& eye,
-                                  const Vec3f& right,
-                                  const Vec3f& up,
-                                  const Vec3f& forward) {
-        Vec3f e = -eye;
-        Mat4f mat = Mat4f::Identity();
-        mat[0] = right.x;
-        mat[1] = up.x;
-        mat[2] = forward.x;
-        mat[4] = right.y;
-        mat[5] = up.y;
-        mat[6] = forward.y;
-        mat[8] = right.z;
-        mat[9] = up.z;
-        mat[10] = forward.z;
-        mat[12] = right.Dot(e);
-        mat[13] = up.Dot(e);
-        mat[14] = forward.Dot(e);
-        return mat;
+                                  const Vec3f& target,
+                                  const Vec3f& up) {
+        Vec3f not_forward = (eye - target).Normalized();
+        Vec3f right = not_forward.Cross(up).Normalized();
+        Vec3f u = right.Cross(not_forward);
+
+        Mat4f result;
+        result[0] = right.x;  // first column
+        result[1] = u.x;
+        result[2] = not_forward.x;
+        result[3] = 0.0f;
+        result[4] = right.y;  // second column
+        result[5] = u.y;
+        result[6] = not_forward.y;
+        result[7] = 0.0f;
+        result[8] = right.z;  // third column
+        result[9] = u.z;
+        result[10] = not_forward.z;
+        result[11] = 0.0f;
+        result[12] = -right.Dot(eye);  // fourth column
+        result[13] = -u.Dot(eye);
+        result[14] = -not_forward.Dot(eye);
+        result[15] = 1.0f;
+        return result;
     }
 };
 
@@ -73,6 +83,100 @@ constexpr Mat4f operator*(const Mat4f& a, const Mat4f& b) {
     result[14] = a[2] * b[12] + a[6] * b[13] + a[10] * b[14] + a[14] * b[15];
     result[15] = a[3] * b[12] + a[7] * b[13] + a[11] * b[14] + a[15] * b[15];
     return result;
+}
+
+constexpr Vec4f operator*(const Mat4f& mtx, const Vec4f& vec) {
+    return Vec4f(
+        mtx[0] * vec.x + mtx[4] * vec.y + mtx[8] * vec.z + mtx[12] * vec.w,
+        mtx[1] * vec.x + mtx[5] * vec.y + mtx[9] * vec.z + mtx[13] * vec.w,
+        mtx[2] * vec.x + mtx[6] * vec.y + mtx[10] * vec.z + mtx[14] * vec.w,
+        mtx[3] * vec.x + mtx[7] * vec.y + mtx[11] * vec.z + mtx[15] * vec.w);
+}
+
+constexpr Mat4f Mat4f::Inverted() const {
+    Mat4f inv;
+    inv[0] = raw[5] * raw[10] * raw[15] - raw[5] * raw[11] * raw[14]
+             - raw[9] * raw[6] * raw[15] + raw[9] * raw[7] * raw[14]
+             + raw[13] * raw[6] * raw[11] - raw[13] * raw[7] * raw[10];
+
+    inv[4] = -raw[4] * raw[10] * raw[15] + raw[4] * raw[11] * raw[14]
+             + raw[8] * raw[6] * raw[15] - raw[8] * raw[7] * raw[14]
+             - raw[12] * raw[6] * raw[11] + raw[12] * raw[7] * raw[10];
+
+    inv[8] = raw[4] * raw[9] * raw[15] - raw[4] * raw[11] * raw[13]
+             - raw[8] * raw[5] * raw[15] + raw[8] * raw[7] * raw[13]
+             + raw[12] * raw[5] * raw[11] - raw[12] * raw[7] * raw[9];
+
+    inv[12] = -raw[4] * raw[9] * raw[14] + raw[4] * raw[10] * raw[13]
+              + raw[8] * raw[5] * raw[14] - raw[8] * raw[6] * raw[13]
+              - raw[12] * raw[5] * raw[10] + raw[12] * raw[6] * raw[9];
+
+    inv[1] = -raw[1] * raw[10] * raw[15] + raw[1] * raw[11] * raw[14]
+             + raw[9] * raw[2] * raw[15] - raw[9] * raw[3] * raw[14]
+             - raw[13] * raw[2] * raw[11] + raw[13] * raw[3] * raw[10];
+
+    inv[5] = raw[0] * raw[10] * raw[15] - raw[0] * raw[11] * raw[14]
+             - raw[8] * raw[2] * raw[15] + raw[8] * raw[3] * raw[14]
+             + raw[12] * raw[2] * raw[11] - raw[12] * raw[3] * raw[10];
+
+    inv[9] = -raw[0] * raw[9] * raw[15] + raw[0] * raw[11] * raw[13]
+             + raw[8] * raw[1] * raw[15] - raw[8] * raw[3] * raw[13]
+             - raw[12] * raw[1] * raw[11] + raw[12] * raw[3] * raw[9];
+
+    inv[13] = raw[0] * raw[9] * raw[14] - raw[0] * raw[10] * raw[13]
+              - raw[8] * raw[1] * raw[14] + raw[8] * raw[2] * raw[13]
+              + raw[12] * raw[1] * raw[10] - raw[12] * raw[2] * raw[9];
+
+    inv[2] = raw[1] * raw[6] * raw[15] - raw[1] * raw[7] * raw[14]
+             - raw[5] * raw[2] * raw[15] + raw[5] * raw[3] * raw[14]
+             + raw[13] * raw[2] * raw[7] - raw[13] * raw[3] * raw[6];
+
+    inv[6] = -raw[0] * raw[6] * raw[15] + raw[0] * raw[7] * raw[14]
+             + raw[4] * raw[2] * raw[15] - raw[4] * raw[3] * raw[14]
+             - raw[12] * raw[2] * raw[7] + raw[12] * raw[3] * raw[6];
+
+    inv[10] = raw[0] * raw[5] * raw[15] - raw[0] * raw[7] * raw[13]
+              - raw[4] * raw[1] * raw[15] + raw[4] * raw[3] * raw[13]
+              + raw[12] * raw[1] * raw[7] - raw[12] * raw[3] * raw[5];
+
+    inv[14] = -raw[0] * raw[5] * raw[14] + raw[0] * raw[6] * raw[13]
+              + raw[4] * raw[1] * raw[14] - raw[4] * raw[2] * raw[13]
+              - raw[12] * raw[1] * raw[6] + raw[12] * raw[2] * raw[5];
+
+    inv[3] = -raw[1] * raw[6] * raw[11] + raw[1] * raw[7] * raw[10]
+             + raw[5] * raw[2] * raw[11] - raw[5] * raw[3] * raw[10]
+             - raw[9] * raw[2] * raw[7] + raw[9] * raw[3] * raw[6];
+
+    inv[7] = raw[0] * raw[6] * raw[11] - raw[0] * raw[7] * raw[10]
+             - raw[4] * raw[2] * raw[11] + raw[4] * raw[3] * raw[10]
+             + raw[8] * raw[2] * raw[7] - raw[8] * raw[3] * raw[6];
+
+    inv[11] = -raw[0] * raw[5] * raw[11] + raw[0] * raw[7] * raw[9]
+              + raw[4] * raw[1] * raw[11] - raw[4] * raw[3] * raw[9]
+              - raw[8] * raw[1] * raw[7] + raw[8] * raw[3] * raw[5];
+
+    inv[15] = raw[0] * raw[5] * raw[10] - raw[0] * raw[6] * raw[9]
+              - raw[4] * raw[1] * raw[10] + raw[4] * raw[2] * raw[9]
+              + raw[8] * raw[1] * raw[6] - raw[8] * raw[2] * raw[5];
+
+    float det =
+        raw[0] * inv[0] + raw[1] * inv[4] + raw[2] * inv[8] + raw[3] * inv[12];
+
+    VERNA_LOGE_IF(det == 0.0f, "Math error: can't invert matrix!");
+
+    det = 1.0 / det;
+    for (auto i = 0; i < 16; i++)
+        inv[i] *= det;
+    return inv;
+}
+
+constexpr Mat4f Mat4f::Transposed() const {
+    return Mat4f({
+        raw[0], raw[4], raw[8], raw[12],   // first
+        raw[1], raw[5], raw[9], raw[13],   // second
+        raw[2], raw[6], raw[10], raw[14],  // third
+        raw[3], raw[7], raw[11], raw[15],  // fourth
+    });
 }
 }  // namespace verna
 

@@ -1,20 +1,30 @@
-#include <viverna/core/Debug.hpp>
 #include <viverna/graphics/Shader.hpp>
+#include <viverna/core/Debug.hpp>
+#include <viverna/graphics/Renderer.hpp>
 #include <viverna/graphics/ShaderCommonCode.hpp>
 #include <viverna/graphics/gpu/CameraData.hpp>
 #include <viverna/graphics/gpu/MeshData.hpp>
 #include <viverna/maths/Mat4f.hpp>
-#include "GraphicsAPIHelper.hpp"
 #include "ResourceTracker.hpp"
+
+#if defined(VERNA_DESKTOP)
+#include <glad/gl.h>
+#elif defined(VERNA_ANDROID)
+#include <GLES3/gl32.h>
+#else
+#error Platform not supported!
+#endif
 
 #include <array>
 #include <string>
 #include <vector>
+#include <fstream>
+#include <sstream>
 
 namespace verna {
 
 namespace {
-class ResourceTracker<ShaderId::id_type> shader_tracker("Shader");
+ResourceTracker<ShaderId::id_type> shader_tracker("Shader");
 
 bool CompileShaderSource(std::string_view source,
                          GLenum shader_type,
@@ -36,9 +46,6 @@ bool CompileShaderSource(std::string_view source,
     }
     sources.push_back(std::string(source));
     for (const std::string& s : sources) {
-#ifndef NDEBUG
-        VERNA_LOGI(s);
-#endif
         sources_ptr.push_back(s.data());
         sources_len.push_back(s.length());
     }
@@ -91,7 +98,7 @@ void UniformInit(GLuint program) {
     glUniformBlockBinding(program, block_loc,
                           gpu::MeshDataBuffer::BLOCK_BINDING);
 
-    for (int i = 0; i < gpu::MaxTextureUnits(); i++) {
+    for (int i = 0; i < RendererInfo::MaxTextureUnits(); i++) {
         std::string texture_uniform_name =
             "_TEXTURES[" + std::to_string(i) + "]";
         GLint textures_loc =
@@ -123,6 +130,23 @@ ShaderId LoadShaderFromSource(std::string_view vertex_src,
     shader_tracker.Push(program);
     output.id = program;
     return output;
+}
+
+ShaderId LoadShaderFromSourceFiles(const std::filesystem::path& vertex_file,
+                                   const std::filesystem::path& fragment_file) {
+    std::error_code ec;
+    if (!std::filesystem::is_regular_file(vertex_file, ec)
+        || !std::filesystem::is_regular_file(fragment_file, ec)) {
+        return ShaderId();
+    }
+    std::ifstream v_file(vertex_file);
+    std::ifstream f_file(fragment_file);
+    if (!v_file.is_open() || !f_file.is_open())
+        return ShaderId();
+    std::stringstream v_stream, f_stream;
+    v_stream << v_file.rdbuf();
+    f_stream << f_file.rdbuf();
+    return LoadShaderFromSource(v_stream.str(), f_stream.str());
 }
 
 void FreeShader(ShaderId shader_program) {

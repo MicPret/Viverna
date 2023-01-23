@@ -1,23 +1,27 @@
 #ifndef VERNA_RENDERER_HPP
 #define VERNA_RENDERER_HPP
 
+#include <viverna/core/VivernaState.hpp>
 #include <viverna/maths/Mat4f.hpp>
 #include "Mesh.hpp"
 #include "Shader.hpp"
+#include "Material.hpp"
 
 namespace verna {
-/**
- * @brief Initializes the renderer. Must be followed by TerminateRenderer()
- *
- */
-void InitializeRenderer();
 
 /**
- * @brief Terminates the renderer, releasing its resources. Must be called after
- * InitializeRenderer()
+ * @brief Initializes the Renderer. Needs InitializeRendererAPI() first
  *
+ * @param state The application state
  */
-void TerminateRenderer();
+void InitializeRenderer(VivernaState& state);
+
+/**
+ * @brief Terminates the Renderer and its resources
+ *
+ * @param state The application state
+ */
+void TerminateRenderer(VivernaState& state);
 
 /**
  * @brief Renders an element on the back buffer, which is not shown on screen
@@ -40,6 +44,10 @@ void Render(const Mesh& mesh,
  *
  */
 void Draw();
+
+namespace RendererInfo {
+int MaxTextureUnits();
+}  // namespace RendererInfo
 }  // namespace verna
 
 #endif

@@ -22,6 +22,10 @@ constexpr bool operator!=(TextureId a, TextureId b) {
 
 TextureId LoadTextureFromFile(const std::filesystem::path& path);
 TextureId LoadTextureFromColor(float red, float green, float blue, float alpha);
+TextureId LoadTextureFromColor(uint8_t red,
+                               uint8_t green,
+                               uint8_t blue,
+                               uint8_t alpha);
 void FreeTexture(TextureId texture);
 
 }  // namespace verna

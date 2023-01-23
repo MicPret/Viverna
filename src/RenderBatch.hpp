@@ -4,10 +4,10 @@
 #include <vector>
 #include <viverna/graphics/Material.hpp>
 #include <viverna/graphics/Mesh.hpp>
+#include <viverna/graphics/Renderer.hpp>
 #include <viverna/graphics/Texture.hpp>
 #include <viverna/graphics/Vertex.hpp>
 #include <viverna/graphics/gpu/MeshData.hpp>
-#include "GraphicsAPIHelper.hpp"
 
 namespace verna {
 struct RenderBatch {
@@ -48,16 +48,18 @@ inline int32_t RenderBatch::GetTextureIndex(TextureId texture) const {
 
 inline bool RenderBatch::TryAddMeshData(const Material& material,
                                         const Mat4f& transform) {
-    const size_t max_textures = static_cast<size_t>(gpu::MaxTextureUnits());
+    const size_t max_textures =
+        static_cast<size_t>(RendererInfo::MaxTextureUnits());
     for (size_t i = 0; i < material.textures.size(); i++) {
-        if (!material.textures[i].IsValid())
+        TextureId mat_texture = material.textures[i];
+        if (!mat_texture.IsValid())
             continue;
-        auto index = GetTextureIndex(material.textures[i]);
+        auto index = GetTextureIndex(mat_texture);
         if (index == -1) {
             if (textures.size() >= max_textures)
                 return false;
             index = textures.size();
-            textures.push_back(material.textures[i]);
+            textures.push_back(mat_texture);
         }
         mesh_data_buffer[num_meshes].material_texture_indices[i] = index;
     }

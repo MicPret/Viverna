@@ -43,6 +43,14 @@ struct Transform {
 
         return pos_scale * rot;  // TODO optimize!!!
     }
+
+    constexpr Transform Lerp(const Transform& a, const Transform& b, float t) {
+        Transform output;
+        output.position = Vec3f::Lerp(a.position, b.position, t);
+        output.rotation = Quaternion::Lerp(a.rotation, b.rotation, t);
+        output.scale = Vec3f::Lerp(a.scale, b.scale, t);
+        return output;
+    }
 };
 }  // namespace verna
 
