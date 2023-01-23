@@ -54,7 +54,7 @@ void InitializeInput(VivernaState& state) {
     app->onInputEvent = HandleInput;
 }
 
-bool TouchListener::Pressed(unsigned& pos_x, unsigned& pos_y) const {
+bool ClickListener::Pressed(unsigned& pos_x, unsigned& pos_y) const {
     GetTouchPos(pos_x, pos_y);
     return GetTouch();
 }
