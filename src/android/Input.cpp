@@ -28,9 +28,11 @@ static void GetTouchPos(unsigned& x, unsigned& y) {
     y = t & 0x7FFF;
 }
 
-int32_t HandleInput(struct android_app* app, AInputEvent* event) {
+static int32_t HandleInput(struct android_app* app, AInputEvent* event) {
     float x, y;
-    switch (AInputEvent_getType(event)) {
+    auto event_type = AInputEvent_getType(event);
+    VERNA_LOGI(std::to_string(event_type == AINPUT_EVENT_TYPE_MOTION));
+    switch (event_type) {
         case AINPUT_EVENT_TYPE_MOTION:
             SetTouch((AMotionEvent_getAction(event) & AMOTION_EVENT_ACTION_MASK)
                      == AMOTION_EVENT_ACTION_DOWN);
