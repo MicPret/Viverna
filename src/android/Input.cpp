@@ -10,22 +10,22 @@ namespace verna {
 
 static uint32_t touch;
 
-static void SetTouch(bool touch) {
+static void SetTouch(bool click) {
     constexpr uint32_t mask = ~(1 << 31);
-    touch = (touch & mask) | (static_cast<uint32_t>(touch) << 31);
+    touch = (touch & mask) | (static_cast<uint32_t>(click) << 31);
 }
 static void SetTouchPos(uint32_t x, uint32_t y) {
-    constexpr uint32_t mask = 1 << 31;
-    uint32_t m = touch & mask;
-    touch = m | (x << 15) | y;
+    uint32_t t = touch & (1 << 31);
+    touch = t | (x << 15) | y;
 }
 static bool GetTouch() {
-    return static_cast<bool>(touch >> 31);
+    return (touch >> 31) != 0;
 }
 static void GetTouchPos(unsigned& x, unsigned& y) {
-    auto m = touch & ~(1 << 31);
-    x = m >> 15;
-    y = m & 0x7FFF;
+    constexpr uint32_t mask = ~(1 << 31);
+    uint32_t t = touch & mask;
+    x = t >> 15;
+    y = t & 0x7FFF;
 }
 
 int32_t HandleInput(struct android_app* app, AInputEvent* event) {
