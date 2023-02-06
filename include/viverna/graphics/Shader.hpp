@@ -29,7 +29,7 @@ constexpr bool operator!=(ShaderId a, ShaderId b) {
  * @brief Compiles a shader program from source. Every shader must be freed with
  * verna::FreeShader(verna::ShaderId)
  *
- * @param vertex_src    GLSL code for the vertex shader. Must not specify GLSL
+ * @param vertex_src GLSL code for the vertex shader. Must not specify GLSL
  * version
  * @param fragment_src  GLSL code for the fragment shader. Must not specify GLSL
  * version or floating point precision

@@ -84,8 +84,12 @@ void TerminateInput(VivernaState& state) {
     VERNA_LOGI("Input terminated!");
 }
 
-bool ClickListener::Pressed(unsigned& pos_x, unsigned& pos_y) const {
+void MouseListener::Position(unsigned& pos_x, unsigned& pos_y) const {
     GetTouchPos(pos_x, pos_y);
+}
+
+bool MouseListener::Pressed(unsigned& pos_x, unsigned& pos_y) const {
+    Position(pos_x, pos_y);
     return GetTouch();
 }
 

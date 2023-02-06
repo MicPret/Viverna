@@ -6,16 +6,15 @@
 #include <viverna/maths/Mat4f.hpp>
 
 namespace verna::gpu {
-struct MeshData {
-    std::array<int32_t, 8> material_texture_indices;
-    std::array<float, 4> material_params;
-    Mat4f model_matrix;
+
+struct MaterialData {
+    std::array<int32_t, 8> texture_indices;
+    std::array<float, 4> parameters;
 };
-struct MeshDataBuffer {
-    static constexpr unsigned BUFFER_SIZE = 64u;
-    std::array<MeshData, BUFFER_SIZE> mesh_data;
-    static constexpr uint32_t BLOCK_BINDING = 1;
-    static constexpr const char BLOCK_NAME[] = "MeshDataBuffer";
+
+struct MeshData {
+    MaterialData material;
+    Mat4f model_matrix;
 };
 }  // namespace verna::gpu
 

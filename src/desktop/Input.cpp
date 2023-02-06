@@ -13,14 +13,14 @@ static void SetClick(bool click) {
     constexpr uint32_t mask = ~(1 << 31);
     mouse = (mouse & mask) | (static_cast<uint32_t>(click) << 31);
 }
-static void SetClickPos(uint32_t x, uint32_t y) {
+static void SetMousePos(uint32_t x, uint32_t y) {
     uint32_t m = mouse & (1 << 31);
     mouse = m | (x << 15) | y;
 }
 static bool GetClick() {
     return (mouse >> 31) != 0;
 }
-static void GetClickPos(unsigned& x, unsigned& y) {
+static void GetMousePos(unsigned& x, unsigned& y) {
     constexpr uint32_t mask = ~(1 << 31);
     uint32_t m = mouse & mask;
     x = m >> 15;
@@ -36,7 +36,7 @@ static void MouseButtonCallback(GLFWwindow* window,
 }
 
 static void CursorCallback(GLFWwindow* window, double x, double y) {
-    SetClickPos(static_cast<uint32_t>(x), static_cast<uint32_t>(y));
+    SetMousePos(static_cast<uint32_t>(x), static_cast<uint32_t>(y));
 }
 
 void InitializeInput(VivernaState& state) {
@@ -68,8 +68,12 @@ void TerminateInput(VivernaState& state) {
     VERNA_LOGI("Input terminated!");
 }
 
-bool ClickListener::Pressed(unsigned& pos_x, unsigned& pos_y) const {
-    GetClickPos(pos_x, pos_y);
+void MouseListener::Position(unsigned& pos_x, unsigned& pos_y) const {
+    GetMousePos(pos_x, pos_y);
+}
+
+bool MouseListener::Pressed(unsigned& pos_x, unsigned& pos_y) const {
+    Position(pos_x, pos_y);
     return GetClick();
 }
 

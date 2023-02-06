@@ -32,26 +32,26 @@ struct Mat4f {
     static constexpr Mat4f LookAt(const Vec3f& eye,
                                   const Vec3f& target,
                                   const Vec3f& up) {
-        Vec3f not_forward = (eye - target).Normalized();
-        Vec3f right = not_forward.Cross(up).Normalized();
-        Vec3f u = right.Cross(not_forward);
+        Vec3f forward = (target - eye).Normalized();
+        Vec3f right = up.Cross(forward).Normalized();
+        Vec3f u = forward.Cross(right);
 
         Mat4f result;
         result[0] = right.x;  // first column
         result[1] = u.x;
-        result[2] = not_forward.x;
+        result[2] = forward.x;
         result[3] = 0.0f;
         result[4] = right.y;  // second column
         result[5] = u.y;
-        result[6] = not_forward.y;
+        result[6] = forward.y;
         result[7] = 0.0f;
         result[8] = right.z;  // third column
         result[9] = u.z;
-        result[10] = not_forward.z;
+        result[10] = forward.z;
         result[11] = 0.0f;
         result[12] = -right.Dot(eye);  // fourth column
         result[13] = -u.Dot(eye);
-        result[14] = -not_forward.Dot(eye);
+        result[14] = -forward.Dot(eye);
         result[15] = 1.0f;
         return result;
     }

@@ -25,7 +25,7 @@ inline void Interpolation(int seconds) {
         "void main() {\n"
         "   SetMeshIdx();\n"
         "   texCoords = vTexCoords;\n"
-        "   gl_Position = PROJECTION_MATRIX * VIEW_MATRIX * MODEL_MATRIX * "
+        "   gl_Position = camera.pv_matrix * MODEL_MATRIX * "
         "vec4(vPosition.x, vPosition.y, vPosition.z, 1.0);\n"
         "}";
 
@@ -46,15 +46,15 @@ inline void Interpolation(int seconds) {
         verna::LoadPrimitiveMesh(verna::PrimitiveMeshType::Pyramid);
     verna::Camera& camera = verna::Camera::GetActive();
 
-    float camera_start = -2.0f;
-    float camera_end = -12.0f;
+    constexpr float camera_start = -2.0f;
+    camera.position = verna::Vec3f(0.0f, 0.0f, camera_start);
     verna::Vec3f pos_start(-4.3f, 3.4f, 3.5f);
-    verna::Vec3f pos_end(4.3f, -3.4f, 4.5f);
+    verna::Vec3f pos_end(4.3f, -3.4f, 18.5f);
     float half_seconds = static_cast<float>(seconds) * 0.5f;
 
     auto start = verna::Clock::now();
     auto end = start + verna::Seconds(seconds);
-    auto now = start + verna::Nanoseconds(10);
+    auto now = start;
 
     while (now < end) {
         verna::DeltaTime<float, verna::Seconds> passed = now - start;
@@ -64,13 +64,10 @@ inline void Interpolation(int seconds) {
         verna::Transform transform;
         transform.position = verna::Vec3f::Lerp(pos_start, pos_end, t);
 
-        verna::Vec3f rot_axis =
-            (pos_end - pos_start).Cross(-verna::Vec3f::UnitY()).Normalized();
+        verna::Vec3f rot_axis = -verna::Vec3f::UnitZ();
         float rot_radians =
-            verna::maths::Lerp(0.1f, verna::maths::Radians(76.0f), t2);
+            verna::maths::Lerp(0.1f, verna::maths::Radians(90.0f), t2);
         transform.rotation = verna::Quaternion(rot_axis, rot_radians);
-
-        camera.position.z = verna::maths::Lerp(camera_start, camera_end, t);
 
         verna::Render(pyramid, material, transform.GetMatrix(), shader);
         transform.position = transform.position + verna::Vec3f::UnitX();

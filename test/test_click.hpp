@@ -31,7 +31,7 @@ inline void Click(int seconds) {
         "void main() {\n"
         "   SetMeshIdx();\n"
         "   texCoords = vTexCoords;\n"
-        "   gl_Position = PROJECTION_MATRIX * VIEW_MATRIX * MODEL_MATRIX * "
+        "   gl_Position = camera.pv_matrix * MODEL_MATRIX * "
         "vec4(vPosition.x, vPosition.y, vPosition.z, 1.0);\n"
         "}";
 
@@ -54,27 +54,28 @@ inline void Click(int seconds) {
     verna::Camera& camera = verna::Camera::GetActive();
     camera.position.z = -3.0f;
 
-    auto now = verna::Clock::now();
-    auto end = now + verna::Seconds(seconds);
+    auto start = verna::Clock::now();
+    auto end = start + verna::Seconds(seconds);
+    auto now = start;
 
-    verna::ClickListener mouse_btn;
+    verna::MouseListener mouse_btn;
     bool prev_pressed = false;
     std::vector<verna::Transform> transforms;
     while (now < end) {
-        verna::DeltaTime<float, verna::Seconds> remaining = end - now;
+        verna::DeltaTime<float, verna::Seconds> time = now - start;
         unsigned x, y;
         if (mouse_btn.Pressed(x, y)) {
             if (!prev_pressed) {
                 verna::Transform transform;
                 transform.position = camera.ToWorldCoords(x, y, 3.0f);
-                transform.scale = verna::Vec3f(0.5f, 0.5f, 0.5f);
+                transform.scale = verna::Vec3f(0.5f);
                 transforms.push_back(std::move(transform));
                 prev_pressed = true;
             }
         } else {
             prev_pressed = false;
         }
-        verna::Quaternion rotation(verna::Vec3f::UnitY(), remaining.count());
+        verna::Quaternion rotation(verna::Vec3f::UnitY(), time.count());
         for (size_t i = 0; i < transforms.size(); i++) {
             const verna::Mesh& mesh = meshes[i % 2];
             verna::Transform& transform = transforms[i];

@@ -11,7 +11,7 @@
 
 namespace verna {
 struct RenderBatch {
-    static constexpr size_t MAX_MESHES = gpu::MeshDataBuffer::BUFFER_SIZE;
+    static constexpr size_t MAX_MESHES = gpu::DrawData::MAX_MESHES;
     // all of the vertices for this batch
     std::vector<Vertex> vertices;
     // all of the indices for this batch
@@ -21,7 +21,7 @@ struct RenderBatch {
     // -> indices offsets (const GLvoid* const * indices)
     std::array<int32_t, MAX_MESHES> indices_count;
     // per-mesh data
-    std::array<gpu::MeshData, MAX_MESHES> mesh_data_buffer;
+    gpu::DrawData draw_data;
     // textures
     std::vector<TextureId> textures;
     // number of meshes (GLsizei drawcount)
@@ -30,7 +30,10 @@ struct RenderBatch {
     // returns -1 if not found
     int32_t GetTextureIndex(TextureId texture) const;
     bool CanContain(const Mesh& mesh) const;
-    bool TryAddMeshData(const Material& material, const Mat4f& transform);
+    void GenerateOffsets(
+        std::array<const void*, MAX_MESHES>& indices_off_out,
+        std::array<int32_t, MAX_MESHES>& vertices_off_out) const;
+    bool TryAddUniformData(const Material& material, const Mat4f& transform);
     void Clear();
 };
 
@@ -46,8 +49,23 @@ inline int32_t RenderBatch::GetTextureIndex(TextureId texture) const {
     return -1;
 }
 
-inline bool RenderBatch::TryAddMeshData(const Material& material,
-                                        const Mat4f& transform) {
+inline void RenderBatch::GenerateOffsets(
+    std::array<const void*, RenderBatch::MAX_MESHES>& indices_off_out,
+    std::array<int32_t, RenderBatch::MAX_MESHES>& vertices_off_out) const {
+    indices_off_out[0] = static_cast<const void*>(0);
+    vertices_off_out[0] = 0;
+    for (unsigned i = 1; i < num_meshes; i++) {
+        unsigned prev = i - 1;
+        size_t n = reinterpret_cast<size_t>(indices_off_out[prev]);
+        n += static_cast<size_t>(indices_count[prev])
+             * sizeof(decltype(indices[0]));
+        indices_off_out[i] = reinterpret_cast<const void*>(n);
+        vertices_off_out[i] = vertices_off_out[prev] + vertices_count[prev];
+    }
+}
+
+inline bool RenderBatch::TryAddUniformData(const Material& material,
+                                           const Mat4f& transform) {
     const size_t max_textures =
         static_cast<size_t>(RendererInfo::MaxTextureUnits());
     for (size_t i = 0; i < material.textures.size(); i++) {
@@ -61,10 +79,10 @@ inline bool RenderBatch::TryAddMeshData(const Material& material,
             index = textures.size();
             textures.push_back(mat_texture);
         }
-        mesh_data_buffer[num_meshes].material_texture_indices[i] = index;
+        draw_data[num_meshes].material.texture_indices[i] = index;
     }
-    mesh_data_buffer[num_meshes].material_params = material.parameters;
-    mesh_data_buffer[num_meshes].model_matrix = transform;
+    draw_data[num_meshes].material.parameters = material.parameters;
+    draw_data[num_meshes].model_matrix = transform;
     return true;
 }
 

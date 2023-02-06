@@ -2,6 +2,7 @@
 #define VERNA_VEC3F_HPP
 
 #include "MathUtils.hpp"
+#include "Vec2f.hpp"
 
 namespace verna {
 struct Vec3f;
@@ -14,6 +15,11 @@ struct Vec3f {
     float z;
     constexpr Vec3f() : x(0.0f), y(0.0f), z(0.0f) {}
     constexpr Vec3f(float x_, float y_, float z_) : x(x_), y(y_), z(z_) {}
+    /**
+     * @brief Initializes every component with the same value n
+     *
+     */
+    constexpr Vec3f(float n) : x(n), y(n), z(n) {}
     constexpr float Dot(const Vec3f& other) const {
         return x * other.x + y * other.y + z * other.z;
     }
@@ -30,6 +36,7 @@ struct Vec3f {
         return maths::AreAlmostEqual(SquaredMagnitude(), 1.0f, epsilon);
     }
     constexpr Vec3f Normalized() const;
+    constexpr Vec2f Xy() const { return Vec2f(x, y); }
 
     static constexpr Vec3f UnitX() { return Vec3f(1.0f, 0.0f, 0.0f); }
     static constexpr Vec3f UnitY() { return Vec3f(0.0f, 1.0f, 0.0f); }
@@ -37,6 +44,27 @@ struct Vec3f {
     static constexpr Vec3f Lerp(const Vec3f& a, const Vec3f& b, float t) {
         return (1.0f - t) * a + t * b;
     }
+
+    /**
+     * @brief Computes a random unit vector
+     *
+     * @return A random unit vector
+     */
+    static Vec3f Random();
+
+    /**
+     * @brief Computes a vector from polar coordinates
+     *
+     * @param azimuth Horizontal clockwise rotation on the ZX plane (starting
+     * from Z) in radians
+     * @param zenit Vertical clockwise rotation on the YZ plane (starting from
+     * Y) in radians
+     * @param magnitude Desired length of the vector
+     * @return Vector in Cartesian coordinates
+     */
+    static Vec3f FromPolarCoordinates(float azimuth,
+                                      float zenit,
+                                      float magnitude = 1.0f);
 };
 
 constexpr Vec3f operator*(float scalar, const Vec3f& vector) {

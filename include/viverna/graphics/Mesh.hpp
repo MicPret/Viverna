@@ -8,13 +8,14 @@
 namespace verna {
 
 struct Mesh {
+    using index_t = uint32_t;
     std::vector<Vertex> vertices;
-    std::vector<uint32_t> indices;
+    std::vector<index_t> indices;
 };
 
 // TODO Mesh LoadMeshFromFile(const std::filesystem::path& filename)
 
-enum class PrimitiveMeshType : uint8_t { Cube, Pyramid };
+enum class PrimitiveMeshType : uint8_t { Cube, Pyramid, Sphere };
 
 Mesh LoadPrimitiveMesh(PrimitiveMeshType type);
 

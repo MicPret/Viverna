@@ -2,8 +2,8 @@
 #include <viverna/core/Debug.hpp>
 #include <viverna/graphics/Renderer.hpp>
 #include <viverna/graphics/ShaderCommonCode.hpp>
-#include <viverna/graphics/gpu/CameraData.hpp>
-#include <viverna/graphics/gpu/MeshData.hpp>
+#include <viverna/graphics/gpu/FrameData.hpp>
+#include <viverna/graphics/gpu/DrawData.hpp>
 #include <viverna/maths/Mat4f.hpp>
 #include "ResourceTracker.hpp"
 
@@ -41,7 +41,8 @@ bool CompileShaderSource(std::string_view source,
             sources.push_back(GetCommonFragmentCode());
             break;
         default:
-            VERNA_LOGE("CompileShaderSource(...) failed: invalid shader_type!");
+            VERNA_LOGE(
+                "CompileShaderSource() failed: unsupported shader type!");
             return false;
     }
     sources.push_back(std::string(source));
@@ -91,12 +92,10 @@ bool LinkShaders(GLuint vertex_shader,
 
 void UniformInit(GLuint program) {
     GLuint block_loc =
-        glGetUniformBlockIndex(program, gpu::CameraData::BLOCK_NAME);
-    glUniformBlockBinding(program, block_loc, gpu::CameraData::BLOCK_BINDING);
-    block_loc =
-        glGetUniformBlockIndex(program, gpu::MeshDataBuffer::BLOCK_NAME);
-    glUniformBlockBinding(program, block_loc,
-                          gpu::MeshDataBuffer::BLOCK_BINDING);
+        glGetUniformBlockIndex(program, gpu::FrameData::BLOCK_NAME);
+    glUniformBlockBinding(program, block_loc, gpu::FrameData::BLOCK_BINDING);
+    block_loc = glGetUniformBlockIndex(program, gpu::DrawData::BLOCK_NAME);
+    glUniformBlockBinding(program, block_loc, gpu::DrawData::BLOCK_BINDING);
 
     for (int i = 0; i < RendererInfo::MaxTextureUnits(); i++) {
         std::string texture_uniform_name =

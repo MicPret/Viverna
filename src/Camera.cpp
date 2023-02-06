@@ -35,7 +35,7 @@ Vec3f Camera::ToWorldCoords(unsigned screen_x,
         static_cast<float>(screen_x) / static_cast<float>(center_x) - 1.0f;
     float ndc_y =
         static_cast<float>(reverse_y) / static_cast<float>(center_y) - 1.0f;
-    Vec4f ndc_origin = Vec4f(ndc_x, ndc_y, -1.0f, 1.0f);
+    Vec4f ndc_origin = Vec4f(ndc_x, ndc_y, 1.0f, 1.0f);
     Mat4f proj = GetProjectionMatrix();
     Mat4f view = GetViewMatrix();
     Mat4f proj_view = proj * view;
@@ -44,6 +44,7 @@ Vec3f Camera::ToWorldCoords(unsigned screen_x,
     float inverse_w = 1.0f / result.w;
     Vec3f origin = inverse_w * Vec3f(result.x, result.y, result.z);
     Vec3f ray_dir = (origin - position).Normalized();
-    return origin + (camera_dist * ray_dir);
+    Vec3f output = origin + (camera_dist * ray_dir);
+    return output;
 }
 }  // namespace verna

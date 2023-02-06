@@ -1,6 +1,6 @@
 #include <viverna/graphics/ShaderCommonCode.hpp>
 #include <viverna/graphics/Renderer.hpp>
-#include <viverna/graphics/gpu/MeshData.hpp>
+#include <viverna/graphics/gpu/DrawData.hpp>
 
 #if defined(VERNA_DESKTOP)
 #include <glad/gl.h>
@@ -63,9 +63,9 @@ std::string InternalFragmentCommonCode() {
 
 std::string InternalLaterCommonCode() {
     Code commons;
-    commons.AddDefine("_MAX_MESHES",
-                      std::to_string(verna::gpu::MeshDataBuffer::BUFFER_SIZE));
-    commons.AddDefine("_MAX_TEXTURES",
+    commons.AddDefine("MAX_MESHES",
+                      std::to_string(verna::gpu::DrawData::MAX_MESHES));
+    commons.AddDefine("MAX_TEXTURES",
                       std::to_string(verna::RendererInfo::MaxTextureUnits()));
     commons.AddLine(
         "struct MeshData {\n"
@@ -83,31 +83,27 @@ std::string InternalLaterCommonCode() {
         "  float param3;\n"
         "  mat4 model;\n"
         "};\n"
-        "layout(std140) uniform CameraData {\n"
-        "  mat4 PROJECTION_MATRIX;\n"
-        "  mat4 VIEW_MATRIX;\n"
+        "struct CameraData {\n"
+        "  mat4 projection_matrix;\n"
+        "  mat4 view_matrix;\n"
+        "  mat4 pv_matrix;\n"
         "};\n"
-        "layout(std140) uniform MeshDataBuffer {\n"
-        "  MeshData _MESH_DATA[_MAX_MESHES];\n"
+        "layout(std140) uniform FrameData {\n"
+        "  CameraData camera;\n"
         "};\n"
-        "uniform sampler2D _TEXTURES[_MAX_TEXTURES];\n");
-    commons.AddDefine("TEXTURE0",
-                      "_TEXTURES[_MESH_DATA[DRAW_ID].texture_idx0]");
-    commons.AddDefine("TEXTURE1",
-                      "_TEXTURES[_MESH_DATA[DRAW_ID].texture_idx1]");
-    commons.AddDefine("TEXTURE2",
-                      "_TEXTURES[_MESH_DATA[DRAW_ID].texture_idx2]");
-    commons.AddDefine("TEXTURE3",
-                      "_TEXTURES[_MESH_DATA[DRAW_ID].texture_idx3]");
-    commons.AddDefine("TEXTURE4",
-                      "_TEXTURES[_MESH_DATA[DRAW_ID].texture_idx4]");
-    commons.AddDefine("TEXTURE5",
-                      "_TEXTURES[_MESH_DATA[DRAW_ID].texture_idx5]");
-    commons.AddDefine("TEXTURE6",
-                      "_TEXTURES[_MESH_DATA[DRAW_ID].texture_idx6]");
-    commons.AddDefine("TEXTURE7",
-                      "_TEXTURES[_MESH_DATA[DRAW_ID].texture_idx7]");
-    commons.AddDefine("MODEL_MATRIX", "_MESH_DATA[DRAW_ID].model");
+        "layout(std140) uniform DrawData {\n"
+        "  MeshData draw_data[MAX_MESHES];\n"
+        "};\n"
+        "uniform sampler2D _textures[MAX_TEXTURES];\n");
+    commons.AddDefine("TEXTURE0", "_textures[draw_data[DRAW_ID].texture_idx0]");
+    commons.AddDefine("TEXTURE1", "_textures[draw_data[DRAW_ID].texture_idx1]");
+    commons.AddDefine("TEXTURE2", "_textures[draw_data[DRAW_ID].texture_idx2]");
+    commons.AddDefine("TEXTURE3", "_textures[draw_data[DRAW_ID].texture_idx3]");
+    commons.AddDefine("TEXTURE4", "_textures[draw_data[DRAW_ID].texture_idx4]");
+    commons.AddDefine("TEXTURE5", "_textures[draw_data[DRAW_ID].texture_idx5]");
+    commons.AddDefine("TEXTURE6", "_textures[draw_data[DRAW_ID].texture_idx6]");
+    commons.AddDefine("TEXTURE7", "_textures[draw_data[DRAW_ID].texture_idx7]");
+    commons.AddDefine("MODEL_MATRIX", "draw_data[DRAW_ID].model");
     return commons.code;
 }
 

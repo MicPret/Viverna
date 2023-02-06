@@ -17,9 +17,10 @@ void InitializeInput(VivernaState& state);
  */
 void TerminateInput(VivernaState& state);
 
-class ClickListener {
+class MouseListener {
    public:
-    bool Pressed(unsigned& pos_x, unsigned& pos_y) const;
+    void Position(unsigned& pos_x, unsigned& pos_y) const;
+    [[nodiscard]] bool Pressed(unsigned& pos_x, unsigned& pos_y) const;
 };
 }  // namespace verna
 

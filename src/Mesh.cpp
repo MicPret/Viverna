@@ -5,6 +5,7 @@ namespace verna {
 
 static Mesh LoadPrimitiveCube();
 static Mesh LoadPrimitivePyramid();
+static Mesh LoadPrimitiveSphere();
 
 Mesh LoadPrimitiveMesh(PrimitiveMeshType type) {
     switch (type) {
@@ -12,6 +13,8 @@ Mesh LoadPrimitiveMesh(PrimitiveMeshType type) {
             return LoadPrimitiveCube();
         case PrimitiveMeshType::Pyramid:
             return LoadPrimitivePyramid();
+        case PrimitiveMeshType::Sphere:
+            return LoadPrimitiveSphere();
         default:
             VERNA_LOGE(
                 "LoadPrimitiveMesh failed: invalid primitive mesh type!");
@@ -74,5 +77,55 @@ static Mesh LoadPrimitivePyramid() {
         1, 4, 2            // right
     };
     return output;
+}
+
+static Mesh LoadPrimitiveSphere() {
+    constexpr unsigned SECTIONS = 8;
+    Mesh sphere;
+    sphere.vertices.resize(SECTIONS * SECTIONS + 2);
+    Vertex vtx;
+    vtx.position = Vec3f::UnitY();
+    vtx.texture_coords = Vec2f(0.0f, 1.0f);
+    sphere.vertices.front() = vtx;
+    vtx.position = -Vec3f::UnitY();
+    vtx.texture_coords = Vec2f(0.0f, 0.0f);
+    sphere.vertices.back() = vtx;
+    constexpr float n = maths::Pi() / static_cast<float>(SECTIONS);
+    constexpr float n2 = 2.0f * n;
+    for (unsigned i = 0; i < SECTIONS; i++) {
+        float zenit = n * static_cast<float>(i);
+        for (unsigned j = 0; j < SECTIONS; j++) {
+            float azimut = n2 * static_cast<float>(j);
+            vtx.position = Vec3f::FromPolarCoordinates(azimut, zenit);
+            vtx.texture_coords =
+                Vec2f(static_cast<float>(j) / static_cast<float>(SECTIONS),
+                      static_cast<float>(i) / static_cast<float>(SECTIONS));
+            unsigned index = i * SECTIONS + j + 1;
+            sphere.vertices[index] = vtx;
+        }
+    }
+    for (unsigned i = 0; i < SECTIONS; i++) {
+        unsigned i0 = i + 1;
+        unsigned i1 = (i + 1) % SECTIONS + 1;
+        sphere.indices.insert(sphere.indices.end(), {0, i1, i0});
+        i0 = i + SECTIONS * (SECTIONS - 2) + 1;
+        i1 = (i + 1) % SECTIONS + SECTIONS * (SECTIONS - 2) + 1;
+        sphere.indices.insert(
+            sphere.indices.end(),
+            {static_cast<Mesh::index_t>(sphere.vertices.size() - 1), i0, i1});
+    }
+    for (unsigned i = 0; i < SECTIONS - 2; i++) {
+        unsigned i0 = i * SECTIONS + 1;
+        unsigned i1 = (i + 1) * SECTIONS + 1;
+        for (unsigned j = 0; j < SECTIONS; j++) {
+            unsigned j0 = i0 + j;
+            unsigned j1 = i0 + (j + 1) % SECTIONS;
+            unsigned j2 = i1 + (j + 1) % SECTIONS;
+            unsigned j3 = i1 + j;
+            sphere.indices.insert(sphere.indices.end(),
+                                  {j0, j1, j2, j2, j3, j0});
+        }
+    }
+    return sphere;
 }
 }  // namespace verna

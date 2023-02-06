@@ -1,6 +1,8 @@
 #ifndef VERNA_RENDERER_HPP
 #define VERNA_RENDERER_HPP
 
+#include <viverna/core/BoundingBox.hpp>
+#include <viverna/core/BoundingSphere.hpp>
 #include <viverna/core/VivernaState.hpp>
 #include <viverna/maths/Mat4f.hpp>
 #include "Mesh.hpp"
@@ -38,6 +40,9 @@ void Render(const Mesh& mesh,
             const Material& material,
             const Mat4f& transform_matrix,
             ShaderId shader_id);
+
+void RenderDebug(const BoundingBox& box);
+void RenderDebug(const BoundingSphere& sphere);
 
 /**
  * @brief Updates the screen with the content rendered on the back buffer

@@ -35,6 +35,10 @@ struct Camera {
     Vec3f ToWorldCoords(unsigned screen_x,
                         unsigned screen_y,
                         float camera_dist) const;
+    constexpr void Reset() {
+        rotation = Quaternion();
+        position = Vec3f();
+    }
 
     static Camera& GetActive();
     static void SetActive(Camera& camera);

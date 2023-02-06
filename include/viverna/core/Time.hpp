@@ -20,6 +20,7 @@ using Clock = std::chrono::steady_clock;
 using TimePoint = std::chrono::time_point<Clock>;
 using Seconds = std::chrono::seconds;
 using Milliseconds = std::chrono::milliseconds;
+using Microseconds = std::chrono::microseconds;
 using Nanoseconds = std::chrono::nanoseconds;
 template <typename Repr, typename Measure>
 using DeltaTime = std::chrono::duration<Repr, typename Measure::period>;

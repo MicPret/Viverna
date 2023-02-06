@@ -2,6 +2,7 @@
 #define VERNA_QUATERNION_HPP
 
 #include "Vec3f.hpp"
+#include "Mat4f.hpp"
 
 namespace verna {
 /**
@@ -64,6 +65,27 @@ struct Quaternion {
      */
     constexpr Vec3f Rotate(const Vec3f& vec) const;
 
+    /**
+     * @brief Computes quaternion to rotation matrix conversion, assuming it's a
+     * unit quaternion
+     *
+     * @return Equivalent rotation matrix
+     */
+    constexpr Mat4f AsMatrix() const {
+        Mat4f r;
+        r[0] = 1.0f - 2.0f * (y * y + z * z);
+        r[1] = 2.0f * (x * y + w * z);
+        r[2] = 2.0f * (x * z - w * y);
+        r[4] = 2.0f * (x * y - w * z);
+        r[5] = 1.0f - 2.0f * (x * x + z * z);
+        r[6] = 2.0f * (y * z + w * x);
+        r[8] = 2.0f * (x * z + w * y);
+        r[9] = 2.0f * (y * z - w * x);
+        r[10] = 1.0f - 2.0f * (x * x + y * y);
+        r[15] = 1.0f;
+        return r;
+    }
+
     static constexpr Quaternion Lerp(const Quaternion& a,
                                      const Quaternion& b,
                                      float t) {
@@ -78,13 +100,14 @@ struct Quaternion {
  *
  * @param p second rotation
  * @param q first rotation
- * @return constexpr Quaternion
+ * @return The Hamilton product of two quaternions
  */
 constexpr Quaternion operator*(const Quaternion& p, const Quaternion& q) {
-    Vec3f vp(p.x, p.y, p.z);
-    Vec3f vq(q.x, q.y, q.z);
-    Vec3f vec = p.w * vq + q.w * vp + vp.Cross(vq);
-    return Quaternion(vec.x, vec.y, vec.z, p.w * q.w - vp.Dot(vq));
+    float w = p.w * q.w - p.x * q.x - p.y * q.y - p.z * q.z;
+    float x = p.w * q.x + p.x * q.w + p.y * q.z - p.z * q.y;
+    float y = p.w * q.y - p.x * q.z + p.y * q.w + p.z * q.x;
+    float z = p.w * q.z + p.x * q.y - p.y * q.x + p.z * q.w;
+    return Quaternion(x, y, z, w);
 }
 
 constexpr Vec3f Quaternion::Rotate(const Vec3f& vec) const {

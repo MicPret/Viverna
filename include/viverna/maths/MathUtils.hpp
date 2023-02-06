@@ -1,8 +1,8 @@
 #ifndef VERNA_MATH_DEFINES_HPP
 #define VERNA_MATH_DEFINES_HPP
 
+#include <cstddef>
 #include <limits>
-#include <cstdint>
 
 namespace verna::maths {
 namespace detail {
@@ -90,6 +90,18 @@ constexpr float Max(float x, float y) {
 }
 
 /**
+ * @brief Computes the max value between x, y and z
+ *
+ * @param x First parameter
+ * @param y Second parameter
+ * @param z Third parameter
+ * @return Max value between three floats
+ */
+constexpr float Max(float x, float y, float z) {
+    return Max(Max(x, y), z);
+}
+
+/**
  * @brief Computes the min value between x and y
  *
  * @param x First parameter
@@ -128,8 +140,8 @@ constexpr int Min(int x, int y) {
  * @param x Input value
  * @return Next Power Of Two, or x itself if it's a POT
  */
-constexpr uint32_t NextPOT(uint32_t x) {
-    uint32_t n = x - 1;
+constexpr size_t NextPOT(size_t x) {
+    size_t n = x - 1;
     n |= n >> 1;
     n |= n >> 2;
     n |= n >> 4;
@@ -137,6 +149,28 @@ constexpr uint32_t NextPOT(uint32_t x) {
     n |= n >> 16;
     return n + 1;
 }
+
+/**
+ * @brief Computes the smallest float greater than x
+ *
+ * @param x Input value
+ * @return The smallest float greater than x
+ */
+float NextFloat(float x);
+
+/**
+ * @brief Generates a random floating-point number between 0 and 1, inclusive
+ *
+ * @return A random float in the interval [0, 1]
+ */
+float RandomFloatInclusive();
+
+/**
+ * @brief Generates a random floating-point number between 0 and 1, exclusive
+ *
+ * @return A random float in the interval [0, 1)
+ */
+float RandomFloatExclusive();
 
 }  // namespace verna::maths
 

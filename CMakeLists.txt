@@ -6,7 +6,7 @@ set(VIVERNA_TARGET_NAME ${PROJECT_NAME})
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_COMPILE_WARNING_AS_ERROR ON)
+# set(CMAKE_COMPILE_WARNING_AS_ERROR ON)
 
 message(STATUS "=============================================================================================")
 message(STATUS "Building for ${CMAKE_SYSTEM_NAME}")
@@ -25,7 +25,7 @@ set_target_properties(${VIVERNA_TARGET_NAME} PROPERTIES
     CXX_STANDARD 17
     CXX_STANDARD_REQUIRED ON
     CXX_EXTENSIONS OFF
-    COMPILE_WARNING_AS_ERROR ON
+    # COMPILE_WARNING_AS_ERROR ON
 )
 target_compile_options(${VIVERNA_TARGET_NAME} PRIVATE "-Wall;-fno-exceptions;-fno-rtti")
 if (CMAKE_SYSTEM_NAME STREQUAL Android)
@@ -34,6 +34,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL Android)
 elseif(CMAKE_SYSTEM_NAME STREQUAL Linux OR CMAKE_SYSTEM_NAME STREQUAL Windows)
     target_compile_definitions(${VIVERNA_TARGET_NAME} PUBLIC VERNA_DESKTOP=1)
 endif()
+
 
 # external includes and sources
 add_subdirectory("${PROJECT_SOURCE_DIR}/ext")

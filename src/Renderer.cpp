@@ -1,13 +1,15 @@
 #include <viverna/graphics/Renderer.hpp>
 #include <viverna/core/Debug.hpp>
+#include <viverna/core/Transform.hpp>
 #include <viverna/graphics/Camera.hpp>
 #include <viverna/graphics/Material.hpp>
 #include <viverna/graphics/Texture.hpp>
 #include <viverna/graphics/Vertex.hpp>
-#include <viverna/graphics/gpu/CameraData.hpp>
-#include <viverna/graphics/gpu/MeshData.hpp>
+#include <viverna/graphics/gpu/DrawData.hpp>
+#include <viverna/graphics/gpu/FrameData.hpp>
 #include "RenderBatch.hpp"
 #include "ShaderBucketMapper.hpp"
+#include "UniformBuffer.hpp"
 
 #include <algorithm>
 #include <utility>
@@ -28,7 +30,7 @@ namespace verna {
 namespace {
 struct GlDrawCommand {
     // indices counts
-    GLsizei* count;
+    const GLsizei* count;
     // indices offsets
     const GLvoid* const* indices;
     // number of meshes
@@ -40,34 +42,54 @@ struct GlDrawCommand {
 void* native_window = nullptr;
 ShaderBucketMapper shader_to_bucket;
 std::vector<RenderBatch> render_batches;
+Bucket debug_bucket;
 
-GLuint vao, vbo, ebo, ubo;
+GLuint vao, vbo, ebo;
+GLsizeiptr vbo_size, ebo_size;
+
+ShaderId wireframe_shader;
+#ifndef NDEBUG
+std::vector<Vertex> dbg_vertices;
+std::vector<Mesh::index_t> dbg_indices;
+#endif
+
+void LoadWireframeShader() {
+    constexpr std::string_view vertex =
+        "layout(location = 0) in vec3 in_position;\n"
+        "void main() {\n"
+        "  SetMeshIdx();"
+        "  gl_Position = camera.pv_matrix * vec4(in_position, 1.0);\n"
+        "}";
+    constexpr std::string_view fragment =
+        "out vec4 out_color;\n"
+        "void main() {\n"
+        "  out_color = vec4(0.6, 1.0, 0.2, 1.0);\n"
+        "}";
+
+    wireframe_shader = LoadShaderFromSource(vertex, fragment);
+}
 
 void GenBuffers() {
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
-    // kinda random big value
-    constexpr GLsizeiptr gl_buffer_size = 1 << 21;
+
+    constexpr GLsizeiptr vbo_size_start =
+        sizeof(Vertex) * 8 * RenderBatch::MAX_MESHES;
+    constexpr GLsizeiptr ebo_size_start =
+        sizeof(decltype(RenderBatch::indices[0])) * 6 * 6
+        * RenderBatch::MAX_MESHES;
+
+    vbo_size = vbo_size_start;
+    ebo_size = ebo_size_start;
     glGenBuffers(1, &vbo);
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, gl_buffer_size, nullptr, GL_DYNAMIC_DRAW);
-    // glBufferStorage(GL_ARRAY_BUFFER, gl_buffer_size, nullptr,
-    // GL_DYNAMIC_STORAGE_BIT);
+    glBufferData(GL_ARRAY_BUFFER, vbo_size, nullptr, GL_DYNAMIC_DRAW);
     glGenBuffers(1, &ebo);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, gl_buffer_size, nullptr,
-                 GL_DYNAMIC_DRAW);
-    glGenBuffers(1, &ubo);
-    glBindBuffer(GL_UNIFORM_BUFFER, ubo);
-    glBufferData(GL_UNIFORM_BUFFER,
-                 sizeof(gpu::CameraData) + sizeof(gpu::MeshDataBuffer), nullptr,
-                 GL_DYNAMIC_DRAW);
-
-    glBindBufferRange(GL_UNIFORM_BUFFER, gpu::CameraData::BLOCK_BINDING, ubo, 0,
-                      sizeof(gpu::CameraData));
-    glBindBufferRange(GL_UNIFORM_BUFFER, gpu::MeshDataBuffer::BLOCK_BINDING,
-                      ubo, sizeof(gpu::CameraData),
-                      sizeof(gpu::MeshDataBuffer));
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, ebo_size, nullptr, GL_DYNAMIC_DRAW);
+    ubo::GenerateUBO();
+    ubo::AddBlock(gpu::FrameData::BLOCK_BINDING, sizeof(gpu::FrameData));
+    ubo::AddBlock(gpu::DrawData::BLOCK_BINDING, sizeof(gpu::DrawData));
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
                           reinterpret_cast<void*>(offsetof(Vertex, position)));
@@ -82,7 +104,9 @@ void DeleteBuffers() {
     glDeleteVertexArrays(1, &vao);
     glDeleteBuffers(1, &vbo);
     glDeleteBuffers(1, &ebo);
-    glDeleteBuffers(1, &ubo);
+    ubo::TerminateUBO();
+    vbo_size = 0;
+    ebo_size = 0;
 }
 
 void ClearBatches() {
@@ -133,6 +157,38 @@ BatchId NewBatchInNewBucket(ShaderId shader) {
     Bucket& bucket = shader_to_bucket.NewBucket(shader);
     return NewBatchInExistingBucket(bucket);
 }
+
+void SendDataToVbo(const RenderBatch& batch) {
+    const GLsizeiptr vbo_bytes =
+        static_cast<GLsizeiptr>(batch.vertices.size() * sizeof(Vertex));
+    if (vbo_bytes <= vbo_size) {
+        glBufferSubData(GL_ARRAY_BUFFER, 0, vbo_bytes, batch.vertices.data());
+    } else {
+        vbo_size = std::max(vbo_size * 3 / 2, vbo_bytes);
+        glBufferData(GL_ARRAY_BUFFER, vbo_size, batch.vertices.data(),
+                     GL_DYNAMIC_DRAW);
+    }
+}
+
+void SendDataToEbo(const RenderBatch& batch) {
+    const GLsizeiptr ebo_bytes = static_cast<GLsizeiptr>(
+        batch.indices.size() * sizeof(decltype(RenderBatch::indices[0])));
+    if (ebo_bytes <= ebo_size) {
+        glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, ebo_bytes,
+                        batch.indices.data());
+    } else {
+        ebo_size = std::max(ebo_size * 3 / 2, ebo_bytes);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, ebo_size, batch.indices.data(),
+                     GL_DYNAMIC_DRAW);
+    }
+}
+
+void BindTextures(const RenderBatch& batch) {
+    for (size_t i = 0; i < batch.textures.size(); i++) {
+        glActiveTexture(GL_TEXTURE0 + i);
+        glBindTexture(GL_TEXTURE_2D, batch.textures[i].id);
+    }
+}
 }  // namespace
 
 void InitializeRenderer(VivernaState& state) {
@@ -146,9 +202,12 @@ void InitializeRenderer(VivernaState& state) {
     }
 
     GenBuffers();
+    LoadWireframeShader();
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
+
+    Camera::GetActive().Reset();
 
     state.SetFlag(VivernaState::RENDERER_INITIALIZED_FLAG, true);
     native_window = state.native_window;
@@ -159,6 +218,7 @@ void TerminateRenderer(VivernaState& state) {
     if (!state.GetFlag(VivernaState::RENDERER_INITIALIZED_FLAG))
         return;
 
+    FreeShader(wireframe_shader);
     DeleteBuffers();
 
     state.SetFlag(VivernaState::RENDERER_INITIALIZED_FLAG, false);
@@ -168,7 +228,7 @@ void TerminateRenderer(VivernaState& state) {
 
 void Render(const Mesh& mesh,
             const Material& material,
-            const Mat4f& transform_matrix,
+            const Mat4f& model_matrix,
             ShaderId shader_id) {
     VERNA_LOGE_IF(!shader_id.IsValid(), "Called Render() with invalid shader!");
     VERNA_LOGE_IF(mesh.vertices.empty() || mesh.indices.empty(),
@@ -187,11 +247,11 @@ void Render(const Mesh& mesh,
         last_batch_id = NewBatchInExistingBucket(*bucket);
         last_batch = &render_batches[last_batch_id];
     }
-    if (!last_batch->TryAddMeshData(material, transform_matrix)) {
+    if (!last_batch->TryAddUniformData(material, model_matrix)) {
         last_batch_id = NewBatchInExistingBucket(*bucket);
         last_batch = &render_batches[last_batch_id];
         [[maybe_unused]] bool added =
-            last_batch->TryAddMeshData(material, transform_matrix);
+            last_batch->TryAddUniformData(material, model_matrix);
         VERNA_LOGE_IF(!added,
                       "Renderer error: failed to material/transform data");
     }
@@ -205,6 +265,20 @@ void Render(const Mesh& mesh,
     batch.indices.insert(batch.indices.end(), mesh.indices.begin(),
                          mesh.indices.end());
     batch.num_meshes++;
+}
+
+[[maybe_unused]] static void DrawDebug() {
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, dbg_vertices.size() * sizeof(Vertex),
+                    dbg_vertices.data());
+    glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0,
+                    dbg_indices.size() * sizeof(Mesh::index_t),
+                    dbg_indices.data());
+    glUseProgram(wireframe_shader.id);
+    glDrawElements(GL_TRIANGLES, dbg_indices.size(), GL_UNSIGNED_INT, nullptr);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    dbg_vertices.clear();
+    dbg_indices.clear();
 }
 
 void Draw() {
@@ -224,55 +298,38 @@ void Draw() {
                   "There are render buckets but no render batches!");
 
     Camera& cam = Camera::GetActive();
-    gpu::CameraData cam_data;
+    gpu::FrameData frame_data;
+    gpu::CameraData& cam_data = frame_data.camera_data;
     cam_data.projection_matrix = cam.GetProjectionMatrix();
     cam_data.view_matrix = cam.GetViewMatrix();
-    glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(gpu::CameraData), &cam_data);
+    cam_data.pv_matrix = cam_data.projection_matrix * cam_data.view_matrix;
+    ubo::SendData(gpu::FrameData::BLOCK_BINDING, &frame_data);
+
     ShaderId shader;
     Bucket bucket;
+    std::array<const GLvoid*, RenderBatch::MAX_MESHES> indices_offsets;
+    std::array<GLint, RenderBatch::MAX_MESHES> vertices_offsets;
     for (size_t i = 0; i < shader_to_bucket.Size(); i++) {
         shader_to_bucket.Get(i, shader, bucket);
         glUseProgram(shader.id);
 #if defined(VERNA_ANDROID)
-        int draw_id_loc = glGetUniformLocation(shader.id, "DRAW_ID");
+        auto draw_id_loc = glGetUniformLocation(shader.id, "DRAW_ID");
 #endif
-        std::array<const GLvoid*, RenderBatch::MAX_MESHES> indices_offsets;
-        std::array<GLint, RenderBatch::MAX_MESHES> vertices_offsets;
-        indices_offsets[0] = static_cast<const GLvoid*>(0);
-        vertices_offsets[0] = 0;
         for (BatchId batch_id : bucket) {
-            RenderBatch& batch = render_batches[batch_id];
-            size_t j;
-            for (j = 1; j < batch.num_meshes; j++) {
-                size_t n = reinterpret_cast<size_t>(indices_offsets[j - 1]);
-                n += static_cast<size_t>(batch.indices_count[j - 1])
-                     * sizeof(uint32_t);
-                indices_offsets[j] = reinterpret_cast<const GLvoid*>(n);
-                vertices_offsets[j] =
-                    vertices_offsets[j - 1] + batch.vertices_count[j - 1];
-            }
+            const RenderBatch& batch = render_batches[batch_id];
+            SendDataToVbo(batch);
+            SendDataToEbo(batch);
+            ubo::SendData(gpu::DrawData::BLOCK_BINDING, &batch.draw_data);
+            BindTextures(batch);
 
-            glBufferSubData(GL_ARRAY_BUFFER, 0,
-                            batch.vertices.size() * sizeof(Vertex),
-                            batch.vertices.data());
-            glBufferSubData(
-                GL_ELEMENT_ARRAY_BUFFER, 0,
-                batch.indices.size() * sizeof(decltype(batch.indices[0])),
-                batch.indices.data());
-            glBufferSubData(GL_UNIFORM_BUFFER, sizeof(gpu::CameraData),
-                            sizeof(gpu::MeshDataBuffer),
-                            batch.mesh_data_buffer.data());
-            for (j = 0; j < batch.textures.size(); j++) {
-                glActiveTexture(GL_TEXTURE0 + j);
-                glBindTexture(GL_TEXTURE_2D, batch.textures[j].id);
-            }
             GlDrawCommand draw_command;
+            batch.GenerateOffsets(indices_offsets, vertices_offsets);
             draw_command.basevertex = vertices_offsets.data();
             draw_command.drawcount = batch.num_meshes;
             draw_command.indices = indices_offsets.data();
             draw_command.count = batch.indices_count.data();
 #if defined(VERNA_ANDROID)
-            for (j = 0; j < draw_command.drawcount; j++) {
+            for (size_t j = 0; j < draw_command.drawcount; j++) {
                 glUniform1i(draw_id_loc, j);
                 glDrawElementsBaseVertex(
                     GL_TRIANGLES, draw_command.count[j], GL_UNSIGNED_INT,
@@ -286,9 +343,46 @@ void Draw() {
 #endif
         }
     }
+#ifndef NDEBUG
+    DrawDebug();
+#endif
     SwapBuffers();
 
     ClearBatches();
+}
+
+void RenderDebug(const BoundingBox& box) {
+#ifndef NDEBUG
+    Mesh::index_t offset = dbg_vertices.size();
+    Transform t;
+    t.position = box.Center();
+    t.scale = box.Size();
+    Mesh cube = LoadPrimitiveMesh(PrimitiveMeshType::Cube);
+    for (Vertex& v : cube.vertices) {
+        v.position = t.Apply(v.position);
+        dbg_vertices.push_back(v);
+    }
+    for (Mesh::index_t id : cube.indices) {
+        dbg_indices.push_back(id + offset);
+    }
+#endif
+}
+
+void RenderDebug(const BoundingSphere& sphere) {
+#ifndef NDEBUG
+    Mesh::index_t offset = dbg_vertices.size();
+    Transform t;
+    t.position = sphere.Position();
+    t.scale = Vec3f(sphere.Radius());
+    Mesh mesh = LoadPrimitiveMesh(PrimitiveMeshType::Sphere);
+    for (Vertex& v : mesh.vertices) {
+        v.position = t.Apply(v.position);
+        dbg_vertices.push_back(v);
+    }
+    for (Mesh::index_t id : mesh.indices) {
+        dbg_indices.push_back(id + offset);
+    }
+#endif
 }
 
 namespace RendererInfo {

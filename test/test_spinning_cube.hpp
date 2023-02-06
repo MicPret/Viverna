@@ -10,6 +10,7 @@
 #include <viverna/graphics/RendererAPI.hpp>
 #include <viverna/graphics/Shader.hpp>
 #include <viverna/graphics/Window.hpp>
+#include <viverna/maths/Quaternion.hpp>
 
 inline void SpinningCube(int seconds) {
     VERNA_LOGI("Running SpinningCube demo for " + std::to_string(seconds)
@@ -23,7 +24,7 @@ inline void SpinningCube(int seconds) {
         "void main() {\n"
         "   SetMeshIdx();\n"
         "   texCoords = vTexCoords;\n"
-        "   gl_Position = PROJECTION_MATRIX * VIEW_MATRIX * MODEL_MATRIX * "
+        "   gl_Position = camera.pv_matrix * MODEL_MATRIX * "
         "vec4(vPosition.x, vPosition.y, vPosition.z, 1.0);\n"
         "}";
 
@@ -44,13 +45,19 @@ inline void SpinningCube(int seconds) {
     verna::Camera& camera = verna::Camera::GetActive();
     camera.position.z = -3.0f;
 
-    auto now = verna::Clock::now();
-    auto end = now + verna::Seconds(seconds);
+    auto start = verna::Clock::now();
+    auto end = start + verna::Seconds(seconds);
+    auto now = start;
 
+    float t = 0.0f;
     while (now < end) {
-        verna::DeltaTime<float, verna::Seconds> remaining = end - now;
-        verna::Mat4f transform = verna::Mat4f::Rotation(
-            verna::Vec3f(0.0f, 1.0f, 0.0f), remaining.count());
+        verna::DeltaTime<float, verna::Seconds> since_start = now - start;
+        t = since_start.count();
+        verna::Mat4f transform =
+            verna::Quaternion(verna::Vec3f::UnitY(), t).AsMatrix();
+        /*
+            verna::Mat4f::Rotation(verna::Vec3f::UnitY(), t);
+            */
         verna::Render(cube, material, transform, shader);
         verna::Draw();
         now = verna::Clock::now();
