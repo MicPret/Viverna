@@ -275,15 +275,22 @@ void Render(const Mesh& mesh,
 
 #ifndef NDEBUG
 static void DrawDebug() {
+#if defined(VERNA_DESKTOP)
+    constexpr GLenum gl_mode = GL_TRIANGLES;
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+#else
+    constexpr GLenum gl_mode = GL_POINTS;
+#endif
     glBufferSubData(GL_ARRAY_BUFFER, 0, dbg_vertices.size() * sizeof(Vertex),
                     dbg_vertices.data());
     glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0,
                     dbg_indices.size() * sizeof(Mesh::index_t),
                     dbg_indices.data());
     glUseProgram(wireframe_shader.id);
-    glDrawElements(GL_TRIANGLES, dbg_indices.size(), GL_UNSIGNED_INT, nullptr);
+    glDrawElements(gl_mode, dbg_indices.size(), GL_UNSIGNED_INT, nullptr);
+#if defined(VERNA_DESKTOP)
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+#endif
     dbg_vertices.clear();
     dbg_indices.clear();
 }
