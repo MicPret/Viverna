@@ -79,6 +79,12 @@ constexpr Vec3f operator-(const Vec3f& a, const Vec3f& b) {
 constexpr Vec3f operator-(const Vec3f& vector) {
     return Vec3f(-vector.x, -vector.y, -vector.z);
 }
+constexpr void operator+=(Vec3f& a, const Vec3f& b) {
+    a = a + b;
+}
+constexpr void operator-=(Vec3f& a, const Vec3f& b) {
+    a = a - b;
+}
 
 constexpr Vec3f Vec3f::Normalized() const {
     float inverse_magnitude = 1.0f / Magnitude();

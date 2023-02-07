@@ -184,10 +184,16 @@ void SendDataToEbo(const RenderBatch& batch) {
 }
 
 void BindTextures(const RenderBatch& batch) {
+#if defined(VERNA_DESKTOP)
+    const GLuint* textures = &batch.textures.front().id;
+    GLsizei count = static_cast<GLsizei>(batch.textures.size());
+    glBindTextures(0, count, textures);
+#else
     for (size_t i = 0; i < batch.textures.size(); i++) {
         glActiveTexture(GL_TEXTURE0 + i);
         glBindTexture(GL_TEXTURE_2D, batch.textures[i].id);
     }
+#endif
 }
 }  // namespace
 
@@ -267,7 +273,8 @@ void Render(const Mesh& mesh,
     batch.num_meshes++;
 }
 
-[[maybe_unused]] static void DrawDebug() {
+#ifndef NDEBUG
+static void DrawDebug() {
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     glBufferSubData(GL_ARRAY_BUFFER, 0, dbg_vertices.size() * sizeof(Vertex),
                     dbg_vertices.data());
@@ -279,6 +286,39 @@ void Render(const Mesh& mesh,
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     dbg_vertices.clear();
     dbg_indices.clear();
+}
+#endif
+
+static void DrawGlCommand(const GlDrawCommand& cmd) {
+#if defined(VERNA_ANDROID)
+    constexpr GLint draw_id_uniloc = 0;
+    for (size_t j = 0; j < cmd.drawcount; j++) {
+        glUniform1i(draw_id_uniloc, j);
+        glDrawElementsBaseVertex(GL_TRIANGLES, cmd.count[j], GL_UNSIGNED_INT,
+                                 cmd.indices[j], cmd.basevertex[j]);
+    }
+#elif defined(VERNA_DESKTOP)
+    glMultiDrawElementsBaseVertex(GL_TRIANGLES, cmd.count, GL_UNSIGNED_INT,
+                                  cmd.indices, cmd.drawcount, cmd.basevertex);
+#endif
+}
+
+static void DrawBatch(const RenderBatch& batch) {
+    static std::array<const GLvoid*, RenderBatch::MAX_MESHES> indices_offsets;
+    static std::array<GLint, RenderBatch::MAX_MESHES> vertices_offsets;
+
+    SendDataToVbo(batch);
+    SendDataToEbo(batch);
+    ubo::SendData(gpu::DrawData::BLOCK_BINDING, &batch.draw_data);
+    BindTextures(batch);
+
+    GlDrawCommand draw_command;
+    batch.GenerateOffsets(indices_offsets, vertices_offsets);
+    draw_command.basevertex = vertices_offsets.data();
+    draw_command.drawcount = batch.num_meshes;
+    draw_command.indices = indices_offsets.data();
+    draw_command.count = batch.indices_count.data();
+    DrawGlCommand(draw_command);
 }
 
 void Draw() {
@@ -307,40 +347,12 @@ void Draw() {
 
     ShaderId shader;
     Bucket bucket;
-    std::array<const GLvoid*, RenderBatch::MAX_MESHES> indices_offsets;
-    std::array<GLint, RenderBatch::MAX_MESHES> vertices_offsets;
     for (size_t i = 0; i < shader_to_bucket.Size(); i++) {
         shader_to_bucket.Get(i, shader, bucket);
         glUseProgram(shader.id);
-#if defined(VERNA_ANDROID)
-        auto draw_id_loc = glGetUniformLocation(shader.id, "DRAW_ID");
-#endif
         for (BatchId batch_id : bucket) {
             const RenderBatch& batch = render_batches[batch_id];
-            SendDataToVbo(batch);
-            SendDataToEbo(batch);
-            ubo::SendData(gpu::DrawData::BLOCK_BINDING, &batch.draw_data);
-            BindTextures(batch);
-
-            GlDrawCommand draw_command;
-            batch.GenerateOffsets(indices_offsets, vertices_offsets);
-            draw_command.basevertex = vertices_offsets.data();
-            draw_command.drawcount = batch.num_meshes;
-            draw_command.indices = indices_offsets.data();
-            draw_command.count = batch.indices_count.data();
-#if defined(VERNA_ANDROID)
-            for (size_t j = 0; j < draw_command.drawcount; j++) {
-                glUniform1i(draw_id_loc, j);
-                glDrawElementsBaseVertex(
-                    GL_TRIANGLES, draw_command.count[j], GL_UNSIGNED_INT,
-                    draw_command.indices[j], draw_command.basevertex[j]);
-            }
-#elif defined(VERNA_DESKTOP)
-            glMultiDrawElementsBaseVertex(GL_TRIANGLES, draw_command.count,
-                                          GL_UNSIGNED_INT, draw_command.indices,
-                                          draw_command.drawcount,
-                                          draw_command.basevertex);
-#endif
+            DrawBatch(batch);
         }
     }
 #ifndef NDEBUG

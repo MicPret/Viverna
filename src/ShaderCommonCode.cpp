@@ -39,7 +39,7 @@ std::string InternalVertexCommonCode() {
     vertex.AddDefine("DRAW_ID", "gl_DrawID");
 #elif defined(VERNA_ANDROID)
     vertex.AddLine("#version 320 es");
-    vertex.AddLine("uniform int DRAW_ID;");
+    vertex.AddLine("layout(location = 0) uniform int DRAW_ID;");
 #endif
     vertex.AddLine("out float MESH_IDX;");
     vertex.AddLine("void SetMeshIdx() { MESH_IDX = float(DRAW_ID); }");

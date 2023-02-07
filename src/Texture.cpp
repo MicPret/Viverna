@@ -17,7 +17,9 @@
 #include <vector>
 
 namespace verna {
+#ifndef NDEBUG
 static ResourceTracker<TextureId::id_type> texture_tracker("Texture");
+#endif
 
 static GLuint GenTexture(const void* pixels, int width, int height);
 

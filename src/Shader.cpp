@@ -24,7 +24,9 @@
 namespace verna {
 
 namespace {
+#ifndef NDEBUG
 ResourceTracker<ShaderId::id_type> shader_tracker("Shader");
+#endif
 
 bool CompileShaderSource(std::string_view source,
                          GLenum shader_type,

@@ -60,10 +60,9 @@ void AddBlock(uint32_t binding_point, size_t size) {
 }
 
 void SendData(uint32_t binding_point, const void* data) {
-    for (uint8_t i = 0; i < bindings.size(); i++) {
-        if (bindings[i].binding_point == binding_point) {
-            glBufferSubData(GL_UNIFORM_BUFFER, bindings[i].offset,
-                            bindings[i].size, data);
+    for (const BlockInfo& block : bindings) {
+        if (block.binding_point == binding_point) {
+            glBufferSubData(GL_UNIFORM_BUFFER, block.offset, block.size, data);
             return;
         }
     }

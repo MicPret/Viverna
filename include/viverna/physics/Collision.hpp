@@ -13,6 +13,13 @@ struct Collision {
     float magnitude;
 };
 
+constexpr bool SphereCollide(const BoundingSphere& a, const BoundingSphere& b) {
+    Vec3f a_to_b = b.Position() - a.Position();
+    float squared_distance = a_to_b.SquaredMagnitude();
+    float radius_sum = a.Radius() + b.Radius();
+    return squared_distance <= (radius_sum * radius_sum);
+}
+
 constexpr bool SphereCollide(const BoundingSphere& a,
                              const BoundingSphere& b,
                              Collision& output) {
@@ -27,13 +34,21 @@ constexpr bool SphereCollide(const BoundingSphere& a,
     return true;
 }
 
+constexpr bool BoxCollide(const BoundingBox& a, const BoundingBox& b) {
+    Vec3f b_a = b.MaxPosition() - a.MinPosition();
+    if (b_a.x < 0.0f || b_a.y < 0.0f || b_a.z < 0.0f)
+        return false;
+    Vec3f a_b = a.MaxPosition() - b.MinPosition();
+    return a_b.x >= 0.0 && a_b.y >= 0.0f && a_b.z >= 0.0f;
+}
+
 constexpr bool BoxCollide(const BoundingBox& a,
                           const BoundingBox& b,
                           Collision& output) {
-    const Vec3f b_a = b.MaxPosition() - a.MinPosition();
-    const Vec3f a_b = a.MaxPosition() - b.MinPosition();
+    Vec3f b_a = b.MaxPosition() - a.MinPosition();
+    Vec3f a_b = a.MaxPosition() - b.MinPosition();
     std::array<float, 6> d = {b_a.x, a_b.x, b_a.y, a_b.y, b_a.z, a_b.z};
-    size_t index = d.size();
+    size_t index = 0;
     float inside = d[0];
     for (size_t i = 1; i < d.size(); i++) {
         if (d[i] < inside) {
@@ -44,12 +59,18 @@ constexpr bool BoxCollide(const BoundingBox& a,
     if (inside < 0)
         return false;
 
-    output.direction = (b.Center() - a.Center()).Normalized();
+    constexpr std::array<Vec3f, 6> dirs = {-Vec3f::UnitX(), Vec3f::UnitX(),
+                                           -Vec3f::UnitY(), Vec3f::UnitY(),
+                                           -Vec3f::UnitZ(), Vec3f::UnitZ()};
+    output.direction = dirs[index];
+    output.magnitude = inside;
+    /*
     d[0] = output.direction.x;
     d[1] = output.direction.y;
     d[2] = output.direction.z;
     float proj = d[index / 2];
     output.magnitude = inside * inside / proj;
+    */
     return true;
 }
 

@@ -19,8 +19,8 @@ inline void Collision(int seconds) {
                + " seconds...");
     verna::VivernaInitializerRAII init;
     int a = seconds / 2;
-    detail::CollisionSphere(seconds - a);
-    detail::CollisionBox(a);
+    detail::CollisionSphere(a);
+    detail::CollisionBox(seconds - a);
 }
 
 namespace detail {
@@ -148,37 +148,40 @@ inline void CollisionBox(int seconds) {
 
     constexpr float distance = 6.0f;
     constexpr verna::Vec3f center = distance * verna::Vec3f::UnitZ();
-    verna::Transform center_transform;
-    center_transform.position = center;
-    verna::BoundingBox center_box;
-    center_box.Recalculate(cube, center_transform);
-    std::array<verna::Vec3f, 4> positions;
+    std::array<verna::Vec3f, 5> positions;
     positions.fill(center);
-    positions[0].x -= distance;
-    positions[0].y -= distance;
-    positions[1].x += distance;
+    positions[1].x -= distance;
     positions[1].y -= distance;
     positions[2].x += distance;
-    positions[2].y += distance;
-    positions[3].x -= distance;
+    positions[2].y -= distance;
+    positions[3].x += distance;
     positions[3].y += distance;
-    std::array<verna::BoundingBox, 4> boxes;
+    positions[4].x -= distance;
+    positions[4].y += distance;
+    std::array<verna::BoundingBox, positions.size()> boxes;
+    verna::Transform t;
+    for (size_t i = 0; i < boxes.size(); i++) {
+        t.position = positions[i];
+        boxes[i].Recalculate(cube, t);
+    }
 
     constexpr float speed = 4.0f;
-    verna::Transform t;
     while (now < end) {
         verna::DeltaTime<float, verna::Seconds> passed = now - prev;
-        for (size_t i = 0; i < positions.size(); i++) {
-            verna::Vec3f& p = positions[i];
-            p = p + speed * passed.count() * (center - p).Normalized();
-            t.position = p;
-            boxes[i].Recalculate(cube, t);
+        for (size_t i = 1; i < positions.size(); i++) {
+            verna::Vec3f transl =
+                speed * passed.count() * (center - positions[i]).Normalized();
+            positions[i] += transl;
+            boxes[i].SetCenter(positions[i]);
         }
 
         verna::Collision col;
-        for (size_t i = 0; i < positions.size(); i++) {
-            if (verna::BoxCollide(boxes[i], center_box, col)) {
-                positions[i] = positions[i] - col.magnitude * col.direction;
+        for (size_t i = 1; i < positions.size(); i++) {
+            for (size_t j = 0; j < i; j++) {
+                if (verna::BoxCollide(boxes[i], boxes[j], col)) {
+                    positions[i] -= col.magnitude * col.direction;
+                    boxes[i].SetCenter(positions[i]);
+                }
             }
         }
 
@@ -186,12 +189,8 @@ inline void CollisionBox(int seconds) {
             t.position = p;
             verna::Render(cube, material, t.GetMatrix(), shader);
         }
-        t.position = center;
-        verna::Render(cube, material, t.GetMatrix(), shader);
-
         for (const verna::BoundingBox& box : boxes)
             verna::RenderDebug(box);
-        verna::RenderDebug(center_box);
 
         verna::Draw();
 
