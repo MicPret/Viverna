@@ -36,8 +36,8 @@ void GenerateUBO() {
     glBufferStorage(GL_UNIFORM_BUFFER, static_cast<GLsizeiptr>(buffer_size),
                     nullptr, GL_DYNAMIC_STORAGE_BIT);
 #else
-    glBufferData(GL_UNIFORM_BUFFER, static_cast<GLsizeiptr>(size), nullptr,
-                 GL_DYNAMIC_DRAW);
+    glBufferData(GL_UNIFORM_BUFFER, static_cast<GLsizeiptr>(buffer_size),
+                 nullptr, GL_DYNAMIC_DRAW);
 #endif
     bindings.reserve(2);
 }
