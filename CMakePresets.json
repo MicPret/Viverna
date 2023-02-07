@@ -12,15 +12,37 @@
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/build",
       "cacheVariables": {
-        "CMAKE_EXPORT_COMPILE_COMMANDS": true,
+        "CMAKE_EXPORT_COMPILE_COMMANDS": true
+      }
+    },
+    {
+      "name": "superDebug",
+      "inherits": "superConf",
+      "hidden": true,
+      "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug"
       }
     },
     {
-      "name": "androidConf",
+      "name": "superRelease",
       "inherits": "superConf",
-      "displayName": "Android config",
-      "description": "Configuration for Android",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "superDesktop",
+      "hidden": true,
+      "condition": {
+        "type": "matches",
+        "string": "${hostSystemName}",
+        "regex": "(Windows)|(Linux)"
+      }
+    },
+    {
+      "name": "superAndroid",
+      "hidden": true,
       "toolchainFile": "${sourceDir}/android_toolchain.cmake",
       "condition": {
         "type": "notEquals",
@@ -29,36 +51,40 @@
       }
     },
     {
-      "name": "desktopConf",
-      "inherits": "superConf",
-      "displayName": "Desktop config",
-      "description": "Configuration for desktop (Windows and Linux)",
-      "condition": {
-        "type": "matches",
-        "string": "${hostSystemName}",
-        "regex": "(Windows)|(Linux)"
-      }
-    }
-  ],
-  "buildPresets": [
-    {
-      "name": "superBuild",
-      "hidden": true,
-      "cleanFirst": true
+      "name": "androidDebug",
+      "inherits": [
+        "superAndroid",
+        "superDebug"
+      ],
+      "displayName": "Android Debug",
+      "description": "Debug for Android"
     },
     {
-      "name": "androidBuild",
-      "inherits": "superBuild",
-      "displayName": "Android build",
-      "description": "Configuration for Android",
-      "configurePreset": "androidConf"
+      "name": "androidRelease",
+      "inherits": [
+        "superAndroid",
+        "superRelease"
+      ],
+      "displayName": "Android Release",
+      "description": "Release for Android"
     },
     {
-      "name": "desktopBuild",
-      "inherits": "superBuild",
-      "displayName": "Desktop build",
-      "description": "Configuration for desktop (Windows and Linux)",
-      "configurePreset": "desktopConf"
+      "name": "desktopDebug",
+      "inherits": [
+        "superDesktop",
+        "superDebug"
+      ],
+      "displayName": "Desktop Debug",
+      "description": "Debug for desktop (Windows and Linux)"
+    },
+    {
+      "name": "desktopRelease",
+      "inherits": [
+        "superDesktop",
+        "superRelease"
+      ],
+      "displayName": "Desktop Release",
+      "description": "Release for desktop (Windows and Linux)"
     }
   ]
 }
