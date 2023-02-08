@@ -58,8 +58,10 @@ inline void CameraMovement(int seconds) {
     float timer;
     constexpr float timer_step = 0.06;
     float times = 1.0f;
+    verna::KeyListener esc_key(verna::Key::Escape);
 
-    while (now < end) {
+    verna::VivernaState& app_state = initializer.app_state;
+    while (app_state.GetFlag(verna::VivernaState::RUNNING_FLAG)) {
         verna::DeltaTime<float, verna::Seconds> passed = now - start;
         mouse.Position(pos_x, pos_y);
         verna::Vec2f mouse_pos01(
@@ -97,6 +99,8 @@ inline void CameraMovement(int seconds) {
         verna::Draw();
 
         now = verna::Clock::now();
+        if (now >= end || esc_key.Pressed())
+            app_state.SetFlag(verna::VivernaState::RUNNING_FLAG, false);
     }
     verna::FreeShader(shader);
     verna::FreeTexture(color);

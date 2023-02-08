@@ -4,11 +4,13 @@
 #include <android/input.h>
 #include <android_native_app_glue.h>
 
+#include <array>
 #include <cstdint>
 
 namespace verna {
 
 static uint32_t touch;
+static std::array<uint8_t, static_cast<size_t>(Key::Last) / 8> keymap;
 
 static void SetTouch(bool click) {
     constexpr uint32_t mask = ~(1 << 31);
@@ -28,10 +30,32 @@ static void GetTouchPos(unsigned& x, unsigned& y) {
     y = t & 0x7FFF;
 }
 
+static constexpr int GetKeyIndex(Key key, int& offset) {
+    int k = static_cast<int>(key);
+    offset = k % 8;
+    return k / 8;
+}
+static constexpr bool GetKeyPressed(Key key) {
+    int offset = 0;
+    int index = GetKeyIndex(key, offset);
+    int keys = static_cast<int>(keymap[index]);
+    int mask = 1 << offset;
+    return (keys & mask) != 0;
+}
+static constexpr void SetKeyPressed(Key key, bool pressed) {
+    int offset = 0;
+    int index = GetKeyIndex(key, offset);
+    int keys = static_cast<int>(keymap[index]);
+    int mask = 1 << offset;
+    keys = (keys & ~mask) | (static_cast<int>(pressed) << offset);
+    keymap[index] = static_cast<uint8_t>(keys);
+}
+
 static int32_t HandleInput(struct android_app* app, AInputEvent* event) {
     float x, y;
     int32_t event_type = AInputEvent_getType(event);
     int32_t action;
+    Key key;
     switch (event_type) {
         case AINPUT_EVENT_TYPE_MOTION:
             action = AMotionEvent_getAction(event) & AMOTION_EVENT_ACTION_MASK;
@@ -48,10 +72,26 @@ static int32_t HandleInput(struct android_app* app, AInputEvent* event) {
             x = AMotionEvent_getX(event, 0);
             y = AMotionEvent_getY(event, 0);
             SetTouchPos(static_cast<uint32_t>(x), static_cast<uint32_t>(y));
-            return 1;
+            break;
+        case AINPUT_EVENT_TYPE_KEY:
+            // TODO TEST
+            action = AKeyEvent_getAction(event);
+            key = static_cast<Key>(AKeyEvent_getKeyCode(event));
+            switch (action) {
+                case AKEY_EVENT_ACTION_DOWN:
+                    SetKeyPressed(key, true);
+                    break;
+                case AKEY_EVENT_ACTION_UP:
+                    SetKeyPressed(key, false);
+                    break;
+                default:
+                    break;
+            }
+            break;
         default:
             return 0;
     }
+    return 1;
 }
 
 void InitializeInput(VivernaState& state) {
@@ -91,6 +131,10 @@ void MouseListener::Position(unsigned& pos_x, unsigned& pos_y) const {
 bool MouseListener::Pressed(unsigned& pos_x, unsigned& pos_y) const {
     Position(pos_x, pos_y);
     return GetTouch();
+}
+
+bool KeyListener::Pressed() const {
+    return GetKeyPressed(key);
 }
 
 }  // namespace verna

@@ -1,6 +1,7 @@
 #ifndef VERNA_TEST_COLLISION_HPP
 #define VERNA_TEST_COLLISION_HPP
 
+#include <viverna/core/Input.hpp>
 #include <viverna/core/VivernaInitializer.hpp>
 #include <viverna/graphics/Mesh.hpp>
 #include <viverna/graphics/Texture.hpp>
@@ -80,7 +81,9 @@ inline void CollisionSphere(int seconds) {
     }
 
     constexpr float speed = 4.0f;
-    while (now < end) {
+
+    verna::KeyListener esc_btn(verna::Key::Escape);
+    while (now < end && !esc_btn.Pressed()) {
         verna::DeltaTime<float, verna::Seconds> passed = now - prev;
         for (auto& p : positions) {
             p = p + speed * passed.count() * (center - p).Normalized();
@@ -166,7 +169,8 @@ inline void CollisionBox(int seconds) {
     }
 
     constexpr float speed = 4.0f;
-    while (now < end) {
+    verna::KeyListener esc_btn(verna::Key::Escape);
+    while (now < end && !esc_btn.Pressed()) {
         verna::DeltaTime<float, verna::Seconds> passed = now - prev;
         for (size_t i = 1; i < positions.size(); i++) {
             verna::Vec3f transl =

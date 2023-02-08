@@ -1,6 +1,7 @@
 #ifndef VERNA_INPUT_HPP
 #define VERNA_INPUT_HPP
 
+#include "Key.hpp"
 #include "VivernaState.hpp"
 
 namespace verna {
@@ -21,6 +22,15 @@ class MouseListener {
    public:
     void Position(unsigned& pos_x, unsigned& pos_y) const;
     [[nodiscard]] bool Pressed(unsigned& pos_x, unsigned& pos_y) const;
+};
+
+class KeyListener {
+   public:
+    constexpr KeyListener(Key key_) : key(key_) {}
+    bool Pressed() const;
+
+   private:
+    Key key;
 };
 }  // namespace verna
 

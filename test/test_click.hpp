@@ -59,9 +59,11 @@ inline void Click(int seconds) {
     auto now = start;
 
     verna::MouseListener mouse_btn;
+    verna::KeyListener esc_btn(verna::Key::Escape);
     bool prev_pressed = false;
     std::vector<verna::Transform> transforms;
-    while (now < end) {
+    auto& app_state = initializer.app_state;
+    while (app_state.GetFlag(verna::VivernaState::RUNNING_FLAG)) {
         verna::DeltaTime<float, verna::Seconds> time = now - start;
         unsigned x, y;
         if (mouse_btn.Pressed(x, y)) {
@@ -84,6 +86,8 @@ inline void Click(int seconds) {
         }
         verna::Draw();
         now = verna::Clock::now();
+        if (now >= end || esc_btn.Pressed())
+            app_state.SetFlag(verna::VivernaState::RUNNING_FLAG, false);
     }
     verna::FreeShader(shader);
     verna::FreeTexture(cyan);

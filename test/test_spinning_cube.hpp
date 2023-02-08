@@ -2,6 +2,7 @@
 #define VERNA_TEST_SPINNING_CUBE_HPP
 
 #include <viverna/core/Debug.hpp>
+#include <viverna/core/Input.hpp>
 #include <viverna/core/VivernaInitializer.hpp>
 #include <viverna/graphics/Camera.hpp>
 #include <viverna/graphics/Material.hpp>
@@ -50,7 +51,8 @@ inline void SpinningCube(int seconds) {
     auto now = start;
 
     float t = 0.0f;
-    while (now < end) {
+    verna::KeyListener esc_btn(verna::Key::Escape);
+    while (now < end && !esc_btn.Pressed()) {
         verna::DeltaTime<float, verna::Seconds> since_start = now - start;
         t = since_start.count();
         verna::Mat4f transform =

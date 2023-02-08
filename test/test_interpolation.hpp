@@ -2,6 +2,7 @@
 #define VERNA_TEST_INTERPOLATION_HPP
 
 #include <viverna/core/Debug.hpp>
+#include <viverna/core/Input.hpp>
 #include <viverna/core/Time.hpp>
 #include <viverna/core/Transform.hpp>
 #include <viverna/core/VivernaInitializer.hpp>
@@ -56,7 +57,8 @@ inline void Interpolation(int seconds) {
     auto end = start + verna::Seconds(seconds);
     auto now = start;
 
-    while (now < end) {
+    verna::KeyListener esc_btn(verna::Key::Escape);
+    while (now < end && !esc_btn.Pressed()) {
         verna::DeltaTime<float, verna::Seconds> passed = now - start;
         float t = passed.count() / static_cast<float>(seconds);
         float t2 = verna::maths::Min(passed.count() / half_seconds, 1.0f);
