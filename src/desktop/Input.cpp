@@ -1,6 +1,7 @@
 #include <viverna/core/Input.hpp>
 #include <viverna/core/Debug.hpp>
 
+#define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
 #include <cstdint>
