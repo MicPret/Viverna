@@ -127,8 +127,9 @@ ShaderId LoadShaderFromSource(std::string_view vertex_src,
 
     glUseProgram(program);
     UniformInit(program);
-
+#ifndef NDEBUG
     shader_tracker.Push(program);
+#endif
     output.id = program;
     return output;
 }
@@ -154,7 +155,9 @@ void FreeShader(ShaderId shader_program) {
     if (!shader_program.IsValid())
         return;
     glDeleteProgram(shader_program.id);
+#ifndef NDEBUG
     shader_tracker.Remove(shader_program.id);
+#endif
 }
 
 int32_t GetShaderUniformLocation(ShaderId shader_program,

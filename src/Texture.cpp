@@ -33,8 +33,9 @@ TextureId LoadTextureFromFile(const std::filesystem::path& path) {
     }
     GLuint texture = GenTexture(loaded, x, y);
     stbi_image_free(loaded);
-
+#ifndef NDEBUG
     texture_tracker.Push(texture);
+#endif
     return TextureId(texture);
 }
 
@@ -62,13 +63,19 @@ TextureId LoadTextureFromColor(uint8_t red,
         data[i * size * size + 3] = alpha;
     }
     GLuint texture = GenTexture(data.data(), size, size);
+#ifndef NDEBUG
     texture_tracker.Push(texture);
+#endif
     return TextureId(texture);
 }
 
 void FreeTexture(TextureId texture) {
+    if (!texture.IsValid())
+        return;
     glDeleteTextures(1, &texture.id);
+#ifndef NDEBUG
     texture_tracker.Remove(texture.id);
+#endif
 }
 
 static GLuint GenTexture(const void* pixels, int width, int height) {
