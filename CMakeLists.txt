@@ -54,7 +54,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL Android)
         EGL
         GLESv3
         log
-        native_app_glue
+        native_app_glue_header
     )
 elseif(CMAKE_SYSTEM_NAME STREQUAL Linux OR CMAKE_SYSTEM_NAME STREQUAL Windows)
     target_link_libraries(${VIVERNA_TARGET_NAME} PUBLIC
