@@ -14,7 +14,6 @@
 
 #include <array>
 #include <cstdint>
-#include <vector>
 
 namespace verna {
 #ifndef NDEBUG
@@ -24,19 +23,17 @@ static ResourceTracker<TextureId::id_type> texture_tracker("Texture");
 static GLuint GenTexture(const void* pixels, int width, int height);
 
 TextureId LoadTextureFromFile(const std::filesystem::path& path) {
+    constexpr int num_channels = 4;
     int x, y, comp;
     const std::string fullpath = path.string();
-    stbi_uc* loaded = stbi_load(fullpath.c_str(), &x, &y, &comp, 4);
+    stbi_uc* loaded = stbi_load(fullpath.c_str(), &x, &y, &comp, num_channels);
     if (loaded == nullptr) {
-        VERNA_LOGE("Failed to load texture: " + fullpath);
+        VERNA_LOGE("LoadTextureFromFile failed: " + fullpath);
         return TextureId();  // invalid texture
     }
-    GLuint texture = GenTexture(loaded, x, y);
+    TextureId output = LoadTextureFromBuffer(loaded, x, y);
     stbi_image_free(loaded);
-#ifndef NDEBUG
-    texture_tracker.Push(texture);
-#endif
-    return TextureId(texture);
+    return output;
 }
 
 TextureId LoadTextureFromColor(float red,
@@ -54,15 +51,27 @@ TextureId LoadTextureFromColor(uint8_t red,
                                uint8_t green,
                                uint8_t blue,
                                uint8_t alpha) {
-    constexpr int size = 2;
-    std::array<uint8_t, 4 * size * size> data;
-    for (int i = 0; i < size * size; i++) {
-        data[i * size * size] = red;
-        data[i * size * size + 1] = green;
-        data[i * size * size + 2] = blue;
-        data[i * size * size + 3] = alpha;
+    constexpr int width = 2;
+    constexpr int height = width;
+    constexpr int size = width * height;
+    constexpr int num_channels = 4;
+    std::array<uint8_t, num_channels * size> data;
+    for (int i = 0; i < size; i++) {
+        auto index = i * size;
+        data[index] = red;
+        data[index + 1] = green;
+        data[index + 2] = blue;
+        data[index + 3] = alpha;
     }
-    GLuint texture = GenTexture(data.data(), size, size);
+    return LoadTextureFromBuffer(data.data(), width, height);
+}
+
+TextureId LoadTextureFromBuffer(const void* buffer, int width, int height) {
+    if (width <= 0 || height <= 0) {
+        VERNA_LOGE("LoadTextureFromBuffer failed: width or height <= 0");
+        return TextureId();
+    }
+    auto texture = GenTexture(buffer, width, height);
 #ifndef NDEBUG
     texture_tracker.Push(texture);
 #endif
@@ -79,10 +88,6 @@ void FreeTexture(TextureId texture) {
 }
 
 static GLuint GenTexture(const void* pixels, int width, int height) {
-    if (width <= 0 || height <= 0) {
-        VERNA_LOGE("Invalid width or height for GenTexture!");
-        return 0u;
-    }
     GLuint texture;
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);

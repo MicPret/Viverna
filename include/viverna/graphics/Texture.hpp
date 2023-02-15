@@ -26,6 +26,7 @@ TextureId LoadTextureFromColor(uint8_t red,
                                uint8_t green,
                                uint8_t blue,
                                uint8_t alpha);
+TextureId LoadTextureFromBuffer(const void* buffer, int width, int height);
 void FreeTexture(TextureId texture);
 
 }  // namespace verna
