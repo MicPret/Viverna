@@ -94,7 +94,7 @@ std::string InternalLaterCommonCode() {
         "layout(std140) uniform DrawData {\n"
         "  MeshData draw_data[MAX_MESHES];\n"
         "};\n"
-        "uniform sampler2D _textures[MAX_TEXTURES];\n");
+        "layout(location = 1) uniform sampler2D _textures[MAX_TEXTURES];\n");
     commons.AddDefine("TEXTURE0", "_textures[draw_data[DRAW_ID].texture_idx0]");
     commons.AddDefine("TEXTURE1", "_textures[draw_data[DRAW_ID].texture_idx1]");
     commons.AddDefine("TEXTURE2", "_textures[draw_data[DRAW_ID].texture_idx2]");

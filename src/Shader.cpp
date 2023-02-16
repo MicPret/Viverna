@@ -100,11 +100,8 @@ void UniformInit(GLuint program) {
     glUniformBlockBinding(program, block_loc, gpu::DrawData::BLOCK_BINDING);
 
     for (int i = 0; i < RendererInfo::MaxTextureUnits(); i++) {
-        std::string texture_uniform_name =
-            "_TEXTURES[" + std::to_string(i) + "]";
-        GLint textures_loc =
-            glGetUniformLocation(program, texture_uniform_name.c_str());
-        glUniform1i(textures_loc, i);
+        constexpr GLint textures_uniform_loc = 1;
+        glUniform1i(textures_uniform_loc + i, i);
     }
 }
 }  // namespace

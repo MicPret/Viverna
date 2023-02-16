@@ -184,8 +184,7 @@ void SendDataToEbo(const RenderBatch& batch) {
 }
 
 void BindTextures(const RenderBatch& batch) {
-// #if defined(VERNA_DESKTOP)
-#if defined(VERNA_DESKTOP_BROKEN__)
+#if defined(VERNA_DESKTOP)
     const GLuint* textures = &batch.textures.front().id;
     GLsizei count = static_cast<GLsizei>(batch.textures.size());
     glBindTextures(0, count, textures);
