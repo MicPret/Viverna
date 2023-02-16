@@ -1,0 +1,77 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath group: 'org.yaml', name: 'snakeyaml', version: '1.33'
+    }
+}
+plugins {
+    id 'com.android.application'
+}
+def verna = [:]
+def yamlParser = new org.yaml.snakeyaml.Yaml()
+def configFile = file('../../config.yaml')
+if (configFile.exists()) {
+    verna = yamlParser.load(configFile.text)
+}
+def VERNA_NDK_VERSION = '25.2.9519653'
+
+android {
+    compileSdk 33
+    ndkVersion "${VERNA_NDK_VERSION}"
+    namespace "${verna.NAMESPACE}.${verna.APP_NAME}".replaceAll(' ', '')
+
+    defaultConfig {
+        applicationId "${verna.NAMESPACE}.${verna.APP_NAME}".replaceAll(' ', '')
+        minSdkVersion 31
+        targetSdkVersion 33
+        manifestPlaceholders = [
+            VERNA_NAMESPACE: "${verna.NAMESPACE}",
+            VERNA_APP_NAME: "${verna.APP_NAME}"
+        ]
+        externalNativeBuild {
+            cmake {
+                // UNNECESSARY
+                // arguments "-DVERNA_NDK_VERSION=${VERNA_NDK_VERSION}"
+            }
+        }
+    }
+    buildTypes {
+        debug {
+            minifyEnabled false
+            shrinkResources false
+            externalNativeBuild {
+                cmake {
+                    arguments "--preset androidDebug"
+                }
+            }
+        }
+        release {
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android.txt'),'proguard-rules.pro'
+            externalNativeBuild {
+                cmake {
+                    arguments "--preset androidRelease"
+                }
+            }
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            version '3.24.0+'
+            path '../../CMakeLists.txt'
+        }
+    }
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    def appcompat_version = "1.6.1"
+    def constraintlayout_version = "2.1.4"
+    implementation "androidx.appcompat:appcompat:${appcompat_version}"
+    implementation "androidx.appcompat:appcompat-resources:${appcompat_version}"
+    implementation "androidx.constraintlayout:constraintlayout:${constraintlayout_version}"
+}
