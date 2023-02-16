@@ -68,6 +68,7 @@ inline bool RenderBatch::TryAddUniformData(const Material& material,
                                            const Mat4f& transform) {
     const size_t max_textures =
         static_cast<size_t>(RendererInfo::MaxTextureUnits());
+    gpu::MeshData& mesh_data = draw_data[num_meshes];
     for (size_t i = 0; i < material.textures.size(); i++) {
         TextureId mat_texture = material.textures[i];
         if (!mat_texture.IsValid())
@@ -79,10 +80,10 @@ inline bool RenderBatch::TryAddUniformData(const Material& material,
             index = textures.size();
             textures.push_back(mat_texture);
         }
-        draw_data[num_meshes].material.texture_indices[i] = index;
+        mesh_data.material.texture_indices[i] = index;
     }
-    draw_data[num_meshes].material.parameters = material.parameters;
-    draw_data[num_meshes].model_matrix = transform;
+    mesh_data.material.parameters = material.parameters;
+    mesh_data.model_matrix = transform;
     return true;
 }
 
