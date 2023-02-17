@@ -61,6 +61,8 @@ void TerminateAll(VivernaState& state) {
         state.SetFlag(VivernaState::ERROR_FLAG, false);
     }
 
+    TerminateAssets(state);
+
     TerminateInput(state);
 
     TerminateRenderer(state);
