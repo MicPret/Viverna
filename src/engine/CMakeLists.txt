@@ -14,6 +14,7 @@ target_sources(${PROJECT_NAME} PRIVATE
 )
     
 target_sources(${PROJECT_NAME} PRIVATE
+    "${VERNA_ENGINE_PLATFORM_PATH}/Assets.cpp"
     "${VERNA_ENGINE_PLATFORM_PATH}/Debug.cpp"
     "${VERNA_ENGINE_PLATFORM_PATH}/Input.cpp"
     "${VERNA_ENGINE_PLATFORM_PATH}/RendererAPI.cpp"

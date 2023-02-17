@@ -18,7 +18,8 @@ struct VivernaState {
     static constexpr flag_type RENDERER_API_INITIALIZED_FLAG = 1 << 1;
     static constexpr flag_type RENDERER_INITIALIZED_FLAG = 1 << 2;
     static constexpr flag_type INPUT_INITIALIZED_FLAG = 1 << 3;
-    static constexpr flag_type RUNNING_FLAG = 1 << 4;
+    static constexpr flag_type ASSETS_INITIALIZED_FLAG = 1 << 4;
+    static constexpr flag_type RUNNING_FLAG = 1 << 5;
 
     constexpr VivernaState() :
         native_app(nullptr), native_window(nullptr), flags(0) {}

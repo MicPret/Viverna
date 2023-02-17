@@ -1,4 +1,5 @@
 #include <viverna/core/VivernaInitializer.hpp>
+#include <viverna/core/Assets.hpp>
 #include <viverna/core/Debug.hpp>
 #include <viverna/core/Input.hpp>
 #include <viverna/graphics/Renderer.hpp>
@@ -35,6 +36,15 @@ void InitializeAll(VivernaState& state) {
 
     InitializeInput(state);
     if (GetError(state)) {
+        TerminateRenderer(state);
+        TerminateRendererAPI(state);
+        TerminateWindow(state);
+        return;
+    }
+
+    InitializeAssets(state);
+    if (GetError(state)) {
+        TerminateInput(state);
         TerminateRenderer(state);
         TerminateRendererAPI(state);
         TerminateWindow(state);

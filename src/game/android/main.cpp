@@ -69,7 +69,6 @@ static void HandleAppCmd(struct android_app* app, int32_t cmd) {
             verna_state.native_app = app;
             verna_state.native_window = app->window;
             verna::InitializeAll(verna_state);
-            // TODO verna::InitializeAssetManager(verna_state);
             verna::OnAppResume(verna_state);
             break;
         case APP_CMD_WINDOW_REDRAW_NEEDED:
