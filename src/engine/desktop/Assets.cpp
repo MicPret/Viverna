@@ -51,4 +51,24 @@ void TerminateAssets(VivernaState& state) {
     state.SetFlag(VivernaState::ASSETS_INITIALIZED_FLAG, false);
     VERNA_LOGI("Assets terminated!");
 }
+
+std::vector<char> LoadRawAsset(const std::filesystem::path& path) {
+    auto fullpath = assets_folder_path / path;
+    std::ifstream file(fullpath, std::ios::binary);
+    if (!file.is_open()) {
+        VERNA_LOGE("LoadAsset() failed: can't find " + fullpath.string());
+        return {};
+    }
+    file.seekg(0, file.end);
+    auto size = file.tellg();
+    file.seekg(0, file.beg);
+    std::vector<char> output(size);
+    file.read(output.data(), size);
+    if (file.fail()) {
+        VERNA_LOGE("LoadRawAsset() failed: read failure for "
+                   + fullpath.string());
+        output.clear();
+    }
+    return output;
+}
 }  // namespace verna

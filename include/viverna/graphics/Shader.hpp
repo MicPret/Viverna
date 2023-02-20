@@ -26,6 +26,16 @@ constexpr bool operator!=(ShaderId a, ShaderId b) {
 }
 
 /**
+ * @brief Compiles a shader program from shader files with the given name (e.g.
+ * LoadShader("unlit") will compile and link shaders/unlit.vert and
+ * shaders/unlit.frag from the assets folder)
+ *
+ * @param shader_name Name of shader files (with different extensions)
+ * @return Shader identifier, must be freed with FreeShader
+ */
+ShaderId LoadShader(std::string_view shader_name);
+
+/**
  * @brief Compiles a shader program from source. Every shader must be freed with
  * verna::FreeShader(verna::ShaderId)
  *
@@ -37,19 +47,6 @@ constexpr bool operator!=(ShaderId a, ShaderId b) {
  */
 ShaderId LoadShaderFromSource(std::string_view vertex_src,
                               std::string_view fragment_src);
-
-/**
- * @brief Compiles a shader program from source files. Every shader must be
- * freed with @ref verna::FreeShader(verna::ShaderId)
- *
- * @param vertex_src    GLSL source file for the vertex shader. Must not specify
- * GLSL version
- * @param fragment_src  GLSL source file for the fragment shader. Must not
- * specify GLSL version or floating point precision
- * @return Shader identifier which will be invalid on failure
- */
-ShaderId LoadShaderFromSourceFiles(const std::filesystem::path& vertex_file,
-                                   const std::filesystem::path& fragment_file);
 
 /**
  * @brief Frees a shader, must be called for every loaded shader. Calling

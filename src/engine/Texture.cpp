@@ -6,11 +6,8 @@
 
 #if defined(VERNA_DESKTOP)
 #include <glad/gl.h>
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb/stb_image.h>
 #elif defined(VERNA_ANDROID)
 #include <GLES3/gl32.h>
-#include <android/imagedecoder.h>
 #else
 #error Platform not supported!
 #endif

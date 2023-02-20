@@ -1,13 +1,11 @@
 cmake_minimum_required(VERSION 3.24.0 FATAL_ERROR)
 
 # parse config.yaml
-file(READ "${CMAKE_CURRENT_SOURCE_DIR}/config.yaml" config)
-string(REGEX MATCH "APP_NAME: \"([A-Za-z0-9_ ]+)" _ ${config})
+file(READ "${CMAKE_CURRENT_SOURCE_DIR}/config.yaml" VERNA_CONFIG_FILE)
+string(REGEX MATCH "APP_NAME: \"([A-Za-z0-9_ ]+)" _ ${VERNA_CONFIG_FILE})
 set(VERNA_APP_NAME ${CMAKE_MATCH_1})
 if(CMAKE_MATCH_COUNT LESS_EQUAL 0)
     message(FATAL_ERROR "Invalid app name in config.yaml!")
-else()
-    message(STATUS "App name: ${VERNA_APP_NAME}")
 endif()
 string(REPLACE " " "" VIVERNA_TARGET_NAME ${VERNA_APP_NAME})
 
@@ -20,6 +18,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 message(STATUS "=============================================================================================")
+message(STATUS "App name: ${VERNA_APP_NAME}")
 message(STATUS "Building for ${CMAKE_SYSTEM_NAME}")
 message(STATUS "System version: ${CMAKE_SYSTEM_VERSION}")
 if (CMAKE_SYSTEM_NAME STREQUAL Android)
@@ -79,6 +78,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL Android)
         GLESv3
         log
         native_app_glue
+        jnigraphics
     )
 elseif(CMAKE_SYSTEM_NAME STREQUAL Linux OR CMAKE_SYSTEM_NAME STREQUAL Windows)
     target_link_libraries(${VIVERNA_TARGET_NAME} PUBLIC

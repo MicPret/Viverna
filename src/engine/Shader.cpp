@@ -1,4 +1,5 @@
 #include <viverna/graphics/Shader.hpp>
+#include <viverna/core/Assets.hpp>
 #include <viverna/core/Debug.hpp>
 #include <viverna/graphics/Renderer.hpp>
 #include <viverna/graphics/ShaderCommonCode.hpp>
@@ -112,6 +113,25 @@ void UniformInit(GLuint program) {
 }
 }  // namespace
 
+ShaderId LoadShader(std::string_view shader_name) {
+    std::filesystem::path path = std::filesystem::path("shaders") / shader_name;
+    std::filesystem::path vertex_path = path.string() + ".vert";
+    std::filesystem::path fragment_path = path.string() + ".frag";
+    auto vertex_raw = LoadRawAsset(vertex_path);
+    if (vertex_raw.empty()) {
+        VERNA_LOGE("LoadShader failed: can't load " + vertex_path.string());
+        return ShaderId();
+    }
+    auto fragment_raw = LoadRawAsset(fragment_path);
+    if (fragment_raw.empty()) {
+        VERNA_LOGE("LoadShader failed: can't load " + fragment_path.string());
+        return ShaderId();
+    }
+    std::string_view vertex_src(vertex_raw.data(), vertex_raw.size());
+    std::string_view fragment_src(fragment_raw.data(), fragment_raw.size());
+    return LoadShaderFromSource(vertex_src, fragment_src);
+}
+
 ShaderId LoadShaderFromSource(std::string_view vertex_src,
                               std::string_view fragment_src) {
     GLuint vertex, fragment, program;
@@ -135,23 +155,6 @@ ShaderId LoadShaderFromSource(std::string_view vertex_src,
 #endif
     output.id = program;
     return output;
-}
-
-ShaderId LoadShaderFromSourceFiles(const std::filesystem::path& vertex_file,
-                                   const std::filesystem::path& fragment_file) {
-    std::error_code ec;
-    if (!std::filesystem::is_regular_file(vertex_file, ec)
-        || !std::filesystem::is_regular_file(fragment_file, ec)) {
-        return ShaderId();
-    }
-    std::ifstream v_file(vertex_file);
-    std::ifstream f_file(fragment_file);
-    if (!v_file.is_open() || !f_file.is_open())
-        return ShaderId();
-    std::stringstream v_stream, f_stream;
-    v_stream << v_file.rdbuf();
-    f_stream << f_file.rdbuf();
-    return LoadShaderFromSource(v_stream.str(), f_stream.str());
 }
 
 void FreeShader(ShaderId shader_program) {
