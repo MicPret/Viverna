@@ -1,6 +1,8 @@
 #ifndef VERNA_TEXTURE_HPP
 #define VERNA_TEXTURE_HPP
 
+#include "Image.hpp"
+
 #include <cstdint>
 #include <filesystem>
 
@@ -20,13 +22,20 @@ constexpr bool operator!=(TextureId a, TextureId b) {
     return !(a == b);
 }
 
-TextureId LoadTextureFromFile(const std::filesystem::path& path);
+/**
+ * @brief Loads a texture from its asset file
+ *
+ * @param texture_path Filepath of a texture asset, excluding "assets/textures"
+ * @return Texture identifier, must be freed with FreeTexture
+ */
+TextureId LoadTexture(const std::filesystem::path& texture_path);
 TextureId LoadTextureFromColor(float red, float green, float blue, float alpha);
 TextureId LoadTextureFromColor(uint8_t red,
                                uint8_t green,
                                uint8_t blue,
                                uint8_t alpha);
-TextureId LoadTextureFromBuffer(const void* buffer, int width, int height);
+TextureId LoadTextureFromImage(ImageId img);
+TextureId LoadTextureFromImageInfo(const Image& img_info);
 void FreeTexture(TextureId texture);
 
 }  // namespace verna

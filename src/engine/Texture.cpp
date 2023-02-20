@@ -1,13 +1,16 @@
 #include <viverna/graphics/Texture.hpp>
+#include <viverna/core/Assets.hpp>
 #include <viverna/core/Debug.hpp>
+#include <viverna/graphics/Image.hpp>
 #include "ResourceTracker.hpp"
 
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb/stb_image.h>
 #if defined(VERNA_DESKTOP)
 #include <glad/gl.h>
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb/stb_image.h>
 #elif defined(VERNA_ANDROID)
 #include <GLES3/gl32.h>
+#include <android/imagedecoder.h>
 #else
 #error Platform not supported!
 #endif
@@ -21,18 +24,21 @@ static ResourceTracker<TextureId::id_type> texture_tracker("Texture");
 #endif
 
 static GLuint GenTexture(const void* pixels, int width, int height);
+static TextureId LoadTextureFromBuffer(const void* buffer,
+                                       int width,
+                                       int height);
 
-TextureId LoadTextureFromFile(const std::filesystem::path& path) {
-    constexpr int num_channels = 4;
-    int x, y, comp;
-    const std::string fullpath = path.string();
-    stbi_uc* loaded = stbi_load(fullpath.c_str(), &x, &y, &comp, num_channels);
-    if (loaded == nullptr) {
-        VERNA_LOGE("LoadTextureFromFile failed: " + fullpath);
-        return TextureId();  // invalid texture
+TextureId LoadTexture(const std::filesystem::path& texture_path) {
+    std::filesystem::path fullpath = "textures" / texture_path;
+    ImageId img = LoadImage(fullpath);
+    if (!img.IsValid()) {
+        VERNA_LOGE("LoadImage failed: " + fullpath.string());
+        return TextureId();
     }
-    TextureId output = LoadTextureFromBuffer(loaded, x, y);
-    stbi_image_free(loaded);
+    auto output = LoadTextureFromImage(img);
+    FreeImage(img);
+    VERNA_LOGE_IF(!output.IsValid(),
+                  "LoadTextureFromImage failed: " + fullpath.string());
     return output;
 }
 
@@ -66,16 +72,13 @@ TextureId LoadTextureFromColor(uint8_t red,
     return LoadTextureFromBuffer(data.data(), width, height);
 }
 
-TextureId LoadTextureFromBuffer(const void* buffer, int width, int height) {
-    if (width <= 0 || height <= 0) {
-        VERNA_LOGE("LoadTextureFromBuffer failed: width or height <= 0");
-        return TextureId();
-    }
-    auto texture = GenTexture(buffer, width, height);
-#ifndef NDEBUG
-    texture_tracker.Push(texture);
-#endif
-    return TextureId(texture);
+TextureId LoadTextureFromImage(ImageId img) {
+    return LoadTextureFromImageInfo(GetImageInfo(img));
+}
+
+TextureId LoadTextureFromImageInfo(const Image& img_info) {
+    return LoadTextureFromBuffer(img_info.pixels, img_info.width,
+                                 img_info.height);
 }
 
 void FreeTexture(TextureId texture) {
@@ -85,6 +88,20 @@ void FreeTexture(TextureId texture) {
 #ifndef NDEBUG
     texture_tracker.Remove(texture.id);
 #endif
+}
+
+static TextureId LoadTextureFromBuffer(const void* buffer,
+                                       int width,
+                                       int height) {
+    if (width <= 0 || height <= 0 || buffer == nullptr) {
+        VERNA_LOGE("LoadTextureFromBuffer failed!");
+        return TextureId();
+    }
+    auto texture = GenTexture(buffer, width, height);
+#ifndef NDEBUG
+    texture_tracker.Push(texture);
+#endif
+    return TextureId(texture);
 }
 
 static GLuint GenTexture(const void* pixels, int width, int height) {
