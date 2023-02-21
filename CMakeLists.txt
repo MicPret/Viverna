@@ -46,6 +46,10 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL Linux OR CMAKE_SYSTEM_NAME STREQUAL Windows)
     else()
         target_compile_definitions(${VIVERNA_TARGET_NAME} PUBLIC VERNA_WINDOWS=1)
     endif()
+    file(COPY
+            "${CMAKE_CURRENT_SOURCE_DIR}/assets"
+        DESTINATION
+            "${CMAKE_BINARY_DIR}")
 endif()
 target_compile_options(${VIVERNA_TARGET_NAME} PRIVATE "-Wall;-fno-exceptions;-fno-rtti")
 set_target_properties(${VIVERNA_TARGET_NAME} PROPERTIES
