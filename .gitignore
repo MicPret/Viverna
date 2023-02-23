@@ -1,2 +1,4 @@
 .vscode
 build
+.cxx
+android/app/src/main/assets
