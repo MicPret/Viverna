@@ -33,7 +33,7 @@ struct Vec3f {
     }
     constexpr float IsUnitVector() const {
         constexpr float epsilon = 2e-6;
-        return maths::AreAlmostEqual(SquaredMagnitude(), 1.0f, epsilon);
+        return maths::AreAlmostEqual(Magnitude(), 1.0f, epsilon);
     }
     constexpr Vec3f Normalized() const;
     constexpr Vec2f Xy() const { return Vec2f(x, y); }

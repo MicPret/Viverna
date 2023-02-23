@@ -42,7 +42,7 @@ Vec3f Camera::ToWorldCoords(unsigned screen_x,
     Mat4f i_pv = proj_view.Inverted();
     Vec4f result = i_pv * ndc_origin;
     float inverse_w = 1.0f / result.w;
-    Vec3f origin = inverse_w * Vec3f(result.x, result.y, result.z);
+    Vec3f origin = inverse_w * result.Xyz();
     Vec3f ray_dir = (origin - position).Normalized();
     Vec3f output = origin + (camera_dist * ray_dir);
     return output;
