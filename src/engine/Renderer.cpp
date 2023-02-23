@@ -210,7 +210,11 @@ void InitializeRenderer(VivernaState& state) {
     GenBuffers();
     LoadWireframeShader();
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClearDepthf(0.0f);
     glEnable(GL_CULL_FACE);
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_GEQUAL);
+    glDepthMask(GL_TRUE);
     glCullFace(GL_BACK);
 
     Camera::GetActive().Reset();

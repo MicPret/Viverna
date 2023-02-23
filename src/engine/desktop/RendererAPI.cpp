@@ -40,6 +40,8 @@ void InitializeRendererAPI(VivernaState& state) {
         return;
     }
 #ifndef NDEBUG
+    glEnable(GL_DEBUG_OUTPUT);
+    glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
     glDebugMessageCallback(OpenGLDebugOutputFunc, &state);
 #endif
 

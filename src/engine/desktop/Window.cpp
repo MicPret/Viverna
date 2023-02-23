@@ -27,6 +27,7 @@ static void GlfwWindowHints(const GLFWvidmode* vidmode) {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
+    glfwWindowHint(GLFW_DEPTH_BITS, 24); // default value
 #ifndef NDEBUG
     glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
 #else
@@ -35,8 +36,10 @@ static void GlfwWindowHints(const GLFWvidmode* vidmode) {
 }
 
 void InitializeWindow(VivernaState& state) {
-    if (state.native_window != nullptr)
+    if (state.native_window != nullptr) {
+        VERNA_LOGI("InitializeWindow called on initialized window! (NOP)");
         return;
+    }
 
 #ifndef NDEBUG
     // TODO error -> error_name
@@ -95,6 +98,7 @@ void TerminateWindow(VivernaState& state) {
     width = 0;
     height = 0;
     glfwTerminate();
+    // TODO glfwSetErrorCallback(nullptr);
     VERNA_LOGI("Window terminated!");
 }
 
