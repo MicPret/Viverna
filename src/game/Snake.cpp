@@ -50,7 +50,7 @@ void Snake::Render(verna::ShaderId shader) {
 }
 
 void Snake::MoveTowards(float dt, const verna::Vec3f& target) {
-    auto& head = transforms[0];
+    auto& head = transforms.front();
     auto forward = Direction();
     float interp = verna::maths::Min(dt * rot_speed, 1.0f);
     auto direction =
@@ -109,12 +109,12 @@ verna::Vec3f Snake::HeadPosition() const {
 }
 
 bool Snake::Hits(const verna::BoundingSphere& sphere) const {
-    return verna::SphereCollide(colliders[0], sphere);
+    return verna::SphereCollide(colliders.front(), sphere);
 }
 
 bool Snake::Hits(BufferView<verna::BoundingBox> boxes) const {
     verna::BoundingBox box;
-    box.Recalculate(mesh, transforms[0]);
+    box.Recalculate(mesh, transforms.front());
     for (const auto& b : boxes)
         if (verna::BoxCollide(b, box))
             return true;
