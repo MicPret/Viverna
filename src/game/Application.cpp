@@ -27,6 +27,7 @@ void OnAppResume(VivernaState& app_state) {
     walls.Setup();
     snake.Setup();
     fruit.Setup();
+    RecalculateFruit();
 }
 
 void OnAppPause(VivernaState& app_state) {
