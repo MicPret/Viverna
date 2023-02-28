@@ -54,19 +54,7 @@ std::vector<Mesh::index_t> dbg_indices;
 #endif
 
 void LoadWireframeShader() {
-    constexpr std::string_view vertex =
-        "layout(location = 0) in vec3 in_position;\n"
-        "void main() {\n"
-        "  SetMeshIdx();"
-        "  gl_Position = camera.pv_matrix * vec4(in_position, 1.0);\n"
-        "}";
-    constexpr std::string_view fragment =
-        "out vec4 out_color;\n"
-        "void main() {\n"
-        "  out_color = vec4(0.6, 1.0, 0.2, 1.0);\n"
-        "}";
-
-    wireframe_shader = LoadShaderFromSource(vertex, fragment);
+    wireframe_shader = LoadShader("debug");
 }
 
 void GenBuffers() {
