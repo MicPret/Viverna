@@ -64,13 +64,7 @@ static std::string ShaderCommonCode(GLenum shader_type) {
         VERNA_LOGE("ShaderCommonCode failed: can't load " + path.string());
         return "";
     }
-    auto output = std::string(common_code_raw.data(), common_code_raw.size());
-    static bool printed = false;
-    if (!printed) {
-        VERNA_LOGI(output);
-        printed = true;
-    }
-    return output;
+    return std::string(common_code_raw.data(), common_code_raw.size());
 }
 
 static bool CompileShaderSources(const std::vector<std::string_view>& sources,
@@ -86,7 +80,13 @@ static bool CompileShaderSources(const std::vector<std::string_view>& sources,
         std::array<GLint, num> gl_sources_len;
         gl_sources[0] = ShaderPreface() + ShaderCommonCode(shader_types[i]);
         gl_sources[1] = std::string(sources[i]);
-
+#ifdef VERNA_PRINT_SHADER_COMMON_CODE
+        static bool printed = false;
+        if (!printed) {
+            VERNA_LOGI(gl_sources[0]);
+            printed = true;
+        }
+#endif
         for (size_t j = 0; j < num; j++) {
             gl_sources_ptr[j] = gl_sources[j].data();
             gl_sources_len[j] = gl_sources[j].length();
