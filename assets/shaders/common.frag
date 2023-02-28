@@ -7,6 +7,7 @@ uniform int DRAW_ID;
 precision mediump float;
 precision highp int;
 #endif
+uniform sampler2D _textures[MAX_TEXTURES];
 
 struct MeshData {
     int texture_idx0;
