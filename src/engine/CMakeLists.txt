@@ -25,7 +25,6 @@ target_sources(${PROJECT_NAME} PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/Mesh.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Renderer.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Shader.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/ShaderCommonCode.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Mat4f.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/MathUtils.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Transform.cpp"
