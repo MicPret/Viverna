@@ -4,14 +4,19 @@
 #include "VivernaState.hpp"
 
 namespace verna {
-void InitializeAll(VivernaState& state);
-void TerminateAll(VivernaState& state);
+/**
+ * @brief Initializes all subsystems (Window, Input, Renderer, ...)
+ *
+ * @param state Runtime information
+ */
+void InitializeViverna(VivernaState& state);
 
-struct VivernaInitializerRAII {
-    VivernaState app_state;
-    VivernaInitializerRAII() { InitializeAll(app_state); }
-    ~VivernaInitializerRAII() { TerminateAll(app_state); }
-};
+/**
+ * @brief Terminates all subsystems (Window, Input, Renderer, ...)
+ *
+ * @param state Runtime information
+ */
+void TerminateViverna(VivernaState& state);
 }  // namespace verna
 
 #endif

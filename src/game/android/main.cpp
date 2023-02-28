@@ -13,7 +13,7 @@
 #include <viverna/core/Debug.hpp>
 #include <viverna/core/VivernaInitializer.hpp>
 #include <game/core/Application.hpp>
-//#include <game/core/Assets.hpp>
+// #include <game/core/Assets.hpp>
 
 static void HandleAppCmd(struct android_app* app, int32_t cmd);
 static void MainLoop(verna::VivernaState& verna_state);
@@ -68,7 +68,7 @@ static void HandleAppCmd(struct android_app* app, int32_t cmd) {
             VERNA_ASSERT(app->window != nullptr);
             verna_state.native_app = app;
             verna_state.native_window = app->window;
-            verna::InitializeAll(verna_state);
+            verna::InitializeViverna(verna_state);
             verna::OnAppResume(verna_state);
             break;
         case APP_CMD_WINDOW_REDRAW_NEEDED:
@@ -76,7 +76,7 @@ static void HandleAppCmd(struct android_app* app, int32_t cmd) {
         case APP_CMD_TERM_WINDOW:
             VERNA_LOGI("APP_CMD_TERM_WINDOW");
             verna::OnAppPause(verna_state);
-            verna::TerminateAll(verna_state);
+            verna::TerminateViverna(verna_state);
             break;
         case APP_CMD_RESUME:
             VERNA_LOGI("APP_CMD_RESUME");

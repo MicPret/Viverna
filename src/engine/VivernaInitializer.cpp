@@ -7,75 +7,53 @@
 #include <viverna/graphics/Window.hpp>
 
 namespace verna {
+
+static std::array initializers = {InitializeWindow, InitializeAssets,
+                                  InitializeRendererAPI, InitializeRenderer,
+                                  InitializeInput};
+static std::array terminators = {TerminateWindow, TerminateAssets,
+                                 TerminateRendererAPI, TerminateRenderer,
+                                 TerminateInput};
+
 static bool GetError(const VivernaState& state) {
     return state.GetFlag(VivernaState::ERROR_FLAG);
 }
 
-void InitializeAll(VivernaState& state) {
+static void Terminate(int level, VivernaState& state) {
+    state.SetFlag(VivernaState::ERROR_FLAG, false);
+    for (int i = level; i >= 0; i--) {
+        terminators[i](state);
+        if (GetError(state))
+            return;
+    }
+}
+
+void InitializeViverna(VivernaState& state) {
     if (GetError(state)) {
         VERNA_LOGE("Could not initialize the engine");
         return;
     }
 
-    InitializeWindow(state);
-    if (GetError(state))
-        return;
-
-    InitializeAssets(state);
-    if (GetError(state)) {
-        TerminateWindow(state);
-        return;
-    }
-
-    InitializeRendererAPI(state);
-    if (GetError(state)) {
-        TerminateAssets(state);
-        TerminateWindow(state);
-        return;
-    }
-
-    InitializeRenderer(state);
-    if (GetError(state)) {
-        TerminateRendererAPI(state);
-        TerminateAssets(state);
-        TerminateWindow(state);
-        return;
-    }
-
-    InitializeInput(state);
-    if (GetError(state)) {
-        TerminateRenderer(state);
-        TerminateRendererAPI(state);
-        TerminateAssets(state);
-        TerminateWindow(state);
-        return;
+    constexpr int num_systems = static_cast<int>(initializers.size());
+    for (int i = 0; i < num_systems; i++) {
+        initializers[i](state);
+        if (GetError(state)) {
+            Terminate(i - 1, state);
+            return;
+        }
     }
 
     state.SetFlag(VivernaState::RUNNING_FLAG, true);
     state.epoch = Clock::now();
 }
 
-void TerminateAll(VivernaState& state) {
+void TerminateViverna(VivernaState& state) {
     if (GetError(state)) {
         VERNA_LOGE("An error was raised before terminating the engine");
         state.SetFlag(VivernaState::ERROR_FLAG, false);
     }
+    Terminate(terminators.size() - 1, state);
 
-    TerminateAssets(state);
-
-    TerminateInput(state);
-
-    TerminateRenderer(state);
-    if (GetError(state))
-        return;
-
-    TerminateRendererAPI(state);
-    if (GetError(state))
-        return;
-
-    TerminateWindow(state);
-    if (GetError(state))
-        return;
     state.SetFlag(VivernaState::RUNNING_FLAG, false);
 }
 }  // namespace verna

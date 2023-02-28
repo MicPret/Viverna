@@ -4,15 +4,15 @@
 static void MainLoop(verna::VivernaState& verna_state);
 
 int main() {
-    verna::VivernaInitializerRAII initializer;
-    auto& app_state = initializer.app_state;
-    verna::OnAppResume(app_state);
+    verna::VivernaState app_state;
+    verna::InitializeViverna(app_state);
 
+    verna::OnAppResume(app_state);
     while (app_state.GetFlag(verna::VivernaState::RUNNING_FLAG))
         MainLoop(app_state);
-
     verna::OnAppPause(app_state);
 
+    verna::TerminateViverna(app_state);
     return 0;
 }
 
