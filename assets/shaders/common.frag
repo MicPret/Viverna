@@ -45,3 +45,5 @@ layout(std140) uniform DrawData {
 #define MODEL_MATRIX draw_data[DRAW_ID].model
 
 in float MESH_IDX;
+in vec2 v_tex_coords;
+out vec4 f_color;

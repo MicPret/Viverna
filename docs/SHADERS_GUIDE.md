@@ -21,15 +21,22 @@ As of now, shaders are written in `.vert` and `.frag` files inside `assets/shade
 
 - **Don't** specify *GLSL version* or *float precision*
 - `SetMeshIdx()`: all vertex shaders should call this before anything else
-- You can access
+- You may access
+    - in/out vertex variables
+        - in_position   _(input vec3)_
+        - in_tex_coords _(input vec2)_
+        - v_tex_coords  _(output vec2)_
+    - in/out fragment variables
+        - v_tex_coords  _(input vec2)_
+        - f_color       _(output vec4)_
     - Camera properties
         - `camera.projection_matrix`
         - `camera.view_matrix`
-        - `camera.pv_matrix` (projection * view)
+        - `camera.pv_matrix` _(projection * view)_
         - WIP
     - Transform matrix
         - `MODEL_MATRIX`
     - Textures
-        - `TEXTURE0`, `TEXTURE1`, ... defined by `material.textures[0]`, `material.textures[1]`, ...
+        - `TEXTURE0`, `TEXTURE1`, ... _defined by `material.textures[0]`, `material.textures[1]`, ..._
     - WIP
 - WIP

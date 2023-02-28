@@ -43,7 +43,11 @@ layout(std140) uniform DrawData {
 #define TEXTURE7 _textures[draw_data[DRAW_ID].texture_idx7]
 #define MODEL_MATRIX draw_data[DRAW_ID].model
 
+layout(location = 0) in vec3 in_position;
+layout(location = 1) in vec2 in_tex_coords;
+
 out float MESH_IDX;
+out vec2 v_tex_coords;
 
 void SetMeshIdx() {
     MESH_IDX = float(DRAW_ID);
