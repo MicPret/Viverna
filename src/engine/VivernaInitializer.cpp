@@ -21,8 +21,15 @@ void InitializeAll(VivernaState& state) {
     if (GetError(state))
         return;
 
+    InitializeAssets(state);
+    if (GetError(state)) {
+        TerminateWindow(state);
+        return;
+    }
+
     InitializeRendererAPI(state);
     if (GetError(state)) {
+        TerminateAssets(state);
         TerminateWindow(state);
         return;
     }
@@ -30,6 +37,7 @@ void InitializeAll(VivernaState& state) {
     InitializeRenderer(state);
     if (GetError(state)) {
         TerminateRendererAPI(state);
+        TerminateAssets(state);
         TerminateWindow(state);
         return;
     }
@@ -38,15 +46,7 @@ void InitializeAll(VivernaState& state) {
     if (GetError(state)) {
         TerminateRenderer(state);
         TerminateRendererAPI(state);
-        TerminateWindow(state);
-        return;
-    }
-
-    InitializeAssets(state);
-    if (GetError(state)) {
-        TerminateInput(state);
-        TerminateRenderer(state);
-        TerminateRendererAPI(state);
+        TerminateAssets(state);
         TerminateWindow(state);
         return;
     }
