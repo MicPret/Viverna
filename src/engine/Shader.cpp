@@ -34,16 +34,14 @@ static std::string ShaderPreface() {
 #if defined(VERNA_DESKTOP)
         "#version 460 core\n"
         "#define VERNA_DESKTOP 1\n\n"
-        "#define MAX_MESHES "
-        + max_meshes + "\n#define MAX_TEXTURES " + max_textures + "\n\n";
 #elif defined(VERNA_ANDROID)
         "#version 320 es\n"
         "#define VERNA_ANDROID 1\n\n"
-        "#define MAX_MESHES "
-        + max_meshes + "\n#define MAX_TEXTURES " + max_textures + "\n\n";
 #else
 #error Platform not supported!
 #endif
+        "#define MAX_MESHES "
+        + max_meshes + "\n#define MAX_TEXTURES " + max_textures + "\n\n";
 }
 
 static std::string ShaderCommonCode(GLenum shader_type) {
