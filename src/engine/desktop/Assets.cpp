@@ -56,7 +56,7 @@ std::vector<char> LoadRawAsset(const std::filesystem::path& path) {
     auto fullpath = assets_folder_path / path;
     std::ifstream file(fullpath, std::ios::binary);
     if (!file.is_open()) {
-        VERNA_LOGE("LoadAsset() failed: can't find " + fullpath.string());
+        VERNA_LOGE("LoadRawAsset failed: can't find " + fullpath.string());
         return {};
     }
     file.seekg(0, file.end);
@@ -65,7 +65,7 @@ std::vector<char> LoadRawAsset(const std::filesystem::path& path) {
     std::vector<char> output(size);
     file.read(output.data(), size);
     if (file.fail()) {
-        VERNA_LOGE("LoadRawAsset() failed: read failure for "
+        VERNA_LOGE("LoadRawAsset failed: read failure for "
                    + fullpath.string());
         output.clear();
     }
