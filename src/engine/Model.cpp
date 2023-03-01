@@ -12,7 +12,7 @@ static constexpr MeshId AsMeshId(ModelId model_id, size_t index) {
     return (model_id << 32) | index;
 }
 static constexpr ModelId GetModelId(MeshId mesh_id) {
-    return mesh_id & 0xFFFFFFFF00000000;
+    return mesh_id >> 32;
 }
 
 Model::Model() {
