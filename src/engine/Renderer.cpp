@@ -190,8 +190,14 @@ void InitializeRenderer(VivernaState& state) {
         return;
     if (!state.GetFlag(VivernaState::RENDERER_API_INITIALIZED_FLAG)) {
         RendererError(state,
-                      "InitializeRendererAPI() should be called before "
-                      "InitializeRenderer()!");
+                      "InitializeRendererAPI should be called before "
+                      "InitializeRenderer!");
+        return;
+    }
+    if (!state.GetFlag(VivernaState::ASSETS_INITIALIZED_FLAG)) {
+        RendererError(state,
+                      "InitializeAssets should be called before "
+                      "InitializeRenderer!");
         return;
     }
 
