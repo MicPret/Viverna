@@ -48,4 +48,5 @@ layout(std140) uniform DrawData {
 
 in float MESH_IDX;
 in vec2 v_tex_coords;
+in vec3 v_normal;
 out vec4 f_color;

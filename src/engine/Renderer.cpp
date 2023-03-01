@@ -86,6 +86,9 @@ void GenBuffers() {
         1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex),
         reinterpret_cast<void*>(offsetof(Vertex, texture_coords)));
     glEnableVertexAttribArray(1);
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+                          reinterpret_cast<void*>(offsetof(Vertex, normal)));
+    glEnableVertexAttribArray(2);
 }
 
 void DeleteBuffers() {
@@ -269,6 +272,28 @@ void Render(const Mesh& mesh,
     batch.indices.insert(batch.indices.end(), mesh.indices.begin(),
                          mesh.indices.end());
     batch.num_meshes++;
+}
+
+void Render(const Mesh& mesh,
+            const Material& material,
+            const Transform& transform,
+            ShaderId shader_id) {
+    Render(mesh, material, transform.GetMatrix(), shader_id);
+}
+
+void Render(const Model& model,
+            const Mat4f& transform_matrix,
+            ShaderId shader_id) {
+    const auto& meshes = model.Meshes();
+    const auto& materials = model.Materials();
+    for (size_t i = 0; i < meshes.size(); i++)
+        Render(meshes[i], materials[i], transform_matrix, shader_id);
+}
+
+void Render(const Model& model,
+            const Transform& transform,
+            ShaderId shader_id) {
+    Render(model, transform.GetMatrix(), shader_id);
 }
 
 #ifndef NDEBUG

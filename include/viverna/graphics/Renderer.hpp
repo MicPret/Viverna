@@ -3,9 +3,11 @@
 
 #include <viverna/core/BoundingBox.hpp>
 #include <viverna/core/BoundingSphere.hpp>
+#include <viverna/core/Transform.hpp>
 #include <viverna/core/VivernaState.hpp>
 #include <viverna/maths/Mat4f.hpp>
 #include "Mesh.hpp"
+#include "Model.hpp"
 #include "Shader.hpp"
 #include "Material.hpp"
 
@@ -40,6 +42,16 @@ void Render(const Mesh& mesh,
             const Material& material,
             const Mat4f& transform_matrix,
             ShaderId shader_id);
+
+void Render(const Mesh& mesh,
+            const Material& material,
+            const Transform& transform,
+            ShaderId shader_id);
+
+void Render(const Model& model,
+            const Mat4f& transform_matrix,
+            ShaderId shader_id);
+void Render(const Model& model, const Transform& transform, ShaderId shader_id);
 
 void RenderDebug(const BoundingBox& box);
 void RenderDebug(const BoundingSphere& sphere);
