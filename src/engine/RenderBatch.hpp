@@ -84,6 +84,8 @@ inline bool RenderBatch::TryAddUniformData(const Material& material,
     }
     mesh_data.material.parameters = material.parameters;
     mesh_data.model_matrix = transform;
+    mesh_data.transpose_inverse_model_matrix =
+        transform.Inverted().Transposed();
     return true;
 }
 
