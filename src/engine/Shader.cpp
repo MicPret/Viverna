@@ -110,8 +110,22 @@ static bool CompileShaderSources(const std::vector<std::string_view>& sources,
         if (success == GL_TRUE)
             continue;
         glGetShaderInfoLog(output[i], log.size(), &loglen, log.data());
-        VERNA_LOGE("Shader compilation failed: "
+#ifndef NDEBUG
+        std::string shader_type_str;
+        switch (shader_types[i]) {
+            case GL_VERTEX_SHADER:
+                shader_type_str = "Vertex";
+                break;
+            case GL_FRAGMENT_SHADER:
+                shader_type_str = "Fragment";
+                break;
+            default:
+                shader_type_str = "Unsupported";
+                break;
+        }
+        VERNA_LOGE(shader_type_str + " shader compilation failed: "
                    + std::string(log.data(), loglen));
+#endif
         return false;
     }
     return true;
