@@ -31,10 +31,12 @@ void Snake::Setup() {
     colliders[1].Recalculate(mesh, transforms[1]);
 
     material.textures[0] = verna::LoadTexture("snake.png");
+    material.textures[1] = verna::LoadTextureFromColor(0.0f, 0.0f, 0.0f, 1.0f);
 }
 
 void Snake::Dispose() {
     verna::FreeTexture(material.textures[0]);
+    verna::FreeTexture(material.textures[1]);
     transforms.clear();
     colliders.clear();
 }

@@ -1,7 +1,7 @@
 #include <game/core/Application.hpp>
 
 #include <viverna/core/Input.hpp>
-#include <viverna/graphics/Camera.hpp>
+#include <viverna/core/Scene.hpp>
 #include <viverna/graphics/Renderer.hpp>
 #include <viverna/graphics/Shader.hpp>
 
@@ -15,6 +15,7 @@ static constexpr float distance = 20.0f;
 static snake::Snake snake(distance);
 static snake::Fruit fruit(distance);
 static snake::Walls walls(distance);
+static Scene scene;
 static ShaderId shader;
 static KeyListener escape(Key::Escape);
 static MouseListener mouse;
@@ -23,11 +24,25 @@ static void Reset();
 static void RecalculateFruit();
 
 void OnAppResume(VivernaState& app_state) {
-    shader = LoadShader("unlit");
+    scene.Setup();
+    Scene::SetActive(scene);
+
+    shader = LoadShader("blinn-phong");
     walls.Setup();
     snake.Setup();
     fruit.Setup();
     RecalculateFruit();
+
+    auto& lights = scene.PointLights();
+    PointLight pl;
+    pl.diffuse = Vec3f(0.9f, 0.8f, 1.0f);
+    pl.specular = Vec3f(1.0f, 1.0f, 1.0f);
+    // pl.ambient = Vec3f(0.001f, 0.001f, 0.001f);
+    pl.ambient = Vec3f();
+    for (const auto& c : walls.Colliders()) {
+        pl.position = c.Center() - (0.6f * c.Depth());
+        lights.push_back(pl);
+    }
 }
 
 void OnAppPause(VivernaState& app_state) {
@@ -42,11 +57,11 @@ void OnAppUpdate(VivernaState& app_state, DeltaTime<float, Seconds> dt) {
         app_state.SetFlag(VivernaState::RUNNING_FLAG, false);
         return;
     }
+    const auto& camera = scene.GetCamera();
     unsigned int mouse_x, mouse_y;
-    Vec3f target =
-        mouse.Pressed(mouse_x, mouse_y)
-            ? Camera::GetActive().ToWorldCoords(mouse_x, mouse_y, distance)
-            : snake.HeadPosition() + snake.Direction();
+    Vec3f target = mouse.Pressed(mouse_x, mouse_y)
+                       ? camera.ToWorldCoords(mouse_x, mouse_y, distance)
+                       : snake.HeadPosition() + snake.Direction();
     target.z = distance;
     snake.MoveTowards(dt.count(), target);
     snake::BufferView<BoundingBox> wall_colliders(walls.Colliders().data(),
@@ -72,7 +87,7 @@ static void RenderScene() {
 }
 
 static void Reset() {
-    Camera::GetActive().Reset();
+    scene.GetCamera().Reset();
     snake.Dispose();
     snake.Setup();
     RecalculateFruit();
@@ -83,7 +98,7 @@ static void RecalculateFruit() {
                                                  snake.Colliders().size());
     snake::BufferView<BoundingBox> walls_cols(walls.Colliders().data(),
                                               walls.Colliders().size());
-    Vec3f pos = Camera::GetActive().ToWorldCoords(0, 0, distance);
+    Vec3f pos = scene.GetCamera().ToWorldCoords(0, 0, distance);
     Vec2f bounds_min(pos.x, -pos.y);
     Vec2f bounds_max(-pos.x, pos.y);
     fruit.Recalculate(snake_cols, walls_cols, bounds_min, bounds_max);
