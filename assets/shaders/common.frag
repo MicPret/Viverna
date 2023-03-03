@@ -3,9 +3,9 @@
 #define DRAW_ID int(MESH_IDX)
 #endif
 #ifdef VERNA_ANDROID
-uniform int DRAW_ID;
 precision mediump float;
 precision highp int;
+uniform int DRAW_ID;
 #endif
 
 in float MESH_IDX;
