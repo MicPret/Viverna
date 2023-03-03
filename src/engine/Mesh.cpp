@@ -3,6 +3,38 @@
 
 namespace verna {
 
+void Mesh::AddVertices(std::initializer_list<Vertex> vertices_) {
+    vertices.insert(vertices.end(), vertices_);
+}
+
+void Mesh::AddTriangle(index_t a, index_t b, index_t c) {
+    indices.insert(indices.end(), {a, b, c});
+}
+
+void Mesh::RecalculateNormals() {
+    if (vertices.size() < 3 || indices.size() < 3) {
+        VERNA_LOGE("RecalculateNormals failed: there is no triangle!");
+        return;
+    }
+
+    // TODO test!!!
+    for (auto& v : vertices)
+        v.normal = Vec3f();
+    for (size_t i = 0; i < indices.size(); i += 3) {
+        auto a = indices[i];
+        auto b = indices[i + 1];
+        auto c = indices[i + 2];
+        Vec3f v1 = vertices[a].position - vertices[b].position;
+        Vec3f v2 = vertices[c].position - vertices[b].position;
+        Vec3f normal = v1.Cross(v2).Normalized();
+        vertices[a].normal += normal;
+        vertices[b].normal += normal;
+        vertices[c].normal += normal;
+    }
+    for (auto& v : vertices)
+        v.normal = v.normal.Normalized();
+}
+
 static Mesh LoadPrimitiveCube();
 static Mesh LoadPrimitivePyramid();
 static Mesh LoadPrimitiveSphere();
@@ -51,6 +83,7 @@ static Mesh LoadPrimitiveCube() {
         2, 4, 3, 2, 7, 4,  // top
         5, 1, 0, 5, 6, 1   // bottom
     };
+    output.RecalculateNormals();
     return output;
 }
 
@@ -76,6 +109,7 @@ static Mesh LoadPrimitivePyramid() {
         4, 3, 2,           // back
         1, 4, 2            // right
     };
+    output.RecalculateNormals();
     return output;
 }
 
@@ -126,6 +160,7 @@ static Mesh LoadPrimitiveSphere() {
                                   {j0, j1, j2, j2, j3, j0});
         }
     }
+    sphere.RecalculateNormals();
     return sphere;
 }
 }  // namespace verna

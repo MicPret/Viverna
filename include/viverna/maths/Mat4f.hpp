@@ -13,7 +13,7 @@ struct Mat4f {
     std::array<float, 16> raw;
 
     constexpr Mat4f() : raw{} {}
-    constexpr Mat4f(std::array<float, 16> matrix) : raw(matrix) {}
+    constexpr Mat4f(const std::array<float, 16>& matrix) : raw(matrix) {}
     constexpr Mat4f(float diagonal) :
         raw{
             diagonal, 0.0f,     0.0f,     0.0f,     // first column
@@ -172,7 +172,7 @@ constexpr Mat4f Mat4f::Inverted() const {
 
 constexpr Mat4f Mat4f::Transposed() const {
     return Mat4f({
-        raw[0], raw[4], raw[8], raw[12],   // first
+        raw[0], raw[4], raw[8], raw[12],   // first column
         raw[1], raw[5], raw[9], raw[13],   // second
         raw[2], raw[6], raw[10], raw[14],  // third
         raw[3], raw[7], raw[11], raw[15],  // fourth

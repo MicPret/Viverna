@@ -2,6 +2,7 @@
 #define VERNA_CAMERA_HPP
 
 #include <viverna/maths/Mat4f.hpp>
+#include <viverna/maths/MathUtils.hpp>
 #include <viverna/maths/Quaternion.hpp>
 
 namespace verna {
@@ -13,6 +14,11 @@ struct Camera {
     float near_plane;
     float far_plane;
 
+    constexpr Camera() :
+        fovy(maths::Radians(45.0f)),
+        aspect_ratio(16.0f / 9.0f),
+        near_plane(0.15),
+        far_plane(1000.0f) {}
     constexpr Camera(float fovy_,
                      float aspect_ratio_,
                      float near_plane_,
@@ -39,9 +45,6 @@ struct Camera {
         rotation = Quaternion();
         position = Vec3f();
     }
-
-    static Camera& GetActive();
-    static void SetActive(Camera& camera);
 };
 }  // namespace verna
 

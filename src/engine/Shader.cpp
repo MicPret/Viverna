@@ -30,6 +30,10 @@ static ResourceTracker<ShaderId::id_type> shader_tracker("Shader");
 static std::string ShaderPreface() {
     std::string max_meshes = std::to_string(gpu::DrawData::MAX_MESHES);
     std::string max_textures = std::to_string(RendererInfo::MaxTextureUnits());
+    std::string max_point_lights =
+        std::to_string(gpu::FrameData::MAX_POINT_LIGHTS);
+    auto common_glsl_raw = LoadRawAsset("shaders/common.glsl");
+    std::string common_glsl(common_glsl_raw.data(), common_glsl_raw.size());
     return
 #if defined(VERNA_DESKTOP)
         "#version 460 core\n"
@@ -41,7 +45,9 @@ static std::string ShaderPreface() {
 #error Platform not supported!
 #endif
         "#define MAX_MESHES "
-        + max_meshes + "\n#define MAX_TEXTURES " + max_textures + "\n\n";
+        + max_meshes + "\n#define MAX_TEXTURES " + max_textures
+        + "\n#define MAX_POINT_LIGHTS " + max_point_lights + "\n\n"
+        + common_glsl + "\n\n";
 }
 
 static std::string ShaderCommonCode(GLenum shader_type) {
@@ -74,16 +80,17 @@ static bool CompileShaderSources(const std::vector<std::string_view>& sources,
     output.resize(size, 0);
     std::vector<std::string> common_sources(size);
     for (size_t i = 0; i < size; i++) {
-        constexpr size_t num = 2;
+        constexpr size_t num = 3;
         std::array<std::string, num> gl_sources;
         std::array<const char*, num> gl_sources_ptr;
         std::array<GLint, num> gl_sources_len;
-        gl_sources[0] = ShaderPreface() + ShaderCommonCode(shader_types[i]);
-        gl_sources[1] = std::string(sources[i]);
+        gl_sources[0] = ShaderPreface();
+        gl_sources[1] = ShaderCommonCode(shader_types[i]);
+        gl_sources[2] = std::string(sources[i]);
 #ifdef VERNA_PRINT_SHADER_COMMON_CODE
         static bool printed = false;
         if (!printed) {
-            VERNA_LOGI(gl_sources[0]);
+            VERNA_LOGI(gl_sources[0] + gl_sources[1]);
             printed = true;
         }
 #endif

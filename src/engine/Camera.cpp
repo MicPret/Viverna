@@ -4,23 +4,6 @@
 
 namespace verna {
 
-static Camera* active_camera;
-
-Camera& Camera::GetActive() {
-    static Camera c(
-        maths::Radians(45.0f),
-        static_cast<float>(WindowWidth()) / static_cast<float>(WindowHeight()),
-        0.15f, 1000.0f);
-
-    if (active_camera == nullptr)
-        active_camera = &c;
-    return *active_camera;
-}
-
-void Camera::SetActive(Camera& camera) {
-    active_camera = &camera;
-}
-
 Mat4f Camera::GetProjectionMatrix() const {
     return Mat4f::Perspective(fovy, aspect_ratio, near_plane, far_plane);
 }

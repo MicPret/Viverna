@@ -17,6 +17,8 @@ struct Vec4f {
     constexpr Vec4f() : x(0.0f), y(0.0f), z(0.0f), w(0.0f) {}
     constexpr Vec4f(float x_, float y_, float z_, float w_) :
         x(x_), y(y_), z(z_), w(w_) {}
+    constexpr Vec4f(const Vec3f& xyz, float w_) :
+        x(xyz.x), y(xyz.y), z(xyz.z), w(w_) {}
     /**
      * @brief Initializes every component with the same value n
      *
