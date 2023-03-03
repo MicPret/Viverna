@@ -1,5 +1,6 @@
 #include <game/core/Walls.hpp>
 
+#include <viverna/core/Scene.hpp>
 #include <viverna/graphics/Camera.hpp>
 #include <viverna/graphics/Renderer.hpp>
 
@@ -11,8 +12,9 @@ Walls::Walls(float distance) {
 
 void Walls::Setup() {
     float distance = transforms[0].position.z;
+    const auto& active_scene = verna::Scene::GetActive();
     verna::Vec3f upper_left =
-        verna::Camera::GetActive().ToWorldCoords(0, 0, distance);
+        active_scene.GetCamera().ToWorldCoords(0, 0, distance);
     float dx = -upper_left.x;
     float dy = upper_left.y;
     float width = dx * 2.0f;
@@ -34,11 +36,15 @@ void Walls::Setup() {
         colliders[i].Recalculate(mesh, transforms[i]);
     bg_material.textures[0] = verna::LoadTexture("bg.png");
     wall_material.textures[0] = verna::LoadTexture("wall.png");
+    auto black = verna::LoadTextureFromColor(0.0f, 0.0f, 0.0f, 1.0f);
+    bg_material.textures[1] = black;
+    wall_material.textures[1] = black;
 }
 
 void Walls::Dispose() {
     verna::FreeTexture(bg_material.textures[0]);
     verna::FreeTexture(wall_material.textures[0]);
+    verna::FreeTexture(wall_material.textures[1]);
 }
 
 void Walls::Render(verna::ShaderId shader) {
