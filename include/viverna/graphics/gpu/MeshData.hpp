@@ -15,6 +15,7 @@ struct MaterialData {
 struct MeshData {
     MaterialData material;
     Mat4f model_matrix;
+    Mat4f transpose_inverse_model_matrix;
 };
 }  // namespace verna::gpu
 

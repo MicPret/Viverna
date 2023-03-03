@@ -1,7 +1,7 @@
 #include <viverna/graphics/Renderer.hpp>
 #include <viverna/core/Debug.hpp>
+#include <viverna/core/Scene.hpp>
 #include <viverna/core/Transform.hpp>
-#include <viverna/graphics/Camera.hpp>
 #include <viverna/graphics/Material.hpp>
 #include <viverna/graphics/Texture.hpp>
 #include <viverna/graphics/Vertex.hpp>
@@ -86,6 +86,9 @@ void GenBuffers() {
         1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex),
         reinterpret_cast<void*>(offsetof(Vertex, texture_coords)));
     glEnableVertexAttribArray(1);
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+                          reinterpret_cast<void*>(offsetof(Vertex, normal)));
+    glEnableVertexAttribArray(2);
 }
 
 void DeleteBuffers() {
@@ -211,7 +214,7 @@ void InitializeRenderer(VivernaState& state) {
     glDepthMask(GL_TRUE);
     glCullFace(GL_BACK);
 
-    Camera::GetActive().Reset();
+    Scene::GetActive().Setup();
 
     state.SetFlag(VivernaState::RENDERER_INITIALIZED_FLAG, true);
     native_window = state.native_window;
@@ -269,6 +272,28 @@ void Render(const Mesh& mesh,
     batch.indices.insert(batch.indices.end(), mesh.indices.begin(),
                          mesh.indices.end());
     batch.num_meshes++;
+}
+
+void Render(const Mesh& mesh,
+            const Material& material,
+            const Transform& transform,
+            ShaderId shader_id) {
+    Render(mesh, material, transform.GetMatrix(), shader_id);
+}
+
+void Render(const Model& model,
+            const Mat4f& transform_matrix,
+            ShaderId shader_id) {
+    const auto& meshes = model.Meshes();
+    const auto& materials = model.Materials();
+    for (size_t i = 0; i < meshes.size(); i++)
+        Render(meshes[i], materials[i], transform_matrix, shader_id);
+}
+
+void Render(const Model& model,
+            const Transform& transform,
+            ShaderId shader_id) {
+    Render(model, transform.GetMatrix(), shader_id);
 }
 
 #ifndef NDEBUG
@@ -342,12 +367,21 @@ void Draw() {
     VERNA_LOGE_IF(render_batches.empty(),
                   "There are render buckets but no render batches!");
 
-    Camera& cam = Camera::GetActive();
+    const Scene& scene = Scene::GetActive();
+    const Camera& cam = scene.GetCamera();
     gpu::FrameData frame_data;
     gpu::CameraData& cam_data = frame_data.camera_data;
     cam_data.projection_matrix = cam.GetProjectionMatrix();
     cam_data.view_matrix = cam.GetViewMatrix();
     cam_data.pv_matrix = cam_data.projection_matrix * cam_data.view_matrix;
+    const auto& point_lights = scene.PointLights();
+    unsigned num_point_lights =
+        std::min(static_cast<unsigned>(point_lights.size()),
+                 gpu::FrameData::MAX_POINT_LIGHTS);
+    for (unsigned i = 0; i < num_point_lights; i++)
+        frame_data.point_lights[i] = gpu::PointLightData(point_lights[i]);
+    frame_data.num_point_lights = num_point_lights;
+
     ubo::SendData(gpu::FrameData::BLOCK_BINDING, &frame_data);
 
     ShaderId shader;

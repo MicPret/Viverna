@@ -23,12 +23,15 @@ As of now, shaders are written in `.vert` and `.frag` files inside `assets/shade
 - `SetMeshIdx()`: all vertex shaders should call this before anything else
 - You may access
     - in/out vertex variables
-        - in_position   _(input vec3)_
-        - in_tex_coords _(input vec2)_
-        - v_tex_coords  _(output vec2)_
+        - `in_position`     _(input vec3)_
+        - `in_tex_coords`   _(input vec2)_
+        - `in_normal`       _(input vec3)_
+        - `v_tex_coords`    _(output vec2)_
+        - `v_normal`        _(output vec3)_
     - in/out fragment variables
-        - v_tex_coords  _(input vec2)_
-        - f_color       _(output vec4)_
+        - `v_tex_coords`    _(input vec2)_
+        - `v_normal`        _(input vec3)_
+        - `f_color`         _(output vec4)_
     - Camera properties
         - `camera.projection_matrix`
         - `camera.view_matrix`

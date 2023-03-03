@@ -9,6 +9,7 @@ namespace verna {
 struct Vertex {
     Vec3f position;
     Vec2f texture_coords;
+    Vec3f normal;
 };
 
 }  // namespace verna
