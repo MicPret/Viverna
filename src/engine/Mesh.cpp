@@ -26,7 +26,7 @@ void Mesh::RecalculateNormals() {
         auto c = indices[i + 2];
         Vec3f v1 = vertices[a].position - vertices[b].position;
         Vec3f v2 = vertices[c].position - vertices[b].position;
-        Vec3f normal = v1.Cross(v2).Normalized();
+        Vec3f normal = v1.Cross(v2);
         vertices[a].normal += normal;
         vertices[b].normal += normal;
         vertices[c].normal += normal;
