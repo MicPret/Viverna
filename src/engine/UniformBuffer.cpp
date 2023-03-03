@@ -13,7 +13,6 @@
 #endif
 
 #include <cstdint>
-#include <utility>
 #include <vector>
 
 namespace verna::ubo {
@@ -49,14 +48,20 @@ void TerminateUBO() {
 
 void AddBlock(uint32_t binding_point, size_t size) {
     uint32_t offset = 0;
-    for (uint8_t i = 0; i < bindings.size(); i++)
-        offset += bindings[i].size;
+    if (!bindings.empty()) {
+        const auto& last_block = bindings.back();
+        offset = last_block.offset + last_block.size;
+        constexpr auto alignment = sizeof(float) * 4;
+        auto align_error = offset % alignment;
+        if (align_error != 0)
+            offset += alignment - align_error;
+    }
     glBindBufferRange(GL_UNIFORM_BUFFER, binding_point, id, offset, size);
     BlockInfo new_block;
     new_block.offset = offset;
     new_block.size = size;
     new_block.binding_point = binding_point;
-    bindings.push_back(std::move(new_block));
+    bindings.push_back(new_block);
 }
 
 void SendData(uint32_t binding_point, const void* data) {
