@@ -1,7 +1,7 @@
 #include <viverna/graphics/Renderer.hpp>
 #include <viverna/core/Debug.hpp>
+#include <viverna/core/Scene.hpp>
 #include <viverna/core/Transform.hpp>
-#include <viverna/graphics/Camera.hpp>
 #include <viverna/graphics/Material.hpp>
 #include <viverna/graphics/Texture.hpp>
 #include <viverna/graphics/Vertex.hpp>
@@ -214,7 +214,7 @@ void InitializeRenderer(VivernaState& state) {
     glDepthMask(GL_TRUE);
     glCullFace(GL_BACK);
 
-    Camera::GetActive().Reset();
+    Scene::GetActive().Setup();
 
     state.SetFlag(VivernaState::RENDERER_INITIALIZED_FLAG, true);
     native_window = state.native_window;
@@ -367,12 +367,21 @@ void Draw() {
     VERNA_LOGE_IF(render_batches.empty(),
                   "There are render buckets but no render batches!");
 
-    Camera& cam = Camera::GetActive();
+    const Scene& scene = Scene::GetActive();
+    const Camera& cam = scene.GetCamera();
     gpu::FrameData frame_data;
     gpu::CameraData& cam_data = frame_data.camera_data;
     cam_data.projection_matrix = cam.GetProjectionMatrix();
     cam_data.view_matrix = cam.GetViewMatrix();
     cam_data.pv_matrix = cam_data.projection_matrix * cam_data.view_matrix;
+    const auto& point_lights = scene.PointLights();
+    unsigned num_point_lights =
+        std::min(static_cast<unsigned>(point_lights.size()),
+                 gpu::FrameData::MAX_POINT_LIGHTS);
+    for (unsigned i = 0; i < num_point_lights; i++)
+        frame_data.point_lights[i] = gpu::PointLightData(point_lights[i]);
+    frame_data.num_point_lights = num_point_lights;
+
     ubo::SendData(gpu::FrameData::BLOCK_BINDING, &frame_data);
 
     ShaderId shader;
