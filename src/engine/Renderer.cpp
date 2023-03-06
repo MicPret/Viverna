@@ -206,7 +206,7 @@ void InitializeRenderer(VivernaState& state) {
 
     GenBuffers();
     LoadWireframeShader();
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClearColor(0.1f, 0.2f, 0.2f, 1.0f);
     glClearDepthf(0.0f);
     glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
@@ -358,9 +358,14 @@ void Draw() {
         ClearBatches();
         return;
     }
-
+#ifndef NDEBUG
+    GLenum glerr;
+    while ((glerr = glGetError()) != GL_NO_ERROR)
+        VERNA_LOGE("Caught OpenGL error in Draw(): " + std::to_string(glerr));
+#endif
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     if (shader_to_bucket.Empty()) {
+        VERNA_LOGW("Nothing to draw!");
         SwapBuffers();
         return;
     }
