@@ -32,7 +32,14 @@ vec3 CalculatePointLights(in vec3 normal, in vec3 camera_pos) {
         vec3 halfway = normalize(to_light + to_camera);
 
         float diffuse_coeff = max(dot(normal, to_light), 0.0);
-        float specular_coeff = pow(max(dot(normal, halfway), 0.0), SHININESS);
+        float shine;
+#ifdef VERNA_ANDROID
+        // Hack: when SHININESS is 0.0, it gives weird results
+        shine = max(SHININESS, 0.0001);
+#else
+        shine = SHININESS;
+#endif
+        float specular_coeff = pow(max(dot(normal, halfway), 0.0), shine);
 
         float attenuation = AttenuateLight(light, light_distance);
 
@@ -47,7 +54,8 @@ vec3 CalculatePointLights(in vec3 normal, in vec3 camera_pos) {
         specular *= attenuation;
         ambient *= attenuation;
 
-        float shadow = 0.0;  // TODO implement later
+        // TODO implement later
+        float shadow = 0.0;
         result += ambient + (1.0 - shadow) * (diffuse + specular);
     }
     return result;
