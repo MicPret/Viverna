@@ -53,6 +53,41 @@ std::vector<Vertex> dbg_vertices;
 std::vector<Mesh::index_t> dbg_indices;
 #endif
 
+void CheckForGLErrors(std::string_view origin) {
+    GLenum glerr;
+    while ((glerr = glGetError()) != GL_NO_ERROR) {
+        std::string error_string;
+        switch (glerr) {
+            case GL_INVALID_ENUM:
+                error_string = "GL_INVALID_ENUM";
+                break;
+            case GL_INVALID_VALUE:
+                error_string = "GL_INVALID_VALUE";
+                break;
+            case GL_INVALID_OPERATION:
+                error_string = "GL_INVALID_OPERATION";
+                break;
+            case GL_STACK_OVERFLOW:
+                error_string = "GL_STACK_OVERFLOW";
+                break;
+            case GL_STACK_UNDERFLOW:
+                error_string = "GL_STACK_UNDERFLOW";
+                break;
+            case GL_OUT_OF_MEMORY:
+                error_string = "GL_OUT_OF_MEMORY";
+                break;
+            case GL_INVALID_FRAMEBUFFER_OPERATION:
+                error_string = "GL_INVALID_FRAMEBUFFER_OPERATION";
+                break;
+            default:
+                error_string = std::to_string(glerr);
+                break;
+        }
+        VERNA_LOGE(std::string(origin)
+                   + " detected OpenGL error: " + error_string);
+    }
+}
+
 void LoadWireframeShader() {
     wireframe_shader = LoadShader("debug");
 }
@@ -89,6 +124,7 @@ void GenBuffers() {
     glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
                           reinterpret_cast<void*>(offsetof(Vertex, normal)));
     glEnableVertexAttribArray(2);
+    CheckForGLErrors("GenBuffers");
 }
 
 void DeleteBuffers() {

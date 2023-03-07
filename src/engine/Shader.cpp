@@ -27,6 +27,41 @@ namespace verna {
 static ResourceTracker<ShaderId::id_type> shader_tracker("Shader");
 #endif
 
+static void CheckForGLErrors(std::string_view origin) {
+    GLenum glerr;
+    while ((glerr = glGetError()) != GL_NO_ERROR) {
+        std::string error_string;
+        switch (glerr) {
+            case GL_INVALID_ENUM:
+                error_string = "GL_INVALID_ENUM";
+                break;
+            case GL_INVALID_VALUE:
+                error_string = "GL_INVALID_VALUE";
+                break;
+            case GL_INVALID_OPERATION:
+                error_string = "GL_INVALID_OPERATION";
+                break;
+            case GL_STACK_OVERFLOW:
+                error_string = "GL_STACK_OVERFLOW";
+                break;
+            case GL_STACK_UNDERFLOW:
+                error_string = "GL_STACK_UNDERFLOW";
+                break;
+            case GL_OUT_OF_MEMORY:
+                error_string = "GL_OUT_OF_MEMORY";
+                break;
+            case GL_INVALID_FRAMEBUFFER_OPERATION:
+                error_string = "GL_INVALID_FRAMEBUFFER_OPERATION";
+                break;
+            default:
+                error_string = std::to_string(glerr);
+                break;
+        }
+        VERNA_LOGE(std::string(origin)
+                   + " detected OpenGL error: " + error_string);
+    }
+}
+
 static std::string ShaderPreface() {
     std::string max_meshes = std::to_string(gpu::DrawData::MAX_MESHES);
     std::string max_textures = std::to_string(RendererInfo::MaxTextureUnits());
@@ -100,35 +135,11 @@ static bool CompileShaderSources(const std::vector<std::string_view>& sources,
         }
 
         output[i] = glCreateShader(shader_types[i]);
+        CheckForGLErrors("CompileShaderSources->glCreateShader");
         glShaderSource(output[i], gl_sources_ptr.size(), gl_sources_ptr.data(),
                        gl_sources_len.data());
-        switch (glGetError()) {
-            case GL_INVALID_VALUE:
-                VERNA_LOGE("glShaderSource failed: GL_INVALID_VALUE");
-                break;
-            case GL_INVALID_OPERATION:
-                VERNA_LOGE("glShaderSource failed: GL_INVALID_OPERATION");
-                break;
-            case GL_NO_ERROR:
-                break;
-            default:
-                VERNA_LOGE("Caught OpenGL error in CompileShaderSources!");
-                break;
-        }
+        CheckForGLErrors("CompileShaderSources->glShaderSource");
         glCompileShader(output[i]);
-        switch (glGetError()) {
-            case GL_INVALID_VALUE:
-                VERNA_LOGE("glCompileShader failed: GL_INVALID_VALUE");
-                break;
-            case GL_INVALID_OPERATION:
-                VERNA_LOGE("glCompileShader failed: GL_INVALID_OPERATION");
-                break;
-            case GL_NO_ERROR:
-                break;
-            default:
-                VERNA_LOGE("Caught OpenGL error in CompileShaderSources!");
-                break;
-        }
         GLint success;
         std::array<GLchar, 256> log;
         GLsizei loglen;
@@ -136,7 +147,6 @@ static bool CompileShaderSources(const std::vector<std::string_view>& sources,
         if (success == GL_TRUE)
             continue;
         glGetShaderInfoLog(output[i], log.size(), &loglen, log.data());
-#ifndef NDEBUG
         std::string shader_type_str;
         switch (shader_types[i]) {
             case GL_VERTEX_SHADER:
@@ -151,7 +161,6 @@ static bool CompileShaderSources(const std::vector<std::string_view>& sources,
         }
         VERNA_LOGE(shader_type_str + " shader compilation failed: "
                    + std::string(log.data(), loglen));
-#endif
         return false;
     }
     return true;
