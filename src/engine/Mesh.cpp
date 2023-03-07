@@ -20,7 +20,8 @@ void Mesh::RecalculateNormals() {
     // TODO test!!!
     for (auto& v : vertices)
         v.normal = Vec3f();
-    for (size_t i = 0; i < indices.size(); i += 3) {
+    size_t max_i = indices.size() - 2;
+    for (size_t i = 0; i < max_i; i += 3) {
         auto a = indices[i];
         auto b = indices[i + 1];
         auto c = indices[i + 2];

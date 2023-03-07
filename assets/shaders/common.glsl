@@ -1,3 +1,8 @@
+#ifdef VERNA_ANDROID
+precision highp float;
+precision highp int;
+#endif
+
 layout(location = 1) uniform sampler2D _textures[MAX_TEXTURES];
 
 struct MeshData {
