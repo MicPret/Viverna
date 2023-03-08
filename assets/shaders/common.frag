@@ -1,12 +1,17 @@
 #ifdef VERNA_DESKTOP
 #line 3
-#define DRAW_ID int(MESH_IDX)
+#define DRAW_ID int(v.MESH_IDX)
 #endif
 #ifdef VERNA_ANDROID
 uniform int DRAW_ID;
 #endif
 
-in float MESH_IDX;
-in vec2 v_tex_coords;
-in vec3 v_normal;
+in VS_OUT {
+    float MESH_IDX;
+    vec3 position;
+    vec2 tex_coords;
+    vec3 normal;
+}
+v;
+
 out vec4 f_color;

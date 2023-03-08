@@ -2,12 +2,10 @@
 #define DIFFUSE_TEXTURE TEXTURE0
 #define SPECULAR_TEXTURE TEXTURE1
 
-in vec3 v_position;
-
 vec3 CalculatePointLights(in vec3 normal, in vec3 camera_pos);
 
 void main() {
-    vec3 normal = normalize(v_normal);
+    vec3 normal = normalize(v.normal);
     vec3 cam_pos = vec3(camera.view_matrix[3]);
 
     vec3 result = CalculatePointLights(normal, cam_pos);
@@ -23,10 +21,10 @@ float AttenuateLight(in PointLightData light, in float dist) {
 
 vec3 CalculatePointLights(in vec3 normal, in vec3 camera_pos) {
     vec3 result = vec3(0.0);
-    vec3 to_camera = normalize(camera_pos - v_position);
+    vec3 to_camera = normalize(camera_pos - v.position);
     for (int i = 0; i < num_point_lights; i++) {
         PointLightData light = point_lights[i];
-        vec3 to_light = light.position.xyz - v_position;
+        vec3 to_light = light.position.xyz - v.position;
         float light_distance = length(to_light);
         to_light = (1.0 / light_distance) * to_light;
         vec3 halfway = normalize(to_light + to_camera);
@@ -43,8 +41,8 @@ vec3 CalculatePointLights(in vec3 normal, in vec3 camera_pos) {
 
         float attenuation = AttenuateLight(light, light_distance);
 
-        vec3 diffuse_map = vec3(texture(DIFFUSE_TEXTURE, v_tex_coords));
-        vec3 specular_map = vec3(texture(SPECULAR_TEXTURE, v_tex_coords));
+        vec3 diffuse_map = vec3(texture(DIFFUSE_TEXTURE, v.tex_coords));
+        vec3 specular_map = vec3(texture(SPECULAR_TEXTURE, v.tex_coords));
         vec3 diffuse = light.diffuse_linear.xyz * diffuse_coeff * diffuse_map;
         vec3 specular =
             light.specular_quadratic.xyz * specular_coeff * specular_map;

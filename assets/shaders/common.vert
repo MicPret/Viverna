@@ -10,10 +10,14 @@ layout(location = 0) in vec3 in_position;
 layout(location = 1) in vec2 in_tex_coords;
 layout(location = 2) in vec3 in_normal;
 
-out float MESH_IDX;
-out vec2 v_tex_coords;
-out vec3 v_normal;
+out VS_OUT {
+    float MESH_IDX;
+    vec3 position;
+    vec2 tex_coords;
+    vec3 normal;
+}
+v;
 
 void SetMeshIdx() {
-    MESH_IDX = float(DRAW_ID);
+    v.MESH_IDX = float(DRAW_ID);
 }
