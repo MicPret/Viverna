@@ -71,4 +71,10 @@ std::vector<char> LoadRawAsset(const std::filesystem::path& path) {
     }
     return output;
 }
+
+bool AssetExists(const std::filesystem::path& path) {
+    std::error_code err_code;
+    return std::filesystem::is_regular_file(assets_folder_path / path,
+                                            err_code);
+}
 }  // namespace verna

@@ -63,4 +63,16 @@ std::vector<char> LoadRawAsset(const std::filesystem::path& path) {
     }
     return buffer;
 }
+
+bool AssetExists(const std::filesystem::path& path) {
+    VERNA_LOGE_IF(asset_manager == nullptr,
+                  "AssetExists failed: Call InitializeAssets!");
+    AAsset* asset =
+        AAssetManager_open(asset_manager, path.c_str(), AASSET_MODE_UNKNOWN);
+    if (asset == nullptr) {
+        return false;
+    }
+    AAsset_close(asset);
+    return true;
+}
 }  // namespace verna

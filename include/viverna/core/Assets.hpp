@@ -17,6 +17,15 @@ void TerminateAssets(VivernaState& state);
  * @return Raw data
  */
 std::vector<char> LoadRawAsset(const std::filesystem::path& path);
+
+/**
+ * @brief Checks whether an asset exists (path should not include "asset/")
+ *
+ * @param path Path to an asset (e.g. "shaders/unlit.vert")
+ * @return true if specified path leads to a valid asset directory, false
+ * otherwise
+ */
+bool AssetExists(const std::filesystem::path& path);
 }  // namespace verna
 
 #endif
