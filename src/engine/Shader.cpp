@@ -113,7 +113,6 @@ static bool CompileShaderSources(const std::vector<std::string_view>& sources,
                                  std::vector<GLuint>& output) {
     size_t size = shader_types.size();
     output.resize(size, 0);
-    std::vector<std::string> common_sources(size);
     for (size_t i = 0; i < size; i++) {
         constexpr size_t num = 3;
         std::array<std::string, num> gl_sources;
@@ -204,36 +203,16 @@ static void UniformInit(GLuint program) {
     glUniform1iv(textures_uniform_loc, count, texture_slots.data());
 }
 
-ShaderId LoadShader(std::string_view shader_name) {
-    std::filesystem::path path = std::filesystem::path("shaders") / shader_name;
-    std::filesystem::path vertex_path = path.string() + ".vert";
-    std::filesystem::path fragment_path = path.string() + ".frag";
-    auto vertex_raw = LoadRawAsset(vertex_path);
-    if (vertex_raw.empty()) {
-        VERNA_LOGE("LoadShader failed: can't load " + vertex_path.string());
-        return ShaderId();
-    }
-    auto fragment_raw = LoadRawAsset(fragment_path);
-    if (fragment_raw.empty()) {
-        VERNA_LOGE("LoadShader failed: can't load " + fragment_path.string());
-        return ShaderId();
-    }
-    std::string_view vertex_src(vertex_raw.data(), vertex_raw.size());
-    std::string_view fragment_src(fragment_raw.data(), fragment_raw.size());
-    return LoadShaderFromSource(vertex_src, fragment_src);
-}
+static ShaderId LoadShaderFromSource(
+    const std::vector<std::string_view>& shader_sources,
+    const std::vector<GLenum>& shader_types) {
+    GLuint program = 0;
+    std::vector<GLuint> shaders_out;
 
-ShaderId LoadShaderFromSource(std::string_view vertex_src,
-                              std::string_view fragment_src) {
-    GLuint program = 0u;
-    constexpr GLuint no_shader = 0u;
-    std::vector<GLuint> shaders(2, no_shader);
-    std::vector<std::string_view> sources = {vertex_src, fragment_src};
-    std::vector<GLenum> types = {GL_VERTEX_SHADER, GL_FRAGMENT_SHADER};
-    if (CompileShaderSources(sources, types, shaders)) {
-        if (!LinkShaders(shaders, program)) {
-            program = 0u;
-            VERNA_LOGE("LoadShaderFromSource failed: linking failed!");
+    if (CompileShaderSources(shader_sources, shader_types, shaders_out)) {
+        if (!LinkShaders(shaders_out, program)) {
+            program = 0;
+            VERNA_LOGE("Shader linking failed!");
         } else {
             glUseProgram(program);
             UniformInit(program);
@@ -242,9 +221,68 @@ ShaderId LoadShaderFromSource(std::string_view vertex_src,
 #endif
         }
     }
-    for (auto shader : shaders)
-        glDeleteShader(shader);
+    for (GLuint s : shaders_out)
+        glDeleteShader(s);
     return ShaderId(program);
+}
+
+ShaderId LoadShader(std::string_view shader_name) {
+    std::filesystem::path path = std::filesystem::path("shaders") / shader_name;
+    std::filesystem::path vertex_path = path.string() + ".vert";
+    std::filesystem::path fragment_path = path.string() + ".frag";
+    std::filesystem::path geometry_path = path.string() + ".geom";
+
+    std::vector<std::string_view> sources;
+    std::vector<GLenum> shader_types;
+    sources.reserve(3);
+    shader_types.reserve(3);
+
+    if (!AssetExists(vertex_path)) {
+        VERNA_LOGE("LoadShader failed: can't find " + vertex_path.string());
+        return ShaderId();
+    }
+    if (!AssetExists(fragment_path)) {
+        VERNA_LOGE("LoadShader failed: can't find " + fragment_path.string());
+        return ShaderId();
+    }
+
+    auto vertex_raw = LoadRawAsset(vertex_path);
+    if (vertex_raw.empty()) {
+        VERNA_LOGE("LoadShader failed: can't load " + vertex_path.string());
+        return ShaderId();
+    }
+    sources.push_back(std::string_view(vertex_raw.data(), vertex_raw.size()));
+    shader_types.push_back(GL_VERTEX_SHADER);
+    auto fragment_raw = LoadRawAsset(fragment_path);
+    if (fragment_raw.empty()) {
+        VERNA_LOGE("LoadShader failed: can't load " + fragment_path.string());
+        return ShaderId();
+    }
+    sources.push_back(
+        std::string_view(fragment_raw.data(), fragment_raw.size()));
+    shader_types.push_back(GL_FRAGMENT_SHADER);
+
+    std::vector<char> geometry_raw;
+    if (AssetExists(geometry_path)) {
+        geometry_raw = LoadRawAsset(geometry_path);
+        if (geometry_raw.empty()) {
+            VERNA_LOGW(geometry_path.string()
+                       + " found, but empty (or failed to load)");
+        } else {
+            sources.push_back(
+                std::string_view(geometry_raw.data(), geometry_raw.size()));
+            shader_types.push_back(GL_GEOMETRY_SHADER);
+        }
+    }
+
+    return LoadShaderFromSource(sources, shader_types);
+}
+
+ShaderId LoadShaderFromSource(std::string_view vertex_src,
+                              std::string_view fragment_src) {
+    std::vector<std::string_view> sources = {vertex_src, fragment_src};
+    std::vector<GLenum> types = {GL_VERTEX_SHADER, GL_FRAGMENT_SHADER};
+    return LoadShaderFromSource(sources, types);
 }
 
 void FreeShader(ShaderId shader_program) {
