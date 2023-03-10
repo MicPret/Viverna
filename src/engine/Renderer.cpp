@@ -335,6 +335,7 @@ void DepthPass() {
             }
         }
     }
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void InitializeRenderer(VivernaState& state) {
