@@ -3,7 +3,8 @@ precision highp float;
 precision highp int;
 #endif
 
-layout(location = 1) uniform sampler2D _textures[MAX_TEXTURES];
+uniform sampler2D _textures[MAX_MATERIAL_TEXTURES];
+uniform samplerCube _depth_maps[MAX_POINT_LIGHTS];
 
 struct MeshData {
     int texture_idx0;
@@ -31,6 +32,7 @@ struct PointLightData {
     vec4 ambient_constant;
     vec4 diffuse_linear;
     vec4 specular_quadratic;
+    mat4 view_matrices[6];
 };
 
 layout(std140) uniform FrameData {

@@ -47,11 +47,39 @@ Bucket debug_bucket;
 GLuint vao, vbo, ebo;
 GLsizeiptr vbo_size, ebo_size;
 
+gpu::FrameData frame_data;
+
 ShaderId wireframe_shader;
+ShaderId depth_shader;
+std::vector<GLuint> depth_maps;
+std::vector<GLuint> depth_fbos;
+constexpr GLsizei SHADOW_MAP_WIDTH = 1024;
+constexpr GLsizei SHADOW_MAP_HEIGHT = 1024;
 #ifndef NDEBUG
 std::vector<Vertex> dbg_vertices;
 std::vector<Mesh::index_t> dbg_indices;
 #endif
+}  // namespace
+
+static void CheckForGLErrors(std::string_view origin);
+static void LoadPrivateShaders();
+static void FreePrivateShaders();
+static void GenBuffers();
+static void DeleteBuffers();
+static void ClearBatches();
+static void SwapBuffers();
+static void RendererError(VivernaState& state,
+                          [[maybe_unused]] std::string_view message);
+static BatchId NewBatchInExistingBucket(Bucket& bucket);
+static BatchId NewBatchInNewBucket(ShaderId shader);
+static void SendDataToVbo(const RenderBatch& batch);
+static void SendDataToEbo(const RenderBatch& batch);
+static void BindTextures(const RenderBatch& batch);
+static void PrepareDraw();
+static void DepthPass();
+static void DrawBatchIgnoreTextures(const RenderBatch& batch);
+static void DrawBatch(const RenderBatch& batch);
+static void DrawGlCommand(const GlDrawCommand& cmd);
 
 void CheckForGLErrors(std::string_view origin) {
     GLenum glerr;
@@ -88,8 +116,14 @@ void CheckForGLErrors(std::string_view origin) {
     }
 }
 
-void LoadWireframeShader() {
+void LoadPrivateShaders() {
     wireframe_shader = LoadShader("debug");
+    depth_shader = LoadShader("depth");
+}
+
+void FreePrivateShaders() {
+    FreeShader(wireframe_shader);
+    FreeShader(depth_shader);
 }
 
 void GenBuffers() {
@@ -124,6 +158,37 @@ void GenBuffers() {
     glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
                           reinterpret_cast<void*>(offsetof(Vertex, normal)));
     glEnableVertexAttribArray(2);
+
+    auto num_lights = RendererInfo::MaxPointLights();
+    depth_fbos.resize(num_lights);
+    depth_maps.resize(num_lights);
+    glGenFramebuffers(num_lights, depth_fbos.data());
+    glGenTextures(num_lights, depth_maps.data());
+    for (int i = 0; i < num_lights; i++) {
+        glBindTexture(GL_TEXTURE_CUBE_MAP, depth_maps[i]);
+        for (auto j = 0; j < 6; j++) {
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + j, 0,
+                         GL_DEPTH_COMPONENT, SHADOW_MAP_WIDTH,
+                         SHADOW_MAP_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT,
+                         nullptr);
+        }
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S,
+                        GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T,
+                        GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R,
+                        GL_CLAMP_TO_EDGE);
+
+        glBindFramebuffer(GL_FRAMEBUFFER, depth_fbos[i]);
+        glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depth_maps[i],
+                             0);
+        glDrawBuffer(GL_NONE);
+        glReadBuffer(GL_NONE);
+    }
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
     CheckForGLErrors("GenBuffers");
 }
 
@@ -222,7 +287,55 @@ void BindTextures(const RenderBatch& batch) {
     }
 #endif
 }
-}  // namespace
+
+void PrepareDraw() {
+    const Scene& scene = Scene::GetActive();
+    const Camera& cam = scene.GetCamera();
+    frame_data.camera_data.projection_matrix = cam.GetProjectionMatrix();
+    frame_data.camera_data.view_matrix = cam.GetViewMatrix();
+    frame_data.camera_data.pv_matrix = frame_data.camera_data.projection_matrix
+                                       * frame_data.camera_data.view_matrix;
+    const auto& scene_lights = scene.PointLights();
+    size_t num_lights =
+        std::min(static_cast<size_t>(gpu::FrameData::MAX_POINT_LIGHTS),
+                 scene_lights.size());
+    frame_data.num_point_lights = static_cast<int32_t>(num_lights);
+    for (size_t i = 0; i < num_lights; i++)
+        frame_data.point_lights[i] = gpu::PointLightData(scene_lights[i]);
+    ubo::SendData(gpu::FrameData::BLOCK_BINDING, &frame_data);
+}
+
+void DepthPass() {
+    constexpr float shadow_aspect_ratio = 1.0f;
+    const auto& scene = Scene::GetActive();
+    const auto& cam = scene.GetCamera();
+    Mat4f projection = Mat4f::Perspective(
+        maths::Pi() * 0.5f, shadow_aspect_ratio, cam.near_plane, cam.far_plane);
+
+    glUseProgram(depth_shader.id);
+    static const auto loc_light_proj =
+        glGetUniformLocation(depth_shader.id, "light_projection");
+    glUniformMatrix4fv(loc_light_proj, 1, GL_FALSE, projection.raw.data());
+    auto num_lights =
+        std::min(static_cast<size_t>(RendererInfo::MaxPointLights()),
+                 scene.PointLights().size());
+    for (size_t i = 0; i < num_lights; i++) {
+        glBindFramebuffer(GL_FRAMEBUFFER, depth_fbos[i]);
+        glClear(GL_DEPTH_BUFFER_BIT);
+        static const auto loc_light_id =
+            glGetUniformLocation(depth_shader.id, "light_id");
+        glUniform1i(loc_light_id, static_cast<GLint>(i));
+        ShaderId shader;
+        Bucket bucket;
+        for (size_t i = 0; i < shader_to_bucket.Size(); i++) {
+            shader_to_bucket.Get(i, shader, bucket);
+            for (BatchId batch_id : bucket) {
+                const RenderBatch& batch = render_batches[batch_id];
+                DrawBatchIgnoreTextures(batch);
+            }
+        }
+    }
+}
 
 void InitializeRenderer(VivernaState& state) {
     if (state.GetFlag(VivernaState::RENDERER_INITIALIZED_FLAG))
@@ -241,7 +354,7 @@ void InitializeRenderer(VivernaState& state) {
     }
 
     GenBuffers();
-    LoadWireframeShader();
+    LoadPrivateShaders();
     glClearColor(0.1f, 0.2f, 0.2f, 1.0f);
     glClearDepthf(0.0f);
     glEnable(GL_CULL_FACE);
@@ -261,7 +374,7 @@ void TerminateRenderer(VivernaState& state) {
     if (!state.GetFlag(VivernaState::RENDERER_INITIALIZED_FLAG))
         return;
 
-    FreeShader(wireframe_shader);
+    FreePrivateShaders();
     DeleteBuffers();
 
     state.SetFlag(VivernaState::RENDERER_INITIALIZED_FLAG, false);
@@ -355,7 +468,7 @@ static void DrawDebug() {
 }
 #endif
 
-static void DrawGlCommand(const GlDrawCommand& cmd) {
+void DrawGlCommand(const GlDrawCommand& cmd) {
 #if defined(VERNA_ANDROID)
     constexpr GLint draw_id_uniloc = 0;
     for (size_t j = 0; j < cmd.drawcount; j++) {
@@ -369,14 +482,13 @@ static void DrawGlCommand(const GlDrawCommand& cmd) {
 #endif
 }
 
-static void DrawBatch(const RenderBatch& batch) {
+void DrawBatchIgnoreTextures(const RenderBatch& batch) {
     static std::array<const GLvoid*, RenderBatch::MAX_MESHES> indices_offsets;
     static std::array<GLint, RenderBatch::MAX_MESHES> vertices_offsets;
 
     SendDataToVbo(batch);
     SendDataToEbo(batch);
     ubo::SendData(gpu::DrawData::BLOCK_BINDING, &batch.draw_data);
-    BindTextures(batch);
 
     GlDrawCommand draw_command;
     batch.GenerateOffsets(indices_offsets, vertices_offsets);
@@ -385,6 +497,11 @@ static void DrawBatch(const RenderBatch& batch) {
     draw_command.indices = indices_offsets.data();
     draw_command.count = batch.indices_count.data();
     DrawGlCommand(draw_command);
+}
+
+void DrawBatch(const RenderBatch& batch) {
+    BindTextures(batch);
+    DrawBatchIgnoreTextures(batch);
 }
 
 void Draw() {
@@ -408,22 +525,8 @@ void Draw() {
     VERNA_LOGE_IF(render_batches.empty(),
                   "There are render buckets but no render batches!");
 
-    const Scene& scene = Scene::GetActive();
-    const Camera& cam = scene.GetCamera();
-    gpu::FrameData frame_data;
-    gpu::CameraData& cam_data = frame_data.camera_data;
-    cam_data.projection_matrix = cam.GetProjectionMatrix();
-    cam_data.view_matrix = cam.GetViewMatrix();
-    cam_data.pv_matrix = cam_data.projection_matrix * cam_data.view_matrix;
-    const auto& point_lights = scene.PointLights();
-    unsigned num_point_lights =
-        std::min(static_cast<unsigned>(point_lights.size()),
-                 gpu::FrameData::MAX_POINT_LIGHTS);
-    for (unsigned i = 0; i < num_point_lights; i++)
-        frame_data.point_lights[i] = gpu::PointLightData(point_lights[i]);
-    frame_data.num_point_lights = num_point_lights;
-
-    ubo::SendData(gpu::FrameData::BLOCK_BINDING, &frame_data);
+    PrepareDraw();
+    DepthPass();
 
     ShaderId shader;
     Bucket bucket;
@@ -485,6 +588,14 @@ int MaxTextureUnits() {
         return x;
     }();
     return max_frag_tus;
+}
+int MaxMaterialTextures() {
+    auto total = MaxTextureUnits();
+    return total == 16 ? 6 : std::min(32, total / 2);
+}
+int MaxPointLights() {
+    return std::min(static_cast<int>(gpu::FrameData::MAX_POINT_LIGHTS),
+                    MaxTextureUnits() - MaxMaterialTextures());
 }
 }  // namespace RendererInfo
 }  // namespace verna

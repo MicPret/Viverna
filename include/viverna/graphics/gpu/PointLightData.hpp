@@ -3,6 +3,7 @@
 
 #include <viverna/graphics/PointLight.hpp>
 #include <viverna/maths/Vec4f.hpp>
+#include <viverna/maths/Mat4f.hpp>
 
 namespace verna::gpu {
 struct PointLightData {
@@ -10,12 +11,9 @@ struct PointLightData {
     Vec4f ambient_constant;
     Vec4f diffuse_linear;
     Vec4f specular_quadratic;
+    std::array<Mat4f, 6> view_matrices;
     constexpr PointLightData() = default;
-    constexpr PointLightData(const PointLight& pl) :
-        position(pl.position, 0.0f),
-        ambient_constant(pl.ambient, pl.attenuation.constant),
-        diffuse_linear(pl.diffuse, pl.attenuation.linear),
-        specular_quadratic(pl.specular, pl.attenuation.quadratic) {}
+    PointLightData(const PointLight& pl);
 };
 
 }  // namespace verna::gpu

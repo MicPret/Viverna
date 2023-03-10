@@ -1,5 +1,4 @@
 #ifdef VERNA_DESKTOP
-#line 3
 #define DRAW_ID gl_DrawID
 #endif
 #ifdef VERNA_ANDROID
