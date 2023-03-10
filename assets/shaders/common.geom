@@ -1,5 +1,4 @@
 #ifdef VERNA_DESKTOP
-#line 3
 #define DRAW_ID int(g_in[0].MESH_IDX)
 #endif
 #ifdef VERNA_ANDROID

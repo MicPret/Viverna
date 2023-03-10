@@ -64,9 +64,10 @@ static void CheckForGLErrors(std::string_view origin) {
 
 static std::string ShaderPreface() {
     std::string max_meshes = std::to_string(gpu::DrawData::MAX_MESHES);
-    std::string max_textures = std::to_string(RendererInfo::MaxTextureUnits());
+    std::string max_material_textures =
+        std::to_string(RendererInfo::MaxMaterialTextures());
     std::string max_point_lights =
-        std::to_string(gpu::FrameData::MAX_POINT_LIGHTS);
+        std::to_string(RendererInfo::MaxPointLights());
     auto common_glsl_raw = LoadRawAsset("shaders/common.glsl");
     std::string common_glsl(common_glsl_raw.data(), common_glsl_raw.size());
     return
@@ -80,9 +81,9 @@ static std::string ShaderPreface() {
 #error Platform not supported!
 #endif
         "#define MAX_MESHES "
-        + max_meshes + "\n#define MAX_TEXTURES " + max_textures
-        + "\n#define MAX_POINT_LIGHTS " + max_point_lights + "\n\n"
-        + common_glsl + "\n\n";
+        + max_meshes + "\n#define MAX_MATERIAL_TEXTURES "
+        + max_material_textures + "\n#define MAX_POINT_LIGHTS "
+        + max_point_lights + "\n\n" + common_glsl + "\n\n";
 }
 
 static std::string ShaderCommonCode(GLenum shader_type) {
@@ -93,6 +94,9 @@ static std::string ShaderCommonCode(GLenum shader_type) {
             break;
         case GL_FRAGMENT_SHADER:
             temp_path += "common.frag";
+            break;
+        case GL_GEOMETRY_SHADER:
+            temp_path += "common.geom";
             break;
         default:
             VERNA_LOGE("ShaderCommonCode failed: unsupported shader type!");
@@ -154,6 +158,9 @@ static bool CompileShaderSources(const std::vector<std::string_view>& sources,
             case GL_FRAGMENT_SHADER:
                 shader_type_str = "Fragment";
                 break;
+            case GL_GEOMETRY_SHADER:
+                shader_type_str = "Geometry";
+                break;
             default:
                 shader_type_str = "Unsupported";
                 break;
@@ -192,15 +199,25 @@ static void UniformInit(GLuint program) {
     block_loc = glGetUniformBlockIndex(program, gpu::DrawData::BLOCK_NAME);
     glUniformBlockBinding(program, block_loc, gpu::DrawData::BLOCK_BINDING);
 
-    constexpr GLint textures_uniform_loc = 1;
     GLint textures_loc = glGetUniformLocation(program, "_textures[0]");
-    if (textures_uniform_loc != textures_loc)  // textures optimized out
-        return;
-    std::vector<GLint> texture_slots(RendererInfo::MaxTextureUnits());
-    GLsizei count = static_cast<GLsizei>(texture_slots.size());
-    for (GLint i = 0; i < count; i++)
-        texture_slots[i] = i;
-    glUniform1iv(textures_uniform_loc, count, texture_slots.data());
+    std::vector<GLint> texture_slots;
+    GLsizei mat_texture_count =
+        static_cast<GLsizei>(RendererInfo::MaxMaterialTextures());
+    if (textures_loc != -1) {
+        texture_slots.resize(mat_texture_count);
+        for (GLint i = 0; i < mat_texture_count; i++)
+            texture_slots[i] = i;
+        glUniform1iv(textures_loc, mat_texture_count, texture_slots.data());
+    }  // else materials optimized out
+    textures_loc = glGetUniformLocation(program, "_depth_maps[0]");
+    GLsizei depth_texture_count =
+        static_cast<GLsizei>(RendererInfo::MaxPointLights());
+    if (mat_texture_count != -1) {
+        texture_slots.resize(depth_texture_count);
+        for (GLint i = 0; i < depth_texture_count; i++)
+            texture_slots[i] = i + mat_texture_count;
+        glUniform1iv(textures_loc, depth_texture_count, texture_slots.data());
+    }  // else depth optimized out
 }
 
 static ShaderId LoadShaderFromSource(

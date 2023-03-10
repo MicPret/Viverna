@@ -67,7 +67,7 @@ inline void RenderBatch::GenerateOffsets(
 inline bool RenderBatch::TryAddUniformData(const Material& material,
                                            const Mat4f& transform) {
     const size_t max_textures =
-        static_cast<size_t>(RendererInfo::MaxTextureUnits());
+        static_cast<size_t>(RendererInfo::MaxMaterialTextures());
     gpu::MeshData& mesh_data = draw_data[num_meshes];
     for (size_t i = 0; i < material.textures.size(); i++) {
         TextureId mat_texture = material.textures[i];

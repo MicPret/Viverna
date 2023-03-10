@@ -135,6 +135,28 @@ constexpr int Min(int x, int y) {
 }
 
 /**
+ * @brief Computes the max value between x and y
+ *
+ * @param x First parameter
+ * @param y Second parameter
+ * @return Max value between two unsigned ints
+ */
+constexpr unsigned Max(unsigned x, unsigned y) {
+    return x >= y ? x : y;
+}
+
+/**
+ * @brief Computes the min value between x and y
+ *
+ * @param x First parameter
+ * @param y Second parameter
+ * @return Min value between two unsigned ints
+ */
+constexpr unsigned Min(unsigned x, unsigned y) {
+    return x <= y ? x : y;
+}
+
+/**
  * @brief Returns the next Power Of Two, or x itself if it's a POT
  *
  * @param x Input value
