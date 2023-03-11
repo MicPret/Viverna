@@ -1,15 +1,15 @@
 layout(triangles) in;
 layout(triangle_strip, max_vertices = 18) out;
 
-uniform mat4 light_projection;
 uniform int light_id;
 
 void main() {
     float m10 = light_projection[2][2];
     float m14 = light_projection[3][2];
     // This is (far - near)^-1
-    float inverse_depth = (m10 * m10 - 1.0) / (2.0 * m14);
+    // float inverse_depth = (m10 * m10 - 1.0) / (2.0 * m14);
     // float far = -m14 / (m10 + 1.0)
+    float inverse_depth = -(m10 + 1.0) / m14;
     // float near = -m14 / (m10 - 1.0)
     PointLightData light = point_lights[light_id];
     for (int face = 0; face < 6; ++face) {
