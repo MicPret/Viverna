@@ -13,6 +13,7 @@ struct FrameData {
 
     CameraData camera_data;
     std::array<PointLightData, MAX_POINT_LIGHTS> point_lights;
+    Mat4f light_projection;
     int32_t num_point_lights;
 
     static constexpr uint32_t BLOCK_BINDING = 0;

@@ -27,6 +27,17 @@ float LightAttenuation(in PointLightData light, in float dist) {
               + light.specular_quadratic.w * dist * dist);
 }
 
+float Shadow(in PointLightData light, in int light_index, float far_plane) {
+    vec3 to_light = v.position - light.position.xyz;
+    float closest_depth = texture(DEPTH_MAP(light_index), to_light).r;
+    closest_depth *= far_plane;
+    float depth = length(to_light);
+    float bias = 0.05;
+    float shadow = (depth - bias) > closestDepth ? 1.0 : 0.0;
+
+    return shadow;
+}
+
 vec3 BlinnPhongAmbient(in PointLightData light) {
     return light.ambient_constant.xyz;
 }

@@ -302,20 +302,21 @@ void PrepareDraw() {
     frame_data.num_point_lights = static_cast<int32_t>(num_lights);
     for (size_t i = 0; i < num_lights; i++)
         frame_data.point_lights[i] = gpu::PointLightData(scene_lights[i]);
+
+    constexpr auto shadow_aspect_ratio =
+        static_cast<float>(SHADOW_MAP_WIDTH)
+        / static_cast<float>(SHADOW_MAP_HEIGHT);
+    frame_data.light_projection = Mat4f::Perspective(
+        maths::Pi() * 0.5f, shadow_aspect_ratio, cam.near_plane, cam.far_plane);
+
     ubo::SendData(gpu::FrameData::BLOCK_BINDING, &frame_data);
 }
 
 void DepthPass() {
     constexpr float shadow_aspect_ratio = 1.0f;
     const auto& scene = Scene::GetActive();
-    const auto& cam = scene.GetCamera();
-    Mat4f projection = Mat4f::Perspective(
-        maths::Pi() * 0.5f, shadow_aspect_ratio, cam.near_plane, cam.far_plane);
 
     glUseProgram(depth_shader.id);
-    static const auto loc_light_proj =
-        glGetUniformLocation(depth_shader.id, "light_projection");
-    glUniformMatrix4fv(loc_light_proj, 1, GL_FALSE, projection.raw.data());
     auto num_lights =
         std::min(static_cast<size_t>(RendererInfo::MaxPointLights()),
                  scene.PointLights().size());

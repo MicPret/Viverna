@@ -26,8 +26,12 @@ void main() {
         vec3 specular =
             BlinnPhongSpecular(light, specular_map, normal, halfway, shine);
         float attenuation = LightAttenuation(light, light_distance);
-        // TODO implement!
-        float shadow = 0.0;
+
+        float m10 = light_projection[2][2];
+        float m14 = light_projection[3][2];
+        float far_plane = -m14 / (m10 + 1.0);
+        float shadow = Shadow(light, i, far_plane);
+
         result +=
             attenuation * (ambient + (1.0 - shadow) * (diffuse + specular));
     }

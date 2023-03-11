@@ -38,11 +38,13 @@ struct PointLightData {
 layout(std140) uniform FrameData {
     CameraData camera;
     PointLightData point_lights[MAX_POINT_LIGHTS];
+    mat4 light_projection;
     int num_point_lights;
 };
 layout(std140) uniform DrawData {
     MeshData draw_data[MAX_MESHES];
 };
+#define DEPTH_MAP(n) _depth_maps[n]
 #define TEXTURE0 _textures[draw_data[DRAW_ID].texture_idx0]
 #define TEXTURE1 _textures[draw_data[DRAW_ID].texture_idx1]
 #define TEXTURE2 _textures[draw_data[DRAW_ID].texture_idx2]
