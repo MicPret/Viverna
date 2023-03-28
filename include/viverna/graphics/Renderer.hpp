@@ -65,7 +65,6 @@ void Draw();
 namespace RendererInfo {
 int MaxTextureUnits();
 int MaxMaterialTextures();
-int MaxPointLights();
 }  // namespace RendererInfo
 }  // namespace verna
 

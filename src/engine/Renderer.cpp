@@ -5,6 +5,7 @@
 #include <viverna/graphics/Material.hpp>
 #include <viverna/graphics/Texture.hpp>
 #include <viverna/graphics/Vertex.hpp>
+#include <viverna/graphics/Window.hpp>
 #include <viverna/graphics/gpu/DrawData.hpp>
 #include <viverna/graphics/gpu/FrameData.hpp>
 #include "RenderBatch.hpp"
@@ -50,9 +51,9 @@ GLsizeiptr vbo_size, ebo_size;
 gpu::FrameData frame_data;
 
 ShaderId wireframe_shader;
-ShaderId depth_shader;
-std::vector<GLuint> depth_maps;
-std::vector<GLuint> depth_fbos;
+ShaderId dirlight_shader;
+GLuint dirlight_depthmap;
+GLuint dirlight_fbo;
 constexpr GLsizei SHADOW_MAP_WIDTH = 1024;
 constexpr GLsizei SHADOW_MAP_HEIGHT = 1024;
 #ifndef NDEBUG
@@ -80,6 +81,8 @@ static void DepthPass();
 static void DrawBatchIgnoreTextures(const RenderBatch& batch);
 static void DrawBatch(const RenderBatch& batch);
 static void DrawGlCommand(const GlDrawCommand& cmd);
+static void InitLights();
+static void TermLights();
 
 void CheckForGLErrors(std::string_view origin) {
     GLenum glerr;
@@ -116,14 +119,44 @@ void CheckForGLErrors(std::string_view origin) {
     }
 }
 
+void InitLights() {
+    glGenFramebuffers(1, &dirlight_fbo);
+
+    glGenTextures(1, &dirlight_depthmap);
+    glActiveTexture(GL_TEXTURE0 + RendererInfo::MaxMaterialTextures());
+    glBindTexture(GL_TEXTURE_2D, dirlight_depthmap);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_MAP_WIDTH,
+                 SHADOW_MAP_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    constexpr std::array borderColor = {1.0f, 1.0f, 1.0f, 1.0f};
+    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR,
+                     borderColor.data());
+
+    glBindFramebuffer(GL_FRAMEBUFFER, dirlight_fbo);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D,
+                           dirlight_depthmap, 0);
+    glDrawBuffer(GL_NONE);
+    glReadBuffer(GL_NONE);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void TermLights() {
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glDeleteTextures(1, &dirlight_depthmap);
+    glDeleteFramebuffers(1, &dirlight_fbo);
+}
+
 void LoadPrivateShaders() {
     wireframe_shader = LoadShader("debug");
-    depth_shader = LoadShader("depth");
+    dirlight_shader = LoadShader("dirlight_depth");
 }
 
 void FreePrivateShaders() {
     FreeShader(wireframe_shader);
-    FreeShader(depth_shader);
+    FreeShader(dirlight_shader);
 }
 
 void GenBuffers() {
@@ -158,36 +191,6 @@ void GenBuffers() {
     glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
                           reinterpret_cast<void*>(offsetof(Vertex, normal)));
     glEnableVertexAttribArray(2);
-
-    auto num_lights = RendererInfo::MaxPointLights();
-    depth_fbos.resize(num_lights);
-    depth_maps.resize(num_lights);
-    glGenFramebuffers(num_lights, depth_fbos.data());
-    glGenTextures(num_lights, depth_maps.data());
-    for (int i = 0; i < num_lights; i++) {
-        glBindTexture(GL_TEXTURE_CUBE_MAP, depth_maps[i]);
-        for (auto j = 0; j < 6; j++) {
-            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + j, 0,
-                         GL_DEPTH_COMPONENT, SHADOW_MAP_WIDTH,
-                         SHADOW_MAP_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT,
-                         nullptr);
-        }
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S,
-                        GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T,
-                        GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R,
-                        GL_CLAMP_TO_EDGE);
-
-        glBindFramebuffer(GL_FRAMEBUFFER, depth_fbos[i]);
-        glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depth_maps[i],
-                             0);
-        glDrawBuffer(GL_NONE);
-        glReadBuffer(GL_NONE);
-    }
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     CheckForGLErrors("GenBuffers");
 }
@@ -290,53 +293,38 @@ void BindTextures(const RenderBatch& batch) {
 
 void PrepareDraw() {
     const Scene& scene = Scene::GetActive();
-    const Camera& cam = scene.GetCamera();
-    frame_data.camera_data.projection_matrix = cam.GetProjectionMatrix();
-    frame_data.camera_data.view_matrix = cam.GetViewMatrix();
-    frame_data.camera_data.pv_matrix = frame_data.camera_data.projection_matrix
-                                       * frame_data.camera_data.view_matrix;
-    const auto& scene_lights = scene.PointLights();
-    size_t num_lights =
-        std::min(static_cast<size_t>(gpu::FrameData::MAX_POINT_LIGHTS),
-                 scene_lights.size());
-    frame_data.num_point_lights = static_cast<int32_t>(num_lights);
-    for (size_t i = 0; i < num_lights; i++)
-        frame_data.point_lights[i] = gpu::PointLightData(scene_lights[i]);
-
-    constexpr auto shadow_aspect_ratio =
-        static_cast<float>(SHADOW_MAP_WIDTH)
-        / static_cast<float>(SHADOW_MAP_HEIGHT);
-    frame_data.light_projection = Mat4f::Perspective(
-        maths::Pi() * 0.5f, shadow_aspect_ratio, cam.near_plane, cam.far_plane);
-
+    frame_data.camera_data = gpu::CameraData(scene.GetCamera());
+    frame_data.direction_light =
+        gpu::DirectionLightData(scene.GetDirectionLight());
     ubo::SendData(gpu::FrameData::BLOCK_BINDING, &frame_data);
 }
 
 void DepthPass() {
-    constexpr float shadow_aspect_ratio = 1.0f;
-    const auto& scene = Scene::GetActive();
+    glViewport(0, 0, SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT);
+    glBindFramebuffer(GL_FRAMEBUFFER, dirlight_fbo);
+    glDepthFunc(GL_LESS);
+    glCullFace(GL_FRONT);
+    glClearDepthf(1.0f);
+    glClear(GL_DEPTH_BUFFER_BIT);
+    glActiveTexture(GL_TEXTURE0 + RendererInfo::MaxMaterialTextures());
+    glBindTexture(GL_TEXTURE_2D, dirlight_depthmap);
 
-    glUseProgram(depth_shader.id);
-    auto num_lights =
-        std::min(static_cast<size_t>(RendererInfo::MaxPointLights()),
-                 scene.PointLights().size());
-    for (size_t i = 0; i < num_lights; i++) {
-        glBindFramebuffer(GL_FRAMEBUFFER, depth_fbos[i]);
-        glClear(GL_DEPTH_BUFFER_BIT);
-        static const auto loc_light_id =
-            glGetUniformLocation(depth_shader.id, "light_id");
-        glUniform1i(loc_light_id, static_cast<GLint>(i));
-        ShaderId shader;
-        Bucket bucket;
-        for (size_t i = 0; i < shader_to_bucket.Size(); i++) {
-            shader_to_bucket.Get(i, shader, bucket);
-            for (BatchId batch_id : bucket) {
-                const RenderBatch& batch = render_batches[batch_id];
-                DrawBatchIgnoreTextures(batch);
-            }
+    glUseProgram(dirlight_shader.id);
+    ShaderId dontcare;
+    Bucket bucket;
+    for (size_t i = 0; i < shader_to_bucket.Size(); i++) {
+        shader_to_bucket.Get(i, dontcare, bucket);
+        for (BatchId batch_id : bucket) {
+            const RenderBatch& batch = render_batches[batch_id];
+            DrawBatchIgnoreTextures(batch);
         }
     }
+
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glDepthFunc(GL_GEQUAL);
+    glClearDepthf(0.0f);
+    glCullFace(GL_BACK);
+    glViewport(0, 0, WindowWidth(), WindowHeight());
 }
 
 void InitializeRenderer(VivernaState& state) {
@@ -366,6 +354,7 @@ void InitializeRenderer(VivernaState& state) {
     glCullFace(GL_BACK);
 
     Scene::GetActive().Setup();
+    InitLights();
 
     state.SetFlag(VivernaState::RENDERER_INITIALIZED_FLAG, true);
     native_window = state.native_window;
@@ -376,6 +365,7 @@ void TerminateRenderer(VivernaState& state) {
     if (!state.GetFlag(VivernaState::RENDERER_INITIALIZED_FLAG))
         return;
 
+    TermLights();
     FreePrivateShaders();
     DeleteBuffers();
 
@@ -518,6 +508,7 @@ void Draw() {
     while ((glerr = glGetError()) != GL_NO_ERROR)
         VERNA_LOGE("Caught OpenGL error in Draw(): " + std::to_string(glerr));
 #endif
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     if (shader_to_bucket.Empty()) {
         VERNA_LOGW("Nothing to draw!");
@@ -594,10 +585,6 @@ int MaxTextureUnits() {
 int MaxMaterialTextures() {
     auto total = MaxTextureUnits();
     return total == 16 ? 6 : std::min(32, total / 2);
-}
-int MaxPointLights() {
-    return std::min(static_cast<int>(gpu::FrameData::MAX_POINT_LIGHTS),
-                    MaxTextureUnits() - MaxMaterialTextures());
 }
 }  // namespace RendererInfo
 }  // namespace verna

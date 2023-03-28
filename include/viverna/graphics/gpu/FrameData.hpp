@@ -1,20 +1,15 @@
-#ifndef VIVERNA_GPU_FRAME_DATA_HPP
-#define VIVERNA_GPU_FRAME_DATA_HPP
+#ifndef VERNA_GPU_FRAME_DATA_HPP
+#define VERNA_GPU_FRAME_DATA_HPP
 
 #include "CameraData.hpp"
-#include "PointLightData.hpp"
+#include "DirectionLightData.hpp"
 
-// TODO #include <string_view>
 #include <array>
 
 namespace verna::gpu {
 struct FrameData {
-    static constexpr unsigned MAX_POINT_LIGHTS = 16;
-
     CameraData camera_data;
-    std::array<PointLightData, MAX_POINT_LIGHTS> point_lights;
-    Mat4f light_projection;
-    int32_t num_point_lights;
+    DirectionLightData direction_light;
 
     static constexpr uint32_t BLOCK_BINDING = 0;
     static constexpr const char BLOCK_NAME[] = "FrameData";

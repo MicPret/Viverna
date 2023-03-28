@@ -2,10 +2,10 @@
 
 namespace verna::gpu {
 
-constexpr void Attenuation(float radius,
-                           float& constant,
-                           float& linear,
-                           float& quadratic) {
+static constexpr void Attenuation(float radius,
+                                  float& constant,
+                                  float& linear,
+                                  float& quadratic) {
     // TODO from radius!
     constant = 1.0f;
     linear = 0.09f;
@@ -20,14 +20,13 @@ PointLightData::PointLightData(const PointLight& pl) :
     Attenuation(pl.radius, ambient_constant.w, diffuse_linear.w,
                 specular_quadratic.w);
     // TODO check!
-    constexpr size_t n = 6;
-    std::array<Vec3f, n> directions = {Vec3f::UnitX(), -Vec3f::UnitX(),
+    constexpr std::array directions = {Vec3f::UnitX(), -Vec3f::UnitX(),
                                        Vec3f::UnitY(), -Vec3f::UnitY(),
                                        Vec3f::UnitZ(), -Vec3f::UnitZ()};
-    std::array<Vec3f, n> ups = {-Vec3f::UnitY(), -Vec3f::UnitY(),
-                                Vec3f::UnitZ(),  -Vec3f::UnitZ(),
-                                -Vec3f::UnitY(), -Vec3f::UnitY()};
-    for (size_t i = 0; i < n; i++)
+
+    constexpr std::array ups = {Vec3f::UnitY(), Vec3f::UnitY(), -Vec3f::UnitZ(),
+                                Vec3f::UnitZ(), Vec3f::UnitY(), Vec3f::UnitY()};
+    for (size_t i = 0; i < 6; i++)
         view_matrices[i] =
             Mat4f::LookAt(pl.position, pl.position + directions[i], ups[i]);
 }
