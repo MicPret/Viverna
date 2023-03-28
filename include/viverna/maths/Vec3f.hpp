@@ -19,7 +19,7 @@ struct Vec3f {
      * @brief Initializes every component with the same value n
      *
      */
-    constexpr Vec3f(float n) : x(n), y(n), z(n) {}
+    explicit constexpr Vec3f(float n) : x(n), y(n), z(n) {}
     constexpr float Dot(const Vec3f& other) const {
         return x * other.x + y * other.y + z * other.z;
     }
