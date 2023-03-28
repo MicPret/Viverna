@@ -6,6 +6,7 @@
 #include <viverna/graphics/Renderer.hpp>
 #include <viverna/graphics/Shader.hpp>
 
+#include <game/core/CameraController.hpp>
 #include <game/core/Fruit.hpp>
 #include <game/core/Snake.hpp>
 #include <game/core/Walls.hpp>
@@ -16,6 +17,7 @@ static constexpr float distance = 20.0f;
 static snake::Snake snake(distance);
 static snake::Fruit fruit(distance);
 static snake::Walls walls(distance);
+static snake::CameraController camera_controller;
 static Scene scene;
 static ShaderId shader;
 static KeyListener escape(Key::Escape);
@@ -38,8 +40,10 @@ void OnAppResume(VivernaState& app_state) {
     DirectionLight& light = scene.GetDirectionLight();
     light.direction = Vec3f(0.1f, -0.4f, 0.5f);
     light.ambient = Vec3f(0.01f);
-    light.diffuse = Vec3f(1.0f);
+    light.diffuse = Vec3f(0.9f);
     light.specular = Vec3f(0.3f);
+
+    camera_controller.SetCamera(scene.GetCamera());
 }
 
 void OnAppPause(VivernaState& app_state) {
@@ -77,6 +81,7 @@ void OnAppUpdate(VivernaState& app_state, DeltaTime<float, Seconds> dt) {
                    walls.Colliders().data(), walls.Colliders().size()))) {
         Reset();
     }
+    camera_controller.Update(dt.count());
 
     RenderScene();
     Draw();
@@ -89,7 +94,7 @@ static void RenderScene() {
 }
 
 static void Reset() {
-    scene.GetCamera().Reset();
+    // scene.GetCamera().Reset();
     snake.Dispose();
     snake.Setup();
     RecalculateFruit();
