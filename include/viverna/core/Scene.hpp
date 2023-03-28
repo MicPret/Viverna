@@ -2,7 +2,7 @@
 #define VERNA_SCENE_HPP
 
 #include <viverna/graphics/Camera.hpp>
-#include <viverna/graphics/PointLight.hpp>
+#include <viverna/graphics/DirectionLight.hpp>
 
 #include <vector>
 
@@ -15,12 +15,14 @@ class Scene {
     static Scene& GetActive();
     constexpr const Camera& GetCamera() const { return camera; }
     constexpr Camera& GetCamera() { return camera; }
-    constexpr const auto& PointLights() const { return point_lights; }
-    constexpr auto& PointLights() { return point_lights; }
+    constexpr const DirectionLight& GetDirectionLight() const {
+        return dir_light;
+    }
+    constexpr DirectionLight& GetDirectionLight() { return dir_light; }
 
    private:
     Camera camera;
-    std::vector<PointLight> point_lights;
+    DirectionLight dir_light;
 };
 }  // namespace verna
 

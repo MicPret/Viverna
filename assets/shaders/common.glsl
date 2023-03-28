@@ -3,8 +3,8 @@ precision highp float;
 precision highp int;
 #endif
 
-uniform sampler2D _textures[MAX_MATERIAL_TEXTURES];
-uniform samplerCube _depth_maps[MAX_POINT_LIGHTS];
+uniform sampler2D material_textures[MAX_MATERIAL_TEXTURES];
+uniform sampler2D dirlight_depthmap;
 
 struct MeshData {
     int texture_idx0;
@@ -26,33 +26,34 @@ struct CameraData {
     mat4 projection_matrix;
     mat4 view_matrix;
     mat4 pv_matrix;
+    float near;
+    float far;
+    float aspect_ratio;
+    float fovy;
 };
-struct PointLightData {
-    vec4 position;
-    vec4 ambient_constant;
-    vec4 diffuse_linear;
-    vec4 specular_quadratic;
-    mat4 view_matrices[6];
+struct DirectionLightData {
+    vec4 direction;
+    vec4 ambient;
+    vec4 diffuse;
+    vec4 specular;
+    mat4 pv_matrix;
 };
 
 layout(std140) uniform FrameData {
     CameraData camera;
-    PointLightData point_lights[MAX_POINT_LIGHTS];
-    mat4 light_projection;
-    int num_point_lights;
+    DirectionLightData direction_light;
 };
 layout(std140) uniform DrawData {
     MeshData draw_data[MAX_MESHES];
 };
-#define DEPTH_MAP(n) _depth_maps[n]
-#define TEXTURE0 _textures[draw_data[DRAW_ID].texture_idx0]
-#define TEXTURE1 _textures[draw_data[DRAW_ID].texture_idx1]
-#define TEXTURE2 _textures[draw_data[DRAW_ID].texture_idx2]
-#define TEXTURE3 _textures[draw_data[DRAW_ID].texture_idx3]
-#define TEXTURE4 _textures[draw_data[DRAW_ID].texture_idx4]
-#define TEXTURE5 _textures[draw_data[DRAW_ID].texture_idx5]
-#define TEXTURE6 _textures[draw_data[DRAW_ID].texture_idx6]
-#define TEXTURE7 _textures[draw_data[DRAW_ID].texture_idx7]
+#define TEXTURE0 material_textures[draw_data[DRAW_ID].texture_idx0]
+#define TEXTURE1 material_textures[draw_data[DRAW_ID].texture_idx1]
+#define TEXTURE2 material_textures[draw_data[DRAW_ID].texture_idx2]
+#define TEXTURE3 material_textures[draw_data[DRAW_ID].texture_idx3]
+#define TEXTURE4 material_textures[draw_data[DRAW_ID].texture_idx4]
+#define TEXTURE5 material_textures[draw_data[DRAW_ID].texture_idx5]
+#define TEXTURE6 material_textures[draw_data[DRAW_ID].texture_idx6]
+#define TEXTURE7 material_textures[draw_data[DRAW_ID].texture_idx7]
 #define MATERIAL_PARAM0 draw_data[DRAW_ID].param0
 #define MATERIAL_PARAM1 draw_data[DRAW_ID].param1
 #define MATERIAL_PARAM2 draw_data[DRAW_ID].param2

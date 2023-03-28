@@ -6,6 +6,7 @@
 #include <viverna/maths/Mat4f.hpp>
 
 namespace verna::gpu {
+// TODO currently unused!
 struct PointLightData {
     Vec4f position;
     Vec4f ambient_constant;

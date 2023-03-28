@@ -1,16 +1,14 @@
-#ifndef VERNA_POINT_LIGHT_HPP
-#define VERNA_POINT_LIGHT_HPP
+#ifndef VERNA_DIRECTION_LIGHT_HPP
+#define VERNA_DIRECTION_LIGHT_HPP
 
 #include <viverna/maths/Vec3f.hpp>
 
 namespace verna {
-// TODO currently unused
-struct PointLight {
-    Vec3f position;
+struct DirectionLight {
+    Vec3f direction;
     Vec3f ambient;
     Vec3f diffuse;
     Vec3f specular;
-    float radius;
 };
 }  // namespace verna
 

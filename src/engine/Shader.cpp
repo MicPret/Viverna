@@ -66,8 +66,6 @@ static std::string ShaderPreface() {
     std::string max_meshes = std::to_string(gpu::DrawData::MAX_MESHES);
     std::string max_material_textures =
         std::to_string(RendererInfo::MaxMaterialTextures());
-    std::string max_point_lights =
-        std::to_string(RendererInfo::MaxPointLights());
     auto common_glsl_raw = LoadRawAsset("shaders/common.glsl");
     std::string common_glsl(common_glsl_raw.data(), common_glsl_raw.size());
     return
@@ -82,8 +80,7 @@ static std::string ShaderPreface() {
 #endif
         "#define MAX_MESHES "
         + max_meshes + "\n#define MAX_MATERIAL_TEXTURES "
-        + max_material_textures + "\n#define MAX_POINT_LIGHTS "
-        + max_point_lights + "\n\n" + common_glsl + "\n\n";
+        + max_material_textures + "\n\n" + common_glsl + "\n\n";
 }
 
 static std::string ShaderCommonCode(GLenum shader_type) {
@@ -199,7 +196,7 @@ static void UniformInit(GLuint program) {
     block_loc = glGetUniformBlockIndex(program, gpu::DrawData::BLOCK_NAME);
     glUniformBlockBinding(program, block_loc, gpu::DrawData::BLOCK_BINDING);
 
-    GLint textures_loc = glGetUniformLocation(program, "_textures[0]");
+    GLint textures_loc = glGetUniformLocation(program, "material_textures[0]");
     std::vector<GLint> texture_slots;
     GLsizei mat_texture_count =
         static_cast<GLsizei>(RendererInfo::MaxMaterialTextures());
@@ -209,15 +206,10 @@ static void UniformInit(GLuint program) {
             texture_slots[i] = i;
         glUniform1iv(textures_loc, mat_texture_count, texture_slots.data());
     }  // else materials optimized out
-    textures_loc = glGetUniformLocation(program, "_depth_maps[0]");
-    GLsizei depth_texture_count =
-        static_cast<GLsizei>(RendererInfo::MaxPointLights());
-    if (mat_texture_count != -1) {
-        texture_slots.resize(depth_texture_count);
-        for (GLint i = 0; i < depth_texture_count; i++)
-            texture_slots[i] = i + mat_texture_count;
-        glUniform1iv(textures_loc, depth_texture_count, texture_slots.data());
-    }  // else depth optimized out
+    textures_loc = glGetUniformLocation(program, "dirlight_depthmap");
+    if (textures_loc != -1) {
+        glUniform1i(textures_loc, static_cast<GLint>(mat_texture_count));
+    }  // else direction light optimized out
 }
 
 static ShaderId LoadShaderFromSource(
