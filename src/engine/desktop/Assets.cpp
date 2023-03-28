@@ -6,6 +6,7 @@
 #elif defined(VERNA_LINUX)
 #include <limits.h>
 #include <unistd.h>
+#include <algorithm>
 #endif
 
 #include <array>
@@ -26,15 +27,16 @@ void InitializeAssets(VivernaState& state) {
     std::string process_path;
     int bytes;
 #if defined(VERNA_WINDOWS)
-    bytes = GetModuleFileName(nullptr, bf.data(), len);
-    process_path = std::string(bf.data(), bytes);
+    bytes = static_cast<int>(
+        GetModuleFileName(nullptr, bf.data(), static_cast<DWORD>(len)));
 #elif defined(VERNA_LINUX)
-    // TODO test!!!
-    bytes = MIN(readlink("/proc/self/exe", bf.data(), len), len - 1);
-    process_path = std::string(bf.data(), bytes);
+    bytes =
+        std::min(static_cast<int>(readlink("/proc/self/exe", bf.data(), len)),
+                 static_cast<int>(len - 1));
 #else
 #error Platform not supported!
 #endif
+    std::string process_path(bf.data(), bytes);
     process_path = process_path.substr(0, process_path.rfind(separator));
     constexpr std::string_view assets_folder_name = "assets";
     assets_folder_path =
