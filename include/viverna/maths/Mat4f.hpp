@@ -29,6 +29,25 @@ struct Mat4f {
     static constexpr Mat4f Identity() { return Mat4f(1.0f); }
     static Mat4f Rotation(const Vec3f& unit_axis, float radians);
     static Mat4f Perspective(float fovy, float aspect, float near, float far);
+    static constexpr Mat4f Ortho(float left,
+                                 float right,
+                                 float top,
+                                 float bottom,
+                                 float near,
+                                 float far) {
+        float i_dx = 1.0f / (right - left);
+        float i_dy = 1.0f / (top - bottom);
+        float i_dz = 1.0f / (far - near);
+        Mat4f result;
+        result[0] = 2.0f * i_dx;
+        result[5] = 2.0f * i_dy;
+        result[10] = i_dz;
+        result[12] = -(right + left) * i_dx;
+        result[13] = -(top + bottom) * i_dy;
+        result[14] = -near * i_dz;
+        result[15] = 1.0f;
+        return result;
+    }
     static constexpr Mat4f LookAt(const Vec3f& eye,
                                   const Vec3f& target,
                                   const Vec3f& up) {
