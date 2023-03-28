@@ -1,16 +1,25 @@
 in vec4 lightspace_pos;
 
+#ifdef VERNA_ANDROID
+#define PCF_SAMPLES 3
+#else
+#define PCF_SAMPLES 4
+#endif
+
 float CalculateShadowPCF(vec2 depthmap_coords,
                          float current_depth,
                          float bias) {
     if (current_depth > 1.0)
         return 0.0;
     float shadow = 0.0;
-    vec2 texel_size = 1.0 / textureSize(dirlight_depthmap, 0);
+    ivec2 texture_size = textureSize(dirlight_depthmap, 0);
+    vec2 texel_size =
+        vec2(1.0, 1.0) / vec2(float(texture_size.x), float(texture_size.y));
     float biased_depth = current_depth - bias;
-    for (int i = 0; i < 9; i++) {
-        float x = i % 3;
-        float y = i / 3;
+    int n = PCF_SAMPLES * PCF_SAMPLES;
+    for (int i = 0; i < n; i++) {
+        float x = float(i % PCF_SAMPLES);
+        float y = float(i / PCF_SAMPLES);
         vec2 offset = vec2(x, y) * texel_size;
         float pcf = texture(dirlight_depthmap, depthmap_coords + offset).r;
         if (biased_depth > pcf)
@@ -39,7 +48,7 @@ vec3 CalculateLight(in vec3 to_light_normalized,
     vec3 diffuse = diff_coeff * light_diff * diff;
     vec3 specular = spec_coeff * light_spec * spec;
 
-    float bias = max(0.01 * (1.0 - cosangle), 0.005);
+    float bias = max(0.003 * (1.0 - cosangle), 0.002);
     vec3 shadow_coords = (vec3(lightspace_pos) / lightspace_pos.w) * 0.5 + 0.5;
     float shadow =
         CalculateShadowPCF(vec2(shadow_coords), shadow_coords.z, bias);
