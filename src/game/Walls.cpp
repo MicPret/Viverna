@@ -19,7 +19,7 @@ void Walls::Setup() {
     float dy = upper_left.y;
     float width = dx * 2.0f;
     float height = dy * 2.0f;
-    transforms.back().position.z = distance + 1.0f;
+    transforms.back().position.z = distance + 0.5f;
     transforms.back().scale = verna::Vec3f(width, height, 0.1f);
     verna::Vec3f scaleV(0.5f, height, 1.0f);
     verna::Vec3f scaleH(width, 0.5f, 1.0f);
