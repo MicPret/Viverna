@@ -71,7 +71,7 @@ static void KeyCallback(GLFWwindow* window,
                         int mods) {
     if (key >= static_cast<int>(Key::Last) || key < 0)
         return;
-    SetKeyPressed(static_cast<Key>(key), action == GLFW_PRESS);
+    SetKeyPressed(static_cast<Key>(key), action != GLFW_RELEASE);
 }
 
 void InitializeInput(VivernaState& state) {
