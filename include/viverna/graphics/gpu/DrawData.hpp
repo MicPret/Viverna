@@ -2,7 +2,6 @@
 #define VERNA_GPU_DRAW_DATA_HPP
 
 #include "MeshData.hpp"
-// TODO #include <string_view>
 
 namespace verna::gpu {
 struct DrawData {
