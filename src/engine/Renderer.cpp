@@ -126,7 +126,8 @@ void InitLights() {
     glActiveTexture(GL_TEXTURE0 + RendererInfo::MaxMaterialTextures());
     glBindTexture(GL_TEXTURE_2D, dirlight_depthmap);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_MAP_WIDTH,
-                 SHADOW_MAP_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+                 SHADOW_MAP_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT,
+                 nullptr);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
@@ -138,8 +139,13 @@ void InitLights() {
     glBindFramebuffer(GL_FRAMEBUFFER, dirlight_fbo);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D,
                            dirlight_depthmap, 0);
-    glDrawBuffer(GL_NONE);
+    constexpr GLenum none = GL_NONE;
+    glDrawBuffers(1, &none);
     glReadBuffer(GL_NONE);
+    auto status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    VERNA_LOGE_IF(
+        status != GL_FRAMEBUFFER_COMPLETE,
+        "Incomplete fbo for direction light: " + std::to_string(status));
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
