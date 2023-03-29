@@ -23,6 +23,9 @@ class BoundingSphere {
     constexpr Vec3f& Position() { return position; }
     constexpr float Radius() const { return radius; }
     constexpr float& Radius() { return radius; }
+    constexpr bool Contains(const Vec3f& point) const {
+        return (point - position).SquaredMagnitude() <= (radius * radius);
+    }
     void Recalculate(const Mesh& mesh, const Transform& transform);
 
    private:

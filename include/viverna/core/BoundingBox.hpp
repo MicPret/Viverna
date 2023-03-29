@@ -38,6 +38,13 @@ class BoundingBox {
     constexpr float Width() const { return size.x; }
     constexpr float Height() const { return size.y; }
     constexpr float Depth() const { return size.z; }
+    constexpr bool Contains(const Vec3f& point) const {
+        auto min = MinPosition();
+        auto max = MaxPosition();
+        return (point.x >= min.x) && (point.y >= min.y) && (point.z >= min.z)
+               && (point.x <= max.x) && (point.y <= max.y)
+               && (point.z <= max.z);
+    }
     constexpr void SetCenter(const Vec3f& center) {
         position = center - 0.5f * Size();
     }
