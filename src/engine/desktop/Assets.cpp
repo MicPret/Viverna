@@ -24,7 +24,6 @@ void InitializeAssets(VivernaState& state) {
     constexpr size_t len = 256;
     constexpr auto separator = std::filesystem::path::preferred_separator;
     std::array<char, len> bf;
-    std::string process_path;
     int bytes;
 #if defined(VERNA_WINDOWS)
     bytes = static_cast<int>(
