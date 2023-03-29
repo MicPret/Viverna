@@ -1,4 +1,5 @@
 #include <viverna/graphics/Renderer.hpp>
+#include <viverna/core/BoundingBox.hpp>
 #include <viverna/core/Debug.hpp>
 #include <viverna/core/Scene.hpp>
 #include <viverna/core/Transform.hpp>
@@ -298,14 +299,83 @@ void BindTextures(const RenderBatch& batch) {
 }
 
 void PrepareDraw() {
+    auto FrustumBox = [](const Mat4f& i_matrix) {
+        std::array cube = {
+            Vec4f(-1.0, -1.0, -1.0, 1.0),  // left bottom front
+            Vec4f(1.0, -1.0, -1.0, 1.0),   // right bottom front
+            Vec4f(1.0, -1.0, 1.0, 1.0),    // right bottom back
+            Vec4f(-1.0, -1.0, 1.0, 1.0),   // left bottom back
+            Vec4f(-1.0, 1.0, -1.0, 1.0),   // left top front
+            Vec4f(1.0, 1.0, -1.0, 1.0),    // right top front
+            Vec4f(1.0, 1.0, 1.0, 1.0),     // right top back
+            Vec4f(-1.0, 1.0, 1.0, 1.0),    // left top back
+        };
+        for (auto& pos : cube) {
+            pos = i_matrix * pos;
+        }
+        // TODO check
+        Vec3f min = /* cube[0].w * */ cube[0].Xyz();
+        Vec3f max = min;
+        for (size_t i = 1; i < cube.size(); i++) {
+            Vec3f vert = /* cube[i].w * */ cube[i].Xyz();
+            if (vert.x <= min.x)
+                min.x = cube[i].x;
+            else if (vert.x > max.x)
+                max.x = cube[i].x;
+            if (vert.y <= min.y)
+                min.y = cube[i].y;
+            else if (vert.y > max.y)
+                max.y = cube[i].y;
+            if (vert.z <= min.z)
+                min.z = cube[i].z;
+            else if (vert.z > max.z)
+                max.z = cube[i].z;
+        }
+        return BoundingBox(min, max - min);
+    };
+
     const Scene& scene = Scene::GetActive();
+    const DirectionLight& dirlight = scene.GetDirectionLight();
+
+    float cosangle =
+        dirlight.direction.Dot(frame_data.direction_light.direction.Xyz());
+    constexpr float epsilon = 2e-6;
+    bool same_direction = maths::AreAlmostEqual(cosangle, 1.0f, epsilon);
+
+    Mat4f dirlight_matrix = frame_data.direction_light.pv_matrix;
+    static BoundingBox container = BoundingBox(Vec3f(), Vec3f());
+    BoundingBox volume =
+        FrustumBox(frame_data.camera_data.pv_matrix.Inverted());
+    bool dirty = !same_direction || !volume.IsCompletelyInside(container);
+    if (dirty) {
+        constexpr float scale = 1.5f;
+        volume.ScaleFromCenter(scale);
+        float offs = maths::Max(volume.Width(), volume.Height()) * 0.5f;
+        Mat4f projection =
+            Mat4f::Ortho(-offs, offs, offs, -offs, volume.MinPosition().z,
+                         volume.MaxPosition().z);
+        Mat4f view =
+            Mat4f::LookAt(-dirlight.direction, Vec3f(), Vec3f::UnitY());
+        dirlight_matrix = projection * view;
+
+        container = volume;
+    }
+
+    frame_data.direction_light.ambient_dirty =
+        Vec4f(dirlight.ambient, static_cast<float>(dirty));
+    frame_data.direction_light.diffuse = Vec4f(dirlight.diffuse, 0.0f);
+    frame_data.direction_light.specular = Vec4f(dirlight.specular, 0.0f);
+    frame_data.direction_light.direction = Vec4f(dirlight.direction, 0.0f);
+    frame_data.direction_light.pv_matrix = dirlight_matrix;
+
     frame_data.camera_data = gpu::CameraData(scene.GetCamera());
-    frame_data.direction_light =
-        gpu::DirectionLightData(scene.GetDirectionLight());
     ubo::SendData(gpu::FrameData::BLOCK_BINDING, &frame_data);
 }
 
 void DepthPass() {
+    bool dirty = static_cast<bool>(frame_data.direction_light.ambient_dirty.w);
+    if (!dirty)
+        return;
     glViewport(0, 0, SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT);
     glBindFramebuffer(GL_FRAMEBUFFER, dirlight_fbo);
     glDepthFunc(GL_LESS);
