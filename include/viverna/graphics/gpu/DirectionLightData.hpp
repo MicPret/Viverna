@@ -8,7 +8,7 @@
 namespace verna::gpu {
 struct DirectionLightData {
     Vec4f direction;
-    Vec4f ambient_dirty;
+    Vec4f ambient;
     Vec4f diffuse;
     Vec4f specular;
     Mat4f pv_matrix;

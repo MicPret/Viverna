@@ -55,8 +55,9 @@ ShaderId wireframe_shader;
 ShaderId dirlight_shader;
 GLuint dirlight_depthmap;
 GLuint dirlight_fbo;
-constexpr GLsizei SHADOW_MAP_WIDTH = 1024;
-constexpr GLsizei SHADOW_MAP_HEIGHT = 1024;
+constexpr GLsizei SHADOW_MAP_SIZE = 2048;
+constexpr GLsizei SHADOW_MAP_WIDTH = SHADOW_MAP_SIZE;
+constexpr GLsizei SHADOW_MAP_HEIGHT = SHADOW_MAP_SIZE;
 #ifndef NDEBUG
 std::vector<Vertex> dbg_vertices;
 std::vector<Mesh::index_t> dbg_indices;
@@ -299,7 +300,7 @@ void BindTextures(const RenderBatch& batch) {
 }
 
 void PrepareDraw() {
-    auto FrustumBox = [](const Mat4f& i_matrix) {
+    constexpr auto FrustumBox = [](const Mat4f& i_matrix) {
         std::array cube = {
             Vec4f(-1.0, -1.0, -1.0, 1.0),  // left bottom front
             Vec4f(1.0, -1.0, -1.0, 1.0),   // right bottom front
@@ -310,32 +311,29 @@ void PrepareDraw() {
             Vec4f(1.0, 1.0, 1.0, 1.0),     // right top back
             Vec4f(-1.0, 1.0, 1.0, 1.0),    // left top back
         };
+
         for (auto& pos : cube) {
-            pos = i_matrix * pos;
+            auto temp = i_matrix * pos;
+            pos = (1.0f / temp.w) * temp;
         }
-        // TODO check
-        Vec3f min = /* cube[0].w * */ cube[0].Xyz();
+
+        Vec3f min = cube[0].Xyz();
         Vec3f max = min;
         for (size_t i = 1; i < cube.size(); i++) {
-            Vec3f vert = /* cube[i].w * */ cube[i].Xyz();
-            if (vert.x <= min.x)
-                min.x = cube[i].x;
-            else if (vert.x > max.x)
-                max.x = cube[i].x;
-            if (vert.y <= min.y)
-                min.y = cube[i].y;
-            else if (vert.y > max.y)
-                max.y = cube[i].y;
-            if (vert.z <= min.z)
-                min.z = cube[i].z;
-            else if (vert.z > max.z)
-                max.z = cube[i].z;
+            const auto& v = cube[i];
+            min.x = maths::Min(min.x, v.x);
+            min.y = maths::Min(min.y, v.y);
+            min.z = maths::Min(min.z, v.z);
+            max.x = maths::Max(max.x, v.x);
+            max.y = maths::Max(max.y, v.y);
+            max.z = maths::Max(max.z, v.z);
         }
         return BoundingBox(min, max - min);
     };
 
     const Scene& scene = Scene::GetActive();
     const DirectionLight& dirlight = scene.GetDirectionLight();
+    auto camdata = gpu::CameraData(scene.GetCamera());
 
     float cosangle =
         dirlight.direction.Dot(frame_data.direction_light.direction.Xyz());
@@ -344,16 +342,24 @@ void PrepareDraw() {
 
     Mat4f dirlight_matrix = frame_data.direction_light.pv_matrix;
     static BoundingBox container = BoundingBox(Vec3f(), Vec3f());
-    BoundingBox volume =
-        FrustumBox(frame_data.camera_data.pv_matrix.Inverted());
+    Mat4f i_pv_matrix;
+    if (camdata.far <= 100.0f) {
+        i_pv_matrix = camdata.pv_matrix.Inverted();
+    } else {
+        Camera temp = scene.GetCamera();
+        temp.far_plane = 100.0f;
+        i_pv_matrix =
+            (temp.GetProjectionMatrix() * camdata.view_matrix).Inverted();
+    }
+    BoundingBox volume = FrustumBox(i_pv_matrix);
     bool dirty = !same_direction || !volume.IsCompletelyInside(container);
     if (dirty) {
-        constexpr float scale = 1.5f;
+        constexpr float scale = 1.1f;
         volume.ScaleFromCenter(scale);
-        float offs = maths::Max(volume.Width(), volume.Height()) * 0.5f;
+        Vec3f min = volume.MinPosition();
+        Vec3f max = volume.MaxPosition();
         Mat4f projection =
-            Mat4f::Ortho(-offs, offs, offs, -offs, volume.MinPosition().z,
-                         volume.MaxPosition().z);
+            Mat4f::Ortho(min.x, max.x, max.y, min.y, min.z, max.z);
         Mat4f view =
             Mat4f::LookAt(-dirlight.direction, Vec3f(), Vec3f::UnitY());
         dirlight_matrix = projection * view;
@@ -361,21 +367,17 @@ void PrepareDraw() {
         container = volume;
     }
 
-    frame_data.direction_light.ambient_dirty =
-        Vec4f(dirlight.ambient, static_cast<float>(dirty));
+    frame_data.direction_light.ambient = Vec4f(dirlight.ambient, 0.0f);
     frame_data.direction_light.diffuse = Vec4f(dirlight.diffuse, 0.0f);
     frame_data.direction_light.specular = Vec4f(dirlight.specular, 0.0f);
     frame_data.direction_light.direction = Vec4f(dirlight.direction, 0.0f);
     frame_data.direction_light.pv_matrix = dirlight_matrix;
+    frame_data.camera_data = camdata;
 
-    frame_data.camera_data = gpu::CameraData(scene.GetCamera());
     ubo::SendData(gpu::FrameData::BLOCK_BINDING, &frame_data);
 }
 
 void DepthPass() {
-    bool dirty = static_cast<bool>(frame_data.direction_light.ambient_dirty.w);
-    if (!dirty)
-        return;
     glViewport(0, 0, SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT);
     glBindFramebuffer(GL_FRAMEBUFFER, dirlight_fbo);
     glDepthFunc(GL_LESS);
