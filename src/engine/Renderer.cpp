@@ -1,4 +1,5 @@
 #include <viverna/graphics/Renderer.hpp>
+#include <viverna/core/BoundingBox.hpp>
 #include <viverna/core/Debug.hpp>
 #include <viverna/core/Scene.hpp>
 #include <viverna/core/Transform.hpp>
@@ -54,8 +55,9 @@ ShaderId wireframe_shader;
 ShaderId dirlight_shader;
 GLuint dirlight_depthmap;
 GLuint dirlight_fbo;
-constexpr GLsizei SHADOW_MAP_WIDTH = 1024;
-constexpr GLsizei SHADOW_MAP_HEIGHT = 1024;
+constexpr GLsizei SHADOW_MAP_SIZE = 2048;
+constexpr GLsizei SHADOW_MAP_WIDTH = SHADOW_MAP_SIZE;
+constexpr GLsizei SHADOW_MAP_HEIGHT = SHADOW_MAP_SIZE;
 #ifndef NDEBUG
 std::vector<Vertex> dbg_vertices;
 std::vector<Mesh::index_t> dbg_indices;
@@ -298,10 +300,80 @@ void BindTextures(const RenderBatch& batch) {
 }
 
 void PrepareDraw() {
+    constexpr auto FrustumBox = [](const Mat4f& i_matrix) {
+        std::array cube = {
+            Vec4f(-1.0, -1.0, -1.0, 1.0),  // left bottom front
+            Vec4f(1.0, -1.0, -1.0, 1.0),   // right bottom front
+            Vec4f(1.0, -1.0, 1.0, 1.0),    // right bottom back
+            Vec4f(-1.0, -1.0, 1.0, 1.0),   // left bottom back
+            Vec4f(-1.0, 1.0, -1.0, 1.0),   // left top front
+            Vec4f(1.0, 1.0, -1.0, 1.0),    // right top front
+            Vec4f(1.0, 1.0, 1.0, 1.0),     // right top back
+            Vec4f(-1.0, 1.0, 1.0, 1.0),    // left top back
+        };
+
+        for (auto& pos : cube) {
+            auto temp = i_matrix * pos;
+            pos = (1.0f / temp.w) * temp;
+        }
+
+        Vec3f min = cube[0].Xyz();
+        Vec3f max = min;
+        for (size_t i = 1; i < cube.size(); i++) {
+            const auto& v = cube[i];
+            min.x = maths::Min(min.x, v.x);
+            min.y = maths::Min(min.y, v.y);
+            min.z = maths::Min(min.z, v.z);
+            max.x = maths::Max(max.x, v.x);
+            max.y = maths::Max(max.y, v.y);
+            max.z = maths::Max(max.z, v.z);
+        }
+        return BoundingBox(min, max - min);
+    };
+
     const Scene& scene = Scene::GetActive();
-    frame_data.camera_data = gpu::CameraData(scene.GetCamera());
-    frame_data.direction_light =
-        gpu::DirectionLightData(scene.GetDirectionLight());
+    const DirectionLight& dirlight = scene.GetDirectionLight();
+    auto camdata = gpu::CameraData(scene.GetCamera());
+
+    float cosangle =
+        dirlight.direction.Dot(frame_data.direction_light.direction.Xyz());
+    constexpr float epsilon = 2e-6;
+    bool same_direction = maths::AreAlmostEqual(cosangle, 1.0f, epsilon);
+
+    Mat4f dirlight_matrix = frame_data.direction_light.pv_matrix;
+    static BoundingBox container = BoundingBox(Vec3f(), Vec3f());
+    Mat4f i_pv_matrix;
+    if (camdata.far <= 100.0f) {
+        i_pv_matrix = camdata.pv_matrix.Inverted();
+    } else {
+        Camera temp = scene.GetCamera();
+        temp.far_plane = 100.0f;
+        i_pv_matrix =
+            (temp.GetProjectionMatrix() * camdata.view_matrix).Inverted();
+    }
+    BoundingBox volume = FrustumBox(i_pv_matrix);
+    bool dirty = !same_direction || !volume.IsCompletelyInside(container);
+    if (dirty) {
+        constexpr float scale = 1.1f;
+        volume.ScaleFromCenter(scale);
+        Vec3f min = volume.MinPosition();
+        Vec3f max = volume.MaxPosition();
+        Mat4f projection =
+            Mat4f::Ortho(min.x, max.x, max.y, min.y, min.z, max.z);
+        Mat4f view =
+            Mat4f::LookAt(-dirlight.direction, Vec3f(), Vec3f::UnitY());
+        dirlight_matrix = projection * view;
+
+        container = volume;
+    }
+
+    frame_data.direction_light.ambient = Vec4f(dirlight.ambient, 0.0f);
+    frame_data.direction_light.diffuse = Vec4f(dirlight.diffuse, 0.0f);
+    frame_data.direction_light.specular = Vec4f(dirlight.specular, 0.0f);
+    frame_data.direction_light.direction = Vec4f(dirlight.direction, 0.0f);
+    frame_data.direction_light.pv_matrix = dirlight_matrix;
+    frame_data.camera_data = camdata;
+
     ubo::SendData(gpu::FrameData::BLOCK_BINDING, &frame_data);
 }
 

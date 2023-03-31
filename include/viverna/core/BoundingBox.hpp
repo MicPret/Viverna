@@ -3,6 +3,7 @@
 
 #include <viverna/maths/Vec3f.hpp>
 
+#include <array>
 #include <vector>
 
 namespace verna {
@@ -38,6 +39,34 @@ class BoundingBox {
     constexpr float Width() const { return size.x; }
     constexpr float Height() const { return size.y; }
     constexpr float Depth() const { return size.z; }
+    constexpr bool Contains(const Vec3f& point) const {
+        auto min = MinPosition();
+        auto max = MaxPosition();
+        return (point.x >= min.x) && (point.y >= min.y) && (point.z >= min.z)
+               && (point.x <= max.x) && (point.y <= max.y)
+               && (point.z <= max.z);
+    }
+    constexpr bool IsCompletelyInside(const BoundingBox& outer) {
+        const auto& vertices = Vertices();
+        for (const auto& v : vertices)
+            if (!outer.Contains(v))
+                return false;
+        return true;
+    }
+    constexpr void ScaleFromMinPosition(const Vec3f& scale) {
+        size = Vec3f(scale.x * size.x, scale.y * size.y, scale.z * size.z);
+    }
+    constexpr void ScaleFromMinPosition(float scalar) {
+        ScaleFromMinPosition(Vec3f(scalar));
+    }
+    constexpr void ScaleFromCenter(const Vec3f& scale) {
+        Vec3f center = Center();
+        ScaleFromMinPosition(scale);
+        SetCenter(center);
+    }
+    constexpr void ScaleFromCenter(float scalar) {
+        ScaleFromCenter(Vec3f(scalar));
+    }
     constexpr void SetCenter(const Vec3f& center) {
         position = center - 0.5f * Size();
     }
@@ -60,6 +89,19 @@ class BoundingBox {
             position.z -= size.z;
             size.z = -size.z;
         }
+    }
+    // Unordered
+    constexpr std::array<Vec3f, 8> Vertices() {
+        Vec3f min = MinPosition();
+        Vec3f max = MaxPosition();
+        return {min,
+                {min.x, min.y, max.z},
+                {min.x, max.y, min.z},
+                {min.x, max.y, max.z},
+                {max.x, min.y, min.z},
+                {max.x, min.y, max.z},
+                {max.x, max.y, min.z},
+                max};
     }
 };
 }  // namespace verna

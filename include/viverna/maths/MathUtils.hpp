@@ -35,6 +35,16 @@ constexpr bool AreAlmostEqual(float a, float b, float epsilon) {
 }
 
 /**
+ * @brief Computes the absolute value of x
+ *
+ * @param x Input float
+ * @return The absolute value
+ */
+constexpr float Abs(float x) {
+    return x >= 0.0f ? x : -x;
+}
+
+/**
  * @brief Returns the square root for non-negative finite x, otherwise NaN
  *
  * @param x Input float

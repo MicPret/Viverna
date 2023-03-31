@@ -181,7 +181,17 @@ constexpr Mat4f Mat4f::Inverted() const {
     float det =
         raw[0] * inv[0] + raw[1] * inv[4] + raw[2] * inv[8] + raw[3] * inv[12];
 
-    VERNA_LOGE_IF(det == 0.0f, "Math error: can't invert matrix!");
+    [[maybe_unused]] auto ToString = [](const std::array<float, 16>& arr) {
+        std::string result;
+        for (size_t i = 0; i < 4; i++) {
+            result += std::to_string(arr[i]) + '\t' + std::to_string(arr[i + 4])
+                      + '\t' + std::to_string(arr[i + 8]) + '\t'
+                      + std::to_string(arr[i + 12]) + '\n';
+        }
+        return result;
+    };
+    VERNA_LOGE_IF(det == 0.0f,
+                  "Math error: can't invert matrix!\n" + ToString(raw));
 
     det = 1.0 / det;
     for (auto i = 0; i < 16; i++)

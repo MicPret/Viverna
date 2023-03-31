@@ -1,10 +1,9 @@
 in vec4 lightspace_pos;
 
-#ifdef VERNA_ANDROID
-#define PCF_SAMPLES 3
-#else
-#define PCF_SAMPLES 4
-#endif
+float CalculateShadow(vec2 depthmap_coords, float current_depth, float bias) {
+    float shadow = texture(dirlight_depthmap, depthmap_coords).r;
+    return (current_depth - bias) > shadow ? 1.0 : 0.0;
+}
 
 float CalculateShadowPCF(vec2 depthmap_coords,
                          float current_depth,
@@ -13,17 +12,16 @@ float CalculateShadowPCF(vec2 depthmap_coords,
         return 0.0;
     float shadow = 0.0;
     ivec2 texture_size = textureSize(dirlight_depthmap, 0);
-    vec2 texel_size =
-        vec2(1.0, 1.0) / vec2(float(texture_size.x), float(texture_size.y));
-    float biased_depth = current_depth - bias;
-    int n = PCF_SAMPLES * PCF_SAMPLES;
-    for (int i = 0; i < n; i++) {
-        float x = float(i % PCF_SAMPLES);
-        float y = float(i / PCF_SAMPLES);
-        vec2 offset = vec2(x, y) * texel_size;
-        float pcf = texture(dirlight_depthmap, depthmap_coords + offset).r;
-        if (biased_depth > pcf)
-            shadow += 1.0;
+    float x_size = 1.0 / float(texture_size.x);
+    float y_size = 1.0 / float(texture_size.y);
+    for (int y = -1; y <= 1; y++) {
+        float y_offs = float(y) * y_size;
+        for (int x = -1; x <= 1; x++) {
+            float x_offs = float(x) * x_size;
+            vec2 offset = vec2(x_offs, y_offs);
+            shadow +=
+                CalculateShadow(depthmap_coords + offset, current_depth, bias);
+        }
     }
     return shadow / 9.0;
 }
@@ -48,10 +46,14 @@ vec3 CalculateLight(in vec3 to_light_normalized,
     vec3 diffuse = diff_coeff * light_diff * diff;
     vec3 specular = spec_coeff * light_spec * spec;
 
-    float bias = max(0.003 * (1.0 - cosangle), 0.002);
+    // float bias = max(0.0003 * (1.0 - cosangle), 0.00003);
+    float bias = 0.0;
     vec3 shadow_coords = (vec3(lightspace_pos) / lightspace_pos.w) * 0.5 + 0.5;
+    float current_depth = shadow_coords.z;
     float shadow =
-        CalculateShadowPCF(vec2(shadow_coords), shadow_coords.z, bias);
+        current_depth > 1.0
+            ? 0.0
+            : CalculateShadowPCF(vec2(shadow_coords), shadow_coords.z, bias);
 
     // attenuation * (ambient + (1.0 - shadow) * (diffuse + specular));
     return ambient + (1.0 - shadow) * (diffuse + specular);
