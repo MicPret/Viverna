@@ -1,5 +1,5 @@
-#ifndef VERNA_FW_APPLICATION_HPP
-#define VERNA_FW_APPLICATION_HPP
+#ifndef VERNA_APPLICATION_HPP
+#define VERNA_APPLICATION_HPP
 
 #include <viverna/core/VivernaState.hpp>
 
