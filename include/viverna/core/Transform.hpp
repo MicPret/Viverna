@@ -18,10 +18,10 @@ struct Transform {
     Vec3f Up() const;
 
     constexpr Mat4f GetMatrix() const {
-        Mat4f t = Mat4f::Identity();
-        t[12] = position.x;
-        t[13] = position.y;
-        t[14] = position.z;
+        Mat4f t_r = rotation.AsMatrix();
+        t_r[12] = position.x;
+        t_r[13] = position.y;
+        t_r[14] = position.z;
 
         Mat4f s;
         s[0] = scale.x;
@@ -29,7 +29,7 @@ struct Transform {
         s[10] = scale.z;
         s[15] = 1.0f;
 
-        return t * rotation.AsMatrix() * s;  // TODO optimize!!!
+        return t_r * s;
     }
 
     constexpr Vec3f Apply(const Vec3f& v) const {
