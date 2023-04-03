@@ -27,7 +27,7 @@ static void GlfwWindowHints(const GLFWvidmode* vidmode) {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
-    glfwWindowHint(GLFW_DEPTH_BITS, 24); // default value
+    glfwWindowHint(GLFW_DEPTH_BITS, 24);  // default value
 #ifndef NDEBUG
     glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
 #else
@@ -42,9 +42,41 @@ void InitializeWindow(VivernaState& state) {
     }
 
 #ifndef NDEBUG
-    // TODO error -> error_name
     glfwSetErrorCallback([](int error, const char* description) {
-        VERNA_LOGE("GLFW error " + std::to_string(error) + ":\n" + description);
+        std::string err_string;
+        switch (error) {
+            case GLFW_NOT_INITIALIZED:
+                err_string = "GLFW_NOT_INITIALIZED";
+                break;
+            case GLFW_NO_CURRENT_CONTEXT:
+                err_string = "GLFW_NO_CURRENT_CONTEXT";
+                break;
+            case GLFW_INVALID_ENUM:
+                err_string = "GLFW_INVALID_ENUM";
+                break;
+            case GLFW_INVALID_VALUE:
+                err_string = "GLFW_INVALID_VALUE";
+                break;
+            case GLFW_OUT_OF_MEMORY:
+                err_string = "GLFW_OUT_OF_MEMORY";
+                break;
+            case GLFW_API_UNAVAILABLE:
+                err_string = "GLFW_API_UNAVAILABLE";
+                break;
+            case GLFW_VERSION_UNAVAILABLE:
+                err_string = "GLFW_VERSION_UNAVAILABLE";
+                break;
+            case GLFW_PLATFORM_ERROR:
+                err_string = "GLFW_PLATFORM_ERROR";
+                break;
+            case GLFW_FORMAT_UNAVAILABLE:
+                err_string = "GLFW_FORMAT_UNAVAILABLE";
+                break;
+            default:
+                err_string = "<Unknown GLFW error>";
+                break;
+        }
+        VERNA_LOGE("GLFW error " + err_string + ":\n" + description);
     });
 #endif
 
