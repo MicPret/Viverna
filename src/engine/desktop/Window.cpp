@@ -130,7 +130,7 @@ void TerminateWindow(VivernaState& state) {
     width = 0;
     height = 0;
     glfwTerminate();
-    // TODO glfwSetErrorCallback(nullptr);
+    glfwSetErrorCallback(nullptr);
     VERNA_LOGI("Window terminated!");
 }
 
