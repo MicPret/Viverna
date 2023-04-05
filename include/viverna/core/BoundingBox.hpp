@@ -113,16 +113,16 @@ class BoundingBox {
     Vec3f size;
     constexpr void Fix() {
         if (size.x < 0) {
-            position.x -= size.x;
             size.x = -size.x;
+            position.x -= size.x;
         }
         if (size.y < 0) {
-            position.y -= size.y;
             size.y = -size.y;
+            position.y -= size.y;
         }
         if (size.z < 0) {
-            position.z -= size.z;
             size.z = -size.z;
+            position.z -= size.z;
         }
     }
     // Unordered
