@@ -13,9 +13,13 @@ struct Transform {
 
     constexpr Transform() : scale(1.0f, 1.0f, 1.0f) {}
 
-    Vec3f Forward() const;
-    Vec3f Right() const;
-    Vec3f Up() const;
+    constexpr Vec3f Forward() const {
+        return rotation.Rotate(Vec3f::UnitZ()).Normalized();
+    }
+    constexpr Vec3f Right() const {
+        return Vec3f::UnitY().Cross(Forward()).Normalized();
+    }
+    constexpr Vec3f Up() const { return Forward().Cross(Right()).Normalized(); }
 
     constexpr Mat4f GetMatrix() const {
         Mat4f t_r = rotation.AsMatrix();
@@ -33,11 +37,7 @@ struct Transform {
     }
 
     constexpr Vec3f Apply(const Vec3f& v) const {
-        Vec3f output;
-        output.x = v.x * scale.x;
-        output.y = v.y * scale.y;
-        output.z = v.z * scale.z;
-        return position + rotation.Rotate(output);
+        return position + rotation.Rotate(scale.ComponentProduct(v));
     }
 
     static constexpr Transform Lerp(const Transform& a,
