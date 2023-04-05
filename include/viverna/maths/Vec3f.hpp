@@ -27,6 +27,15 @@ struct Vec3f {
         return Vec3f(y * other.z - other.y * z, z * other.x - other.z * x,
                      x * other.y - other.x * y);
     }
+    /**
+     * @brief Returns a vector made from a componentwise multiplication
+     *
+     * @param other Input vector
+     * @return Componentwise product
+     */
+    constexpr Vec3f ComponentProduct(const Vec3f& other) const {
+        return Vec3f(x * other.x, y * other.y, z * other.z);
+    }
     constexpr float SquaredMagnitude() const { return Dot(*this); }
     constexpr float Magnitude() const {
         return maths::Sqrt(SquaredMagnitude());
@@ -44,7 +53,28 @@ struct Vec3f {
     static constexpr Vec3f Lerp(const Vec3f& a, const Vec3f& b, float t) {
         return (1.0f - t) * a + t * b;
     }
-
+    /**
+     * @brief Returns a vector made from the smallest components of the two
+     *
+     * @param a First vector
+     * @param b Second vector
+     * @return {0.0f, 1.0f, 2.0f), {1.0f, 1.0f, -1.0f} => {0.0f, 1.0f, -1.0f}
+     */
+    static constexpr Vec3f Min(const Vec3f& a, const Vec3f& b) {
+        return Vec3f(maths::Min(a.x, b.x), maths::Min(a.y, b.y),
+                     maths::Min(a.z, b.z));
+    }
+    /**
+     * @brief Returns a vector made from the largest components of the two
+     *
+     * @param a First vector
+     * @param b Second vector
+     * @return {0.0f, 1.0f, 2.0f), {1.0f, 1.0f, -1.0f} => {1.0f, 1.0f, 2.0f}
+     */
+    static constexpr Vec3f Max(const Vec3f& a, const Vec3f& b) {
+        return Vec3f(maths::Max(a.x, b.x), maths::Max(a.y, b.y),
+                     maths::Max(a.z, b.z));
+    }
     /**
      * @brief Computes a random unit vector
      *

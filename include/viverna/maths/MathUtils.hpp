@@ -57,6 +57,16 @@ constexpr float Sqrt(float x) {
 }
 
 /**
+ * @brief Returns the square of x
+ *
+ * @param x Input float
+ * @return The square
+ */
+constexpr float Squared(float x) {
+    return x * x;
+}
+
+/**
  * @brief Converts an angle from degrees to radians
  *
  * @param degrees Angle in degrees
