@@ -1,15 +1,16 @@
 #ifndef VERNA_BOUNDING_BOX_HPP
 #define VERNA_BOUNDING_BOX_HPP
 
+#include <viverna/core/Debug.hpp>
 #include <viverna/maths/Vec3f.hpp>
 
 #include <array>
-#include <vector>
 
 namespace verna {
 
 struct Mesh;
 struct Transform;
+class BoundingSphere;
 
 /**
  * @brief AABB in world coordinates
@@ -47,8 +48,8 @@ class BoundingBox {
                && (point.z <= max.z);
     }
     constexpr bool IsCompletelyInside(const BoundingBox& outer) {
-        const auto& vertices = Vertices();
-        for (const auto& v : vertices)
+        std::array vertices = Vertices();
+        for (const Vec3f& v : vertices)
             if (!outer.Contains(v))
                 return false;
         return true;
@@ -70,8 +71,42 @@ class BoundingBox {
     constexpr void SetCenter(const Vec3f& center) {
         position = center - 0.5f * Size();
     }
+    constexpr bool Collides(const BoundingBox& other) const {
+        Vec3f b_a = other.MaxPosition() - MinPosition();
+        Vec3f a_b = MaxPosition() - other.MinPosition();
+        return (b_a.x < 0.0f || b_a.y < 0.0f || b_a.z < 0.0f)
+               || (a_b.x >= 0.0 && a_b.y >= 0.0f && a_b.z >= 0.0f);
+    }
+    bool Collides(const BoundingSphere& sphere) const;
     void Recalculate(const Mesh& mesh, const Transform& transform);
-    void Recalculate(const std::vector<Vec3f>& world_coords);
+    void Recalculate(const Mesh& mesh);
+    /**
+     * @brief Computes bounds based on world positions that must fit inside
+     *
+     * @tparam Vec3fCollection A collection of Vec3f (e.g. std::array,
+     * std::vector)
+     * @param positions Points in space to fit inside the AABB, in world
+     * coordinates
+     */
+    template <typename Vec3fCollection>
+    void Recalculate(Vec3fCollection&& positions) {
+        if (positions.begin() == positions.end()) {
+            VERNA_LOGW(
+                "Called BoundingBox::Recalculate on empty collection of "
+                "Vec3f!");
+            position = Vec3f();
+            size = Vec3f();
+            return;
+        }
+        Vec3f min = *(positions.begin());
+        Vec3f max = min;
+        for (const Vec3f& pos : positions) {
+            min = Vec3f::Min(min, pos);
+            max = Vec3f::Max(max, pos);
+        }
+        position = min;
+        size = max - min;
+    }
 
    private:
     Vec3f position;
@@ -91,8 +126,8 @@ class BoundingBox {
         }
     }
     // Unordered
-    constexpr std::array<Vec3f, 8> Vertices() {
-        Vec3f min = MinPosition();
+    constexpr std::array<Vec3f, 8> Vertices() const {
+        const Vec3f& min = position;
         Vec3f max = MaxPosition();
         return {min,
                 {min.x, min.y, max.z},
