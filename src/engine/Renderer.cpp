@@ -321,7 +321,7 @@ void PrepareDraw() {
         }
 
         BoundingBox result;
-        result.Encapsulate(transformed);
+        result.Recalculate(transformed);
         return result;
     };
 
