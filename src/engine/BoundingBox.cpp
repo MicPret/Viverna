@@ -28,7 +28,7 @@ void BoundingBox::ApplyTransform(const Transform& transform) {
     std::array vertices = Vertices();
     for (Vec3f& v : vertices)
         v = transform.Apply(v);
-    Encapsulate(vertices);
+    Recalculate(vertices);
 }
 
 void BoundingBox::Recalculate(const Mesh& mesh, const Transform& transform) {
@@ -42,7 +42,7 @@ void BoundingBox::Recalculate(const Mesh& mesh, const Transform& transform) {
     Vec3f min = pos;
     Vec3f max = pos;
     for (size_t i = 1; i < mesh.vertices.size(); i++) {
-        pos = transform.Apply(mesh.vertices[1].position);
+        pos = transform.Apply(mesh.vertices[i].position);
         min = Vec3f::Min(min, pos);
         max = Vec3f::Max(max, pos);
     }
