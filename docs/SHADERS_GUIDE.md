@@ -30,6 +30,9 @@ As of now, shaders are written in `.vert`, `.frag` and optional `.geom` files in
         - `v.position`      _(output vec3)_
         - `v.tex_coords`    _(output vec2)_
         - `v.normal`        _(output vec3)_
+    - in/out geometry variables
+        - `g_in[]`  _(input interface, same as vertex "v")_
+        - `g_out`   _(output interface, same as vertex "v")_
     - in/out fragment variables
         - `v.position`      _(input vec3)_
         - `v.tex_coords`    _(input vec2)_

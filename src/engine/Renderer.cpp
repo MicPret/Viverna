@@ -44,7 +44,6 @@ struct GlDrawCommand {
 void* native_window = nullptr;
 ShaderBucketMapper shader_to_bucket;
 std::vector<RenderBatch> render_batches;
-Bucket debug_bucket;
 
 GLuint vao, vbo, ebo;
 GLsizeiptr vbo_size, ebo_size;
@@ -58,6 +57,9 @@ GLuint dirlight_fbo;
 constexpr GLsizei SHADOW_MAP_SIZE = 2048;
 constexpr GLsizei SHADOW_MAP_WIDTH = SHADOW_MAP_SIZE;
 constexpr GLsizei SHADOW_MAP_HEIGHT = SHADOW_MAP_SIZE;
+
+BoundingBox render_bounds;  // TODO use!!!!!!!
+
 #ifndef NDEBUG
 std::vector<Vertex> dbg_vertices;
 std::vector<Mesh::index_t> dbg_indices;
@@ -301,7 +303,7 @@ void BindTextures(const RenderBatch& batch) {
 
 void PrepareDraw() {
     constexpr auto FrustumBox = [](const Mat4f& i_matrix) {
-        std::array cube = {
+        constexpr std::array cube = {
             Vec4f(-1.0, -1.0, -1.0, 1.0),  // left bottom front
             Vec4f(1.0, -1.0, -1.0, 1.0),   // right bottom front
             Vec4f(1.0, -1.0, 1.0, 1.0),    // right bottom back
@@ -311,24 +313,16 @@ void PrepareDraw() {
             Vec4f(1.0, 1.0, 1.0, 1.0),     // right top back
             Vec4f(-1.0, 1.0, 1.0, 1.0),    // left top back
         };
+        std::array<Vec3f, cube.size()> transformed;
 
-        for (auto& pos : cube) {
-            auto temp = i_matrix * pos;
-            pos = (1.0f / temp.w) * temp;
+        for (size_t i = 0; i < cube.size(); i++) {
+            auto temp = i_matrix * cube[i];
+            transformed[i] = (1.0f / temp.w) * temp.Xyz();
         }
 
-        Vec3f min = cube[0].Xyz();
-        Vec3f max = min;
-        for (size_t i = 1; i < cube.size(); i++) {
-            const auto& v = cube[i];
-            min.x = maths::Min(min.x, v.x);
-            min.y = maths::Min(min.y, v.y);
-            min.z = maths::Min(min.z, v.z);
-            max.x = maths::Max(max.x, v.x);
-            max.y = maths::Max(max.y, v.y);
-            max.z = maths::Max(max.z, v.z);
-        }
-        return BoundingBox(min, max - min);
+        BoundingBox result;
+        result.Encapsulate(transformed);
+        return result;
     };
 
     const Scene& scene = Scene::GetActive();
@@ -352,10 +346,12 @@ void PrepareDraw() {
             (temp.GetProjectionMatrix() * camdata.view_matrix).Inverted();
     }
     BoundingBox volume = FrustumBox(i_pv_matrix);
-    bool dirty = !same_direction || !volume.IsCompletelyInside(container);
+    bool dirty = !same_direction || !volume.IsCompletelyInside(container)
+                 || !render_bounds.IsCompletelyInside(container);
     if (dirty) {
         constexpr float scale = 1.1f;
         volume.ScaleFromCenter(scale);
+        volume.Encapsulate(render_bounds);
         Vec3f min = volume.MinPosition();
         Vec3f max = volume.MaxPosition();
         Mat4f projection =
@@ -452,10 +448,10 @@ void TerminateRenderer(VivernaState& state) {
     VERNA_LOGI("Renderer terminated!");
 }
 
-void Render(const Mesh& mesh,
-            const Material& material,
-            const Mat4f& model_matrix,
-            ShaderId shader_id) {
+static void Render(const Mesh& mesh,
+                   const Material& material,
+                   const Mat4f& model_matrix,
+                   ShaderId shader_id) {
     VERNA_LOGE_IF(!shader_id.IsValid(), "Called Render() with invalid shader!");
     VERNA_LOGE_IF(mesh.vertices.empty() || mesh.indices.empty(),
                   "Called Render() on empty Mesh!");
@@ -497,22 +493,13 @@ void Render(const Mesh& mesh,
             const Material& material,
             const Transform& transform,
             ShaderId shader_id) {
+    BoundingBox box = mesh.bounds;
+    box.ApplyTransform(transform);
+    if (render_bounds.Size().SquaredMagnitude() > 0.0f)
+        render_bounds.Encapsulate(box);
+    else
+        render_bounds = box;
     Render(mesh, material, transform.GetMatrix(), shader_id);
-}
-
-void Render(const Model& model,
-            const Mat4f& transform_matrix,
-            ShaderId shader_id) {
-    const auto& meshes = model.Meshes();
-    const auto& materials = model.Materials();
-    for (size_t i = 0; i < meshes.size(); i++)
-        Render(meshes[i], materials[i], transform_matrix, shader_id);
-}
-
-void Render(const Model& model,
-            const Transform& transform,
-            ShaderId shader_id) {
-    Render(model, transform.GetMatrix(), shader_id);
 }
 
 #ifndef NDEBUG
@@ -615,6 +602,7 @@ void Draw() {
     SwapBuffers();
 
     ClearBatches();
+    render_bounds = BoundingBox();
 }
 
 void RenderDebug(const BoundingBox& box) {

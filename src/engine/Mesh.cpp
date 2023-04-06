@@ -3,14 +3,6 @@
 
 namespace verna {
 
-void Mesh::AddVertices(std::initializer_list<Vertex> vertices_) {
-    vertices.insert(vertices.end(), vertices_);
-}
-
-void Mesh::AddTriangle(index_t a, index_t b, index_t c) {
-    indices.insert(indices.end(), {a, b, c});
-}
-
 void Mesh::RecalculateNormals() {
     if (vertices.size() < 3 || indices.size() < 3) {
         VERNA_LOGE("RecalculateNormals failed: there is no triangle!");
@@ -32,9 +24,15 @@ void Mesh::RecalculateNormals() {
         vertices[b].normal += normal;
         vertices[c].normal += normal;
     }
-    for (auto& v : vertices)
+    for (Vertex& v : vertices)
         v.normal = v.normal.Normalized();
 }
+
+void Mesh::RecalculateBounds() {
+    bounds.Recalculate(*this);
+}
+
+// Primitives
 
 static Mesh LoadPrimitiveCube();
 static Mesh LoadPrimitivePyramid();
@@ -85,6 +83,7 @@ static Mesh LoadPrimitiveCube() {
         5, 1, 0, 5, 6, 1   // bottom
     };
     output.RecalculateNormals();
+    output.RecalculateBounds();
     return output;
 }
 
@@ -111,6 +110,7 @@ static Mesh LoadPrimitivePyramid() {
         1, 4, 2            // right
     };
     output.RecalculateNormals();
+    output.RecalculateBounds();
     return output;
 }
 
@@ -162,6 +162,8 @@ static Mesh LoadPrimitiveSphere() {
         }
     }
     sphere.RecalculateNormals();
+    sphere.RecalculateBounds();
     return sphere;
 }
+
 }  // namespace verna
