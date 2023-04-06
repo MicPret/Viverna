@@ -24,6 +24,13 @@ bool BoundingBox::Collides(const BoundingSphere& sphere) const {
     return dist_squared > 0;
 }
 
+void BoundingBox::ApplyTransform(const Transform& transform) {
+    std::array vertices = Vertices();
+    for (Vec3f& v : vertices)
+        v = transform.Apply(v);
+    Encapsulate(vertices);
+}
+
 void BoundingBox::Recalculate(const Mesh& mesh, const Transform& transform) {
     if (mesh.vertices.empty()) {
         VERNA_LOGW("Called BoundingBox::Recalculate on empty mesh!");

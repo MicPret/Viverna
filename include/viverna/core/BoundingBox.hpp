@@ -18,7 +18,7 @@ class BoundingSphere;
  */
 class BoundingBox {
    public:
-    constexpr BoundingBox() : size(Vec3f(1.0f)) {}
+    constexpr BoundingBox() = default;
     constexpr BoundingBox(const Vec3f& min_pos, const Vec3f& size_) :
         position(min_pos), size(size_) {
         Fix();
@@ -78,6 +78,24 @@ class BoundingBox {
                || (a_b.x >= 0.0 && a_b.y >= 0.0f && a_b.z >= 0.0f);
     }
     bool Collides(const BoundingSphere& sphere) const;
+    constexpr void Encapsulate(const Vec3f& point) {
+        Vec3f min = Vec3f::Min(MinPosition(), point);
+        Vec3f max = Vec3f::Max(MaxPosition(), point);
+        position = min;
+        size = max - min;
+    }
+    constexpr void Encapsulate(const BoundingBox& other) {
+        Vec3f min = Vec3f::Min(MinPosition(), other.MinPosition());
+        Vec3f max = Vec3f::Max(MaxPosition(), other.MaxPosition());
+        position = min;
+        size = max - min;
+    }
+    /**
+     * @brief Applies a transformation, then adjusts the box to be axis-aligned
+     *
+     * @param transform
+     */
+    void ApplyTransform(const Transform& transform);
     void Recalculate(const Mesh& mesh, const Transform& transform);
     void Recalculate(const Mesh& mesh);
     /**
@@ -89,7 +107,7 @@ class BoundingBox {
      * coordinates
      */
     template <typename Vec3fCollection>
-    void Recalculate(Vec3fCollection&& positions) {
+    void Encapsulate(Vec3fCollection&& positions) {
         if (positions.begin() == positions.end()) {
             VERNA_LOGW(
                 "Called BoundingBox::Recalculate on empty collection of "
