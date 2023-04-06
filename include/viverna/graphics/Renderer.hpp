@@ -33,25 +33,15 @@ void TerminateRenderer(VivernaState& state);
  *
  * @param mesh The mesh that must be rendered
  * @param material The material properties used to render the mesh
- * @param transform_matrix The matrix used to give the mesh a position, rotation
- * and scale
+ * @param transform The transformation used to give the mesh a position,
+ * rotation and scale
  * @param shader_id The identifier for the shader program to use to render the
  * mesh
  */
 void Render(const Mesh& mesh,
             const Material& material,
-            const Mat4f& transform_matrix,
-            ShaderId shader_id);
-
-void Render(const Mesh& mesh,
-            const Material& material,
             const Transform& transform,
             ShaderId shader_id);
-
-void Render(const Model& model,
-            const Mat4f& transform_matrix,
-            ShaderId shader_id);
-void Render(const Model& model, const Transform& transform, ShaderId shader_id);
 
 void RenderDebug(const BoundingBox& box);
 void RenderDebug(const BoundingSphere& sphere);
