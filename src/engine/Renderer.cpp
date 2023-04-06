@@ -351,9 +351,10 @@ void PrepareDraw() {
     if (dirty) {
         constexpr float scale = 1.1f;
         volume.ScaleFromCenter(scale);
-        volume.Encapsulate(render_bounds);
-        Vec3f min = volume.MinPosition();
-        Vec3f max = volume.MaxPosition();
+        Vec3f min =
+            Vec3f::Min(volume.MinPosition(), render_bounds.MinPosition());
+        Vec3f max =
+            Vec3f::Max(volume.MaxPosition(), render_bounds.MaxPosition());
         Mat4f projection =
             Mat4f::Ortho(min.x, max.x, max.y, min.y, min.z, max.z);
         Mat4f view =
