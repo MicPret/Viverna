@@ -107,7 +107,7 @@ class BoundingBox {
      * coordinates
      */
     template <typename Vec3fCollection>
-    void Encapsulate(const Vec3fCollection& positions) {
+    void Recalculate(const Vec3fCollection& positions) {
         if (positions.begin() == positions.end()) {
             VERNA_LOGW(
                 "Called BoundingBox::Recalculate on empty collection of "
