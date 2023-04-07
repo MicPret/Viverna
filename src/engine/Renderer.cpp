@@ -302,73 +302,62 @@ void BindTextures(const RenderBatch& batch) {
 }
 
 void PrepareDraw() {
-    constexpr auto FrustumBox = [](const Mat4f& i_matrix) {
-        constexpr std::array cube = {
-            Vec4f(-1.0, -1.0, -1.0, 1.0),  // left bottom front
-            Vec4f(1.0, -1.0, -1.0, 1.0),   // right bottom front
-            Vec4f(1.0, -1.0, 1.0, 1.0),    // right bottom back
-            Vec4f(-1.0, -1.0, 1.0, 1.0),   // left bottom back
-            Vec4f(-1.0, 1.0, -1.0, 1.0),   // left top front
-            Vec4f(1.0, 1.0, -1.0, 1.0),    // right top front
-            Vec4f(1.0, 1.0, 1.0, 1.0),     // right top back
-            Vec4f(-1.0, 1.0, 1.0, 1.0),    // left top back
-        };
-        std::array<Vec3f, cube.size()> transformed;
-
-        for (size_t i = 0; i < cube.size(); i++) {
-            auto temp = i_matrix * cube[i];
-            transformed[i] = (1.0f / temp.w) * temp.Xyz();
-        }
-
-        BoundingBox result;
-        result.Recalculate(transformed);
-        return result;
-    };
-
     const Scene& scene = Scene::GetActive();
+    const Camera& cam = scene.GetCamera();
     const DirectionLight& dirlight = scene.GetDirectionLight();
-    auto camdata = gpu::CameraData(scene.GetCamera());
+    gpu::CameraData camdata(cam);
 
-    float cosangle =
-        dirlight.direction.Dot(frame_data.direction_light.direction.Xyz());
-    constexpr float epsilon = 2e-6;
-    bool same_direction = maths::AreAlmostEqual(cosangle, 1.0f, epsilon);
-
-    Mat4f dirlight_matrix = frame_data.direction_light.pv_matrix;
-    static BoundingBox container = BoundingBox(Vec3f(), Vec3f());
     Mat4f i_pv_matrix;
-    if (camdata.far <= 100.0f) {
-        i_pv_matrix = camdata.pv_matrix.Inverted();
-    } else {
-        Camera temp = scene.GetCamera();
-        temp.far_plane = 100.0f;
+    float far = render_bounds.MaxPosition().z;
+    if (camdata.far > 100.0f || camdata.far > far) {
+        far = maths::Min(100.0f, far);
+        Camera temp = cam;
+        temp.far_plane = far;
         i_pv_matrix =
             (temp.GetProjectionMatrix() * camdata.view_matrix).Inverted();
+    } else {
+        far = camdata.far;
+        i_pv_matrix = camdata.pv_matrix.Inverted();
     }
-    BoundingBox volume = FrustumBox(i_pv_matrix);
-    bool dirty = !same_direction || !volume.IsCompletelyInside(container)
-                 || !render_bounds.IsCompletelyInside(container);
-    if (dirty) {
-        constexpr float scale = 1.1f;
-        volume.ScaleFromCenter(scale);
-        Vec3f min =
-            Vec3f::Max(volume.MinPosition(), render_bounds.MinPosition());
-        Vec3f max =
-            Vec3f::Min(volume.MaxPosition(), render_bounds.MaxPosition());
-        Mat4f projection =
-            Mat4f::Ortho(min.x, max.x, max.y, min.y, min.z, max.z);
-        Mat4f view =
-            Mat4f::LookAt(-dirlight.direction, Vec3f(), Vec3f::UnitY());
-        dirlight_matrix = projection * view;
-
-        container = volume;
+    constexpr std::array cube = {
+        Vec4f(-1.0, -1.0, 1.0, 1.0),   // left bottom back
+        Vec4f(-1.0, -1.0, -1.0, 1.0),  // left bottom front
+        Vec4f(1.0, -1.0, -1.0, 1.0),   // right bottom front
+        Vec4f(1.0, -1.0, 1.0, 1.0),    // right bottom back
+        Vec4f(-1.0, 1.0, -1.0, 1.0),   // left top front
+        Vec4f(-1.0, 1.0, 1.0, 1.0),    // left top back
+        Vec4f(1.0, 1.0, 1.0, 1.0),     // right top back
+        Vec4f(1.0, 1.0, -1.0, 1.0),    // right top front
+    };
+    std::array<Vec3f, cube.size()> transformed;
+    Vec3f centroid;
+    for (size_t i = 0; i < cube.size(); i++) {
+        Vec4f temp = i_pv_matrix * cube[i];
+        transformed[i] = (1.0f / temp.w) * temp.Xyz();
+        centroid += transformed[i];
     }
+    centroid = (1.0f / static_cast<float>(cube.size())) * centroid;
+    Vec3f lightdir = dirlight.direction.Normalized();
+    Mat4f view =
+        Mat4f::LookAt(centroid - (far * lightdir), centroid, Vec3f::UnitY());
+    for (auto& pos : transformed) {
+        Vec4f temp = view * Vec4f(pos, 1.0f);
+        pos = (1.0f / temp.w) * temp.Xyz();
+    }
+    Vec3f min = transformed[0];
+    Vec3f max = min;
+    for (size_t i = 1; i < transformed.size(); i++) {
+        const Vec3f& p = transformed[i];
+        min = Vec3f::Min(min, p);
+        max = Vec3f::Max(max, p);
+    }
+    Mat4f proj = Mat4f::Ortho(min.x, max.x, max.y, min.y, min.z, max.z);
 
     frame_data.direction_light.ambient = Vec4f(dirlight.ambient, 0.0f);
     frame_data.direction_light.diffuse = Vec4f(dirlight.diffuse, 0.0f);
     frame_data.direction_light.specular = Vec4f(dirlight.specular, 0.0f);
     frame_data.direction_light.direction = Vec4f(dirlight.direction, 0.0f);
-    frame_data.direction_light.pv_matrix = dirlight_matrix;
+    frame_data.direction_light.pv_matrix = proj * view;
     frame_data.camera_data = camdata;
 
     ubo::SendData(gpu::FrameData::BLOCK_BINDING, &frame_data);
