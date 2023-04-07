@@ -58,7 +58,7 @@ constexpr GLsizei SHADOW_MAP_SIZE = 2048;
 constexpr GLsizei SHADOW_MAP_WIDTH = SHADOW_MAP_SIZE;
 constexpr GLsizei SHADOW_MAP_HEIGHT = SHADOW_MAP_SIZE;
 
-BoundingBox render_bounds;  // TODO use!!!!!!!
+BoundingBox render_bounds;
 
 #ifndef NDEBUG
 std::vector<Vertex> dbg_vertices;
