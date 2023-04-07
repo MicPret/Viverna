@@ -43,7 +43,7 @@ void Snake::Dispose() {
 
 void Snake::Render(verna::ShaderId shader) {
     for (const auto& t : transforms)
-        verna::Render(mesh, material, t.GetMatrix(), shader);
+        verna::Render(mesh, material, t, shader);
 
 #ifdef VERNA_GAME_DEBUG
     for (const auto& c : colliders)

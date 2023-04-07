@@ -50,8 +50,8 @@ void Walls::Dispose() {
 void Walls::Render(verna::ShaderId shader) {
     size_t i;
     for (i = 0; i < colliders.size(); i++)
-        verna::Render(mesh, wall_material, transforms[i].GetMatrix(), shader);
-    verna::Render(mesh, bg_material, transforms[i].GetMatrix(), shader);
+        verna::Render(mesh, wall_material, transforms[i], shader);
+    verna::Render(mesh, bg_material, transforms[i], shader);
 
 #ifdef VERNA_GAME_DEBUG
     for (const auto& c : colliders)

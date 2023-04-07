@@ -22,7 +22,7 @@ void Fruit::Dispose() {
 }
 
 void Fruit::Render(verna::ShaderId shader) {
-    verna::Render(mesh, material, transform.GetMatrix(), shader);
+    verna::Render(mesh, material, transform, shader);
 
 #ifdef VERNA_GAME_DEBUG
     verna::RenderDebug(collider);
