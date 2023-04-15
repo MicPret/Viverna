@@ -243,6 +243,7 @@ void SwapBuffers() {
     VERNA_LOGE_IF(eglGetError() != EGL_SUCCESS,
                   "Error found calling eglSwapBuffers");
 #endif
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 void RendererError(VivernaState& state,
@@ -564,7 +565,6 @@ void Draw() {
         VERNA_LOGE("Caught OpenGL error in Draw(): " + std::to_string(glerr));
 #endif
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     if (shader_to_bucket.Empty()) {
         VERNA_LOGW("Nothing to draw!");
         SwapBuffers();
