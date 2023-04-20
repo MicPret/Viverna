@@ -45,8 +45,6 @@ void OnAppPause(VivernaState& app_state) {
     FreeShader(shader);
 }
 void OnAppUpdate(VivernaState& app_state, DeltaTime<float, Seconds> dt) {
-    // Called every frame (remember to call Draw() and NextFrame()!)
-
     NextFrame();
 
     KeyListener escape(Key::Escape);
@@ -60,6 +58,7 @@ void OnAppUpdate(VivernaState& app_state, DeltaTime<float, Seconds> dt) {
 
     editor::UpdateCamera(scene->GetCamera(), dt.count());
 
+    Draw();
     BeginGUI();
     if (ImGui::Begin("Viverna")) {
         static std::array<float, 3> position;
@@ -70,8 +69,6 @@ void OnAppUpdate(VivernaState& app_state, DeltaTime<float, Seconds> dt) {
     }
     ImGui::End();
     EndGUI();
-
-    Draw();
 }
 
 static void InitGUI() {
