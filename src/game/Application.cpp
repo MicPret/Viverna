@@ -45,7 +45,9 @@ void OnAppPause(VivernaState& app_state) {
     FreeShader(shader);
 }
 void OnAppUpdate(VivernaState& app_state, DeltaTime<float, Seconds> dt) {
-    // Called every frame (remember to call Draw()!)
+    // Called every frame (remember to call Draw() and NextFrame()!)
+
+    NextFrame();
 
     KeyListener escape(Key::Escape);
     if (escape.Pressed()) {

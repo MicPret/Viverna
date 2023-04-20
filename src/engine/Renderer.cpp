@@ -87,6 +87,7 @@ static void DrawBatch(const RenderBatch& batch);
 static void DrawGlCommand(const GlDrawCommand& cmd);
 static void InitLights();
 static void TermLights();
+static void ResetRenderBounds();
 
 void CheckForGLErrors(std::string_view origin) {
     GLenum glerr;
@@ -557,7 +558,6 @@ void Draw() {
     if (native_window == nullptr) {
         VERNA_LOGE(
             "Called Draw() before Renderer could access current context!");
-        ClearBatches();
         return;
     }
 #ifndef NDEBUG
@@ -570,7 +570,6 @@ void Draw() {
 #ifdef VERNA_WARN_EMPTY_SCENE
         VERNA_LOGW("Nothing to draw!");
 #endif
-        SwapBuffers();
         return;
     }
     VERNA_LOGE_IF(render_batches.empty(),
@@ -592,10 +591,12 @@ void Draw() {
 #ifndef NDEBUG
     DrawDebug();
 #endif
-    SwapBuffers();
+}
 
+void NextFrame() {
+    SwapBuffers();
     ClearBatches();
-    render_bounds = BoundingBox();
+    ResetRenderBounds();
 }
 
 void RenderDebug(const BoundingBox& box) {
@@ -630,6 +631,10 @@ void RenderDebug(const BoundingSphere& sphere) {
         dbg_indices.push_back(id + offset);
     }
 #endif
+}
+
+void ResetRenderBounds() {
+    render_bounds = BoundingBox();
 }
 
 namespace RendererInfo {

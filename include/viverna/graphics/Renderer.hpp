@@ -28,8 +28,7 @@ void InitializeRenderer(VivernaState& state);
 void TerminateRenderer(VivernaState& state);
 
 /**
- * @brief Renders an element on the back buffer, which is not shown on screen
- * until Draw() is called
+ * @brief Adds an element to the render batch
  *
  * @param mesh The mesh that must be rendered
  * @param material The material properties used to render the mesh
@@ -47,10 +46,17 @@ void RenderDebug(const BoundingBox& box);
 void RenderDebug(const BoundingSphere& sphere);
 
 /**
- * @brief Updates the screen with the content rendered on the back buffer
+ * @brief Draws the batch on the back buffer, which is not shown until
+ * NextFrame() gets called
  *
  */
 void Draw();
+
+/**
+ * @brief Swaps buffers and clears the new back buffer
+ *
+ */
+void NextFrame();
 
 namespace RendererInfo {
 int MaxTextureUnits();
