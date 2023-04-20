@@ -309,7 +309,8 @@ void PrepareDraw() {
     gpu::CameraData camdata(cam);
 
     Mat4f i_pv_matrix;
-    float far = render_bounds.MaxPosition().z;
+    Vec3f max_bounds = render_bounds.MaxPosition();
+    float far = maths::Max(max_bounds.x, max_bounds.y, max_bounds.z);
     if (camdata.far > 100.0f || camdata.far > far) {
         far = maths::Min(100.0f, far);
         Camera temp = cam;
