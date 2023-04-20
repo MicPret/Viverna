@@ -87,5 +87,6 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL Linux OR CMAKE_SYSTEM_NAME STREQUAL Windows)
     target_link_libraries(${VIVERNA_TARGET_NAME} PUBLIC
         glad
         glfw
+        imgui
     )
 endif()
