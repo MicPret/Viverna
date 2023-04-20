@@ -566,7 +566,9 @@ void Draw() {
 #endif
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     if (shader_to_bucket.Empty()) {
+#ifdef VERNA_WARN_EMPTY_SCENE
         VERNA_LOGW("Nothing to draw!");
+#endif
         SwapBuffers();
         return;
     }
