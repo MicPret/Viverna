@@ -87,6 +87,7 @@ static void DrawBatch(const RenderBatch& batch);
 static void DrawGlCommand(const GlDrawCommand& cmd);
 static void InitLights();
 static void TermLights();
+static void ResetRenderBounds();
 
 void CheckForGLErrors(std::string_view origin) {
     GLenum glerr;
@@ -304,53 +305,31 @@ void BindTextures(const RenderBatch& batch) {
 
 void PrepareDraw() {
     const Scene& scene = Scene::GetActive();
-    const Camera& cam = scene.GetCamera();
     const DirectionLight& dirlight = scene.GetDirectionLight();
-    gpu::CameraData camdata(cam);
 
-    Mat4f i_pv_matrix;
-    float far = render_bounds.MaxPosition().z;
-    if (camdata.far > 100.0f || camdata.far > far) {
-        far = maths::Min(100.0f, far);
-        Camera temp = cam;
-        temp.far_plane = far;
-        i_pv_matrix =
-            (temp.GetProjectionMatrix() * camdata.view_matrix).Inverted();
-    } else {
-        far = camdata.far;
-        i_pv_matrix = camdata.pv_matrix.Inverted();
-    }
-    constexpr std::array cube = {
-        Vec4f(-1.0, -1.0, 1.0, 1.0),   // left bottom back
-        Vec4f(-1.0, -1.0, -1.0, 1.0),  // left bottom front
-        Vec4f(1.0, -1.0, -1.0, 1.0),   // right bottom front
-        Vec4f(1.0, -1.0, 1.0, 1.0),    // right bottom back
-        Vec4f(-1.0, 1.0, -1.0, 1.0),   // left top front
-        Vec4f(-1.0, 1.0, 1.0, 1.0),    // left top back
-        Vec4f(1.0, 1.0, 1.0, 1.0),     // right top back
-        Vec4f(1.0, 1.0, -1.0, 1.0),    // right top front
-    };
-    std::array<Vec3f, cube.size()> transformed;
-    Vec3f centroid;
-    for (size_t i = 0; i < cube.size(); i++) {
-        Vec4f temp = i_pv_matrix * cube[i];
-        transformed[i] = (1.0f / temp.w) * temp.Xyz();
-        centroid += transformed[i];
-    }
-    centroid = (1.0f / static_cast<float>(cube.size())) * centroid;
     Vec3f lightdir = dirlight.direction.Normalized();
-    Mat4f view =
-        Mat4f::LookAt(centroid - (far * lightdir), centroid, Vec3f::UnitY());
-    for (auto& pos : transformed) {
-        Vec4f temp = view * Vec4f(pos, 1.0f);
-        pos = (1.0f / temp.w) * temp.Xyz();
+    Mat4f view = Mat4f::LookAt(-lightdir, Vec3f(),
+                               lightdir.Cross(Vec3f::UnitX()).Normalized());
+
+    Vec3f min = render_bounds.MinPosition();
+    Vec3f max = render_bounds.MaxPosition();
+    std::array lightview = {min,
+                            Vec3f(min.x, min.y, max.z),
+                            Vec3f(min.x, max.y, min.z),
+                            Vec3f(min.x, max.y, max.z),
+                            Vec3f(max.x, min.y, min.z),
+                            Vec3f(max.x, min.y, max.z),
+                            Vec3f(max.x, max.y, min.z),
+                            max};
+    for (Vec3f& p : lightview) {
+        Vec4f temp = view * Vec4f(p, 1.0f);
+        p = (1.0f / temp.w) * temp.Xyz();
     }
-    Vec3f min = transformed[0];
-    Vec3f max = min;
-    for (size_t i = 1; i < transformed.size(); i++) {
-        const Vec3f& p = transformed[i];
-        min = Vec3f::Min(min, p);
-        max = Vec3f::Max(max, p);
+    min = lightview[0];
+    max = min;
+    for (size_t i = 1; i < lightview.size(); i++) {
+        min = Vec3f::Min(min, lightview[i]);
+        max = Vec3f::Max(max, lightview[i]);
     }
     Mat4f proj = Mat4f::Ortho(min.x, max.x, max.y, min.y, min.z, max.z);
 
@@ -359,7 +338,7 @@ void PrepareDraw() {
     frame_data.direction_light.specular = Vec4f(dirlight.specular, 0.0f);
     frame_data.direction_light.direction = Vec4f(dirlight.direction, 0.0f);
     frame_data.direction_light.pv_matrix = proj * view;
-    frame_data.camera_data = camdata;
+    frame_data.camera_data = gpu::CameraData(scene.GetCamera());
 
     ubo::SendData(gpu::FrameData::BLOCK_BINDING, &frame_data);
 }
@@ -556,7 +535,6 @@ void Draw() {
     if (native_window == nullptr) {
         VERNA_LOGE(
             "Called Draw() before Renderer could access current context!");
-        ClearBatches();
         return;
     }
 #ifndef NDEBUG
@@ -566,8 +544,9 @@ void Draw() {
 #endif
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     if (shader_to_bucket.Empty()) {
+#ifdef VERNA_WARN_EMPTY_SCENE
         VERNA_LOGW("Nothing to draw!");
-        SwapBuffers();
+#endif
         return;
     }
     VERNA_LOGE_IF(render_batches.empty(),
@@ -589,10 +568,12 @@ void Draw() {
 #ifndef NDEBUG
     DrawDebug();
 #endif
-    SwapBuffers();
+}
 
+void NextFrame() {
+    SwapBuffers();
     ClearBatches();
-    render_bounds = BoundingBox();
+    ResetRenderBounds();
 }
 
 void RenderDebug(const BoundingBox& box) {
@@ -627,6 +608,10 @@ void RenderDebug(const BoundingSphere& sphere) {
         dbg_indices.push_back(id + offset);
     }
 #endif
+}
+
+void ResetRenderBounds() {
+    render_bounds = BoundingBox();
 }
 
 namespace RendererInfo {

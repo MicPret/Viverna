@@ -12,7 +12,6 @@
 #include <game/core/Walls.hpp>
 
 namespace verna {
-
 static constexpr float distance = 20.0f;
 static snake::Snake snake(distance);
 static snake::Fruit fruit(distance);
@@ -54,6 +53,7 @@ void OnAppPause(VivernaState& app_state) {
 }
 
 void OnAppUpdate(VivernaState& app_state, DeltaTime<float, Seconds> dt) {
+    NextFrame();
     if (escape.Pressed()) {
         app_state.SetFlag(VivernaState::RUNNING_FLAG, false);
         return;
