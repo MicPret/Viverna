@@ -4,9 +4,7 @@
 
 namespace editor {
 
-constexpr float speed = 1.0f;
-
-void UpdateCamera(verna::Camera& camera, float dt) {
+void UpdateCamera(verna::Camera& camera, float speed, float dt) {
     verna::KeyListener w(verna::Key::W);
     verna::KeyListener a(verna::Key::A);
     verna::KeyListener s(verna::Key::S);

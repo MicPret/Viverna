@@ -56,7 +56,8 @@ void OnAppUpdate(VivernaState& app_state, DeltaTime<float, Seconds> dt) {
     for (size_t i = 0; i < meshes.size(); i++)
         Render(meshes[i], materials[i], transforms[i], shader);
 
-    editor::UpdateCamera(scene->GetCamera(), dt.count());
+    static float camera_speed = 1.0f;
+    editor::UpdateCamera(scene->GetCamera(), camera_speed, dt.count());
 
     Draw();
     BeginGUI();
@@ -66,6 +67,8 @@ void OnAppUpdate(VivernaState& app_state, DeltaTime<float, Seconds> dt) {
         if (ImGui::Button("New Cube")) {
             SpawnCube(Vec3f(position[0], position[1], position[2]));
         }
+        ImGui::Spacing();
+        ImGui::SliderFloat("Camera speed", &camera_speed, 1.0f, 10.0f);
     }
     ImGui::End();
     EndGUI();
