@@ -110,6 +110,12 @@ void InitializeWindow(VivernaState& state) {
     glfwMakeContextCurrent(window);
     state.native_window = window;
 
+    int sync = (glfwExtensionSupported("WGL_EXT_swap_control_tear")
+                || glfwExtensionSupported("GLX_EXT_swap_control_tear"))
+                   ? -1
+                   : 1;
+    glfwSwapInterval(sync);
+
     VERNA_LOGI("Window initialized!");
 }
 
