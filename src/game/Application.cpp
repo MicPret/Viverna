@@ -61,13 +61,17 @@ void OnAppUpdate(VivernaState& app_state, DeltaTime<float, Seconds> dt) {
 
     Draw();
     BeginGUI();
-    if (ImGui::Begin("Viverna")) {
-        static std::array<float, 3> position;
-        ImGui::SliderFloat3("Position", position.data(), -50.0f, 50.0f);
-        if (ImGui::Button("New Cube")) {
-            SpawnCube(Vec3f(position[0], position[1], position[2]));
-        }
+    if (ImGui::Begin("Viverna", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        Transform& selected = transforms.back();
+        float* vec3 = reinterpret_cast<float*>(&selected.position);
+        ImGui::DragFloat3("Position", vec3, 0.01f, -25.0f, 25.0f);
+        vec3 = reinterpret_cast<float*>(&selected.scale);
+        ImGui::DragFloat3("Scale", vec3, 0.01f, 0.01f, 10.0f);
+        if (ImGui::Button("New Cube"))
+            SpawnCube(selected.position);
         ImGui::Spacing();
+        vec3 = reinterpret_cast<float*>(&scene->GetDirectionLight().direction);
+        ImGui::DragFloat3("Light direction", vec3, 0.01, -1.0f, 1.0f);
         ImGui::SliderFloat("Camera speed", &camera_speed, 1.0f, 10.0f);
     }
     ImGui::End();
