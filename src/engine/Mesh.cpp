@@ -61,45 +61,45 @@ static Mesh LoadPrimitiveCube() {
     // front
     for (size_t i = 0; i < 4; i++)
         output.vertices[i].normal = -Vec3f::UnitZ();
-    output.vertices[0].position = Vec3f(-0.5f, 1.0f, -0.5f);  // top left
-    output.vertices[1].position = Vec3f(-0.5f, 0.0f, -0.5f);  // btm left
-    output.vertices[2].position = Vec3f(0.5f, 0.0f, -0.5f);   // btm right
-    output.vertices[3].position = Vec3f(0.5f, 1.0f, -0.5f);   // top right
+    output.vertices[0].position = Vec3f(-0.5f, 0.5f, -0.5f);   // top left
+    output.vertices[1].position = Vec3f(-0.5f, -0.5f, -0.5f);  // btm left
+    output.vertices[2].position = Vec3f(0.5f, -0.5f, -0.5f);   // btm right
+    output.vertices[3].position = Vec3f(0.5f, 0.5f, -0.5f);    // top right
     // left
     for (size_t i = 4; i < 8; i++)
         output.vertices[i].normal = -Vec3f::UnitX();
-    output.vertices[4].position = Vec3f(-0.5f, 1.0f, 0.5f);   // top left
-    output.vertices[5].position = Vec3f(-0.5f, 0.0f, 0.5f);   // btm left
-    output.vertices[6].position = Vec3f(-0.5f, 0.0f, -0.5f);  // btm right
-    output.vertices[7].position = Vec3f(-0.5f, 1.0f, -0.5f);  // top right
+    output.vertices[4].position = Vec3f(-0.5f, 0.5f, 0.5f);    // top left
+    output.vertices[5].position = Vec3f(-0.5f, -0.5f, 0.5f);   // btm left
+    output.vertices[6].position = Vec3f(-0.5f, -0.5f, -0.5f);  // btm right
+    output.vertices[7].position = Vec3f(-0.5f, 0.5f, -0.5f);   // top right
     // back
     for (size_t i = 8; i < 12; i++)
         output.vertices[i].normal = Vec3f::UnitZ();
-    output.vertices[8].position = Vec3f(0.5f, 1.0f, 0.5f);    // top left
-    output.vertices[9].position = Vec3f(0.5f, 0.0f, 0.5f);    // btm left
-    output.vertices[10].position = Vec3f(-0.5f, 0.0f, 0.5f);  // btm right
-    output.vertices[11].position = Vec3f(-0.5f, 1.0f, 0.5f);  // top right
+    output.vertices[8].position = Vec3f(0.5f, 0.5f, 0.5f);     // top left
+    output.vertices[9].position = Vec3f(0.5f, -0.5f, 0.5f);    // btm left
+    output.vertices[10].position = Vec3f(-0.5f, -0.5f, 0.5f);  // btm right
+    output.vertices[11].position = Vec3f(-0.5f, 0.5f, 0.5f);   // top right
     // right
     for (size_t i = 12; i < 16; i++)
         output.vertices[i].normal = Vec3f::UnitX();
-    output.vertices[12].position = Vec3f(0.5f, 1.0f, -0.5f);  // top left
-    output.vertices[13].position = Vec3f(0.5f, 0.0f, -0.5f);  // btm left
-    output.vertices[14].position = Vec3f(0.5f, 0.0f, 0.5f);   // btm right
-    output.vertices[15].position = Vec3f(0.5f, 1.0f, 0.5f);   // top right
+    output.vertices[12].position = Vec3f(0.5f, 0.5f, -0.5f);   // top left
+    output.vertices[13].position = Vec3f(0.5f, -0.5f, -0.5f);  // btm left
+    output.vertices[14].position = Vec3f(0.5f, -0.5f, 0.5f);   // btm right
+    output.vertices[15].position = Vec3f(0.5f, 0.5f, 0.5f);    // top right
     // top
     for (size_t i = 16; i < 20; i++)
         output.vertices[i].normal = Vec3f::UnitY();
-    output.vertices[16].position = Vec3f(-0.5f, 1.0f, 0.5f);   // top left
-    output.vertices[17].position = Vec3f(-0.5f, 1.0f, -0.5f);  // btm left
-    output.vertices[18].position = Vec3f(0.5f, 1.0f, -0.5f);   // btm right
-    output.vertices[19].position = Vec3f(0.5f, 1.0f, 0.5f);    // top right
+    output.vertices[16].position = Vec3f(-0.5f, 0.5f, 0.5f);   // top left
+    output.vertices[17].position = Vec3f(-0.5f, 0.5f, -0.5f);  // btm left
+    output.vertices[18].position = Vec3f(0.5f, 0.5f, -0.5f);   // btm right
+    output.vertices[19].position = Vec3f(0.5f, 0.5f, 0.5f);    // top right
     // bottom
     for (size_t i = 20; i < 24; i++)
         output.vertices[i].normal = -Vec3f::UnitY();
-    output.vertices[20].position = Vec3f(-0.5f, 0.0f, -0.5f);  // top left
-    output.vertices[21].position = Vec3f(-0.5f, 0.0f, 0.5f);   // btm left
-    output.vertices[22].position = Vec3f(0.5f, 0.0f, 0.5f);    // btm right
-    output.vertices[23].position = Vec3f(0.5f, 0.0f, -0.5f);   // top right
+    output.vertices[20].position = Vec3f(-0.5f, -0.5f, -0.5f);  // top left
+    output.vertices[21].position = Vec3f(-0.5f, -0.5f, 0.5f);   // btm left
+    output.vertices[22].position = Vec3f(0.5f, -0.5f, 0.5f);    // btm right
+    output.vertices[23].position = Vec3f(0.5f, -0.5f, -0.5f);   // top right
     // texture_coords
     for (size_t i = 0; i < N_VERTICES; i += 4) {
         output.vertices[i].texture_coords = Vec2f(0.0f, 1.0f);
