@@ -34,8 +34,7 @@ struct Camera {
 
     constexpr Mat4f GetViewMatrix() const {
         Vec3f forward = Forward();
-        Vec3f up = forward.Cross(Vec3f::UnitX());
-        return Mat4f::LookAt(position, position + forward, up);
+        return Mat4f::LookAt(position, position + forward, Vec3f::UnitY());
     }
     Mat4f GetProjectionMatrix() const;
     Vec3f ToWorldCoords(unsigned screen_x,
