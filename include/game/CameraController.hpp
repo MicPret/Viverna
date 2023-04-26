@@ -5,7 +5,10 @@
 
 namespace editor {
 
-void UpdateCamera(verna::Camera& camera, float speed, float dt);
+void UpdateCamera(verna::Camera& camera,
+                  float speed,
+                  float dt,
+                  bool enable_rotation);
 
 }
 

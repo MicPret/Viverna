@@ -48,6 +48,7 @@ void OnAppUpdate(VivernaState& app_state, DeltaTime<float, Seconds> dt) {
     NextFrame();
 
     KeyListener escape(Key::Escape);
+    KeyListener space(Key::Space);
     if (escape.Pressed()) {
         app_state.SetFlag(VivernaState::RUNNING_FLAG, false);
         return;
@@ -57,22 +58,40 @@ void OnAppUpdate(VivernaState& app_state, DeltaTime<float, Seconds> dt) {
         Render(meshes[i], materials[i], transforms[i], shader);
 
     static float camera_speed = 1.0f;
-    editor::UpdateCamera(scene->GetCamera(), camera_speed, dt.count());
+    bool space_pressed = space.Pressed();
+    editor::UpdateCamera(scene->GetCamera(), camera_speed, dt.count(),
+                         space_pressed);
 
     Draw();
     BeginGUI();
+    Transform& selected = transforms.back();
+    float* vec3 = nullptr;
     if (ImGui::Begin("Viverna", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
-        Transform& selected = transforms.back();
-        float* vec3 = reinterpret_cast<float*>(&selected.position);
-        ImGui::DragFloat3("Position", vec3, 0.01f, -25.0f, 25.0f);
-        vec3 = reinterpret_cast<float*>(&selected.scale);
-        ImGui::DragFloat3("Scale", vec3, 0.01f, 0.01f, 10.0f);
-        if (ImGui::Button("New Cube"))
-            SpawnCube(selected.position);
-        ImGui::Spacing();
-        vec3 = reinterpret_cast<float*>(&scene->GetDirectionLight().direction);
-        ImGui::DragFloat3("Light direction", vec3, 0.01, -1.0f, 1.0f);
-        ImGui::SliderFloat("Camera speed", &camera_speed, 1.0f, 10.0f);
+        if (ImGui::BeginTabBar("TabBar")) {
+            if (ImGui::BeginTabItem("Game objects")) {
+                vec3 = reinterpret_cast<float*>(&selected.position);
+                ImGui::DragFloat3("Position", vec3, 0.01f, -100.0f, 100.0f);
+                vec3 = reinterpret_cast<float*>(&selected.scale);
+                ImGui::DragFloat3("Scale", vec3, 0.01f, 0.01f, 100.0f);
+                if (ImGui::Button("New Cube"))
+                    SpawnCube(selected.position);
+                ImGui::EndTabItem();
+            }
+            if (ImGui::BeginTabItem("Scene properties")) {
+                Vec3f& light_dir = scene->GetDirectionLight().direction;
+                vec3 = reinterpret_cast<float*>(&light_dir);
+                ImGui::DragFloat3("Light direction", vec3, 0.01, -1.0f, 1.0f);
+                light_dir = light_dir.Normalized();
+                ImGui::EndTabItem();
+            }
+            if (ImGui::BeginTabItem("Camera")) {
+                ImGui::Checkbox("Press space to enable camera rotation",
+                                &space_pressed);
+                ImGui::SliderFloat("Camera speed", &camera_speed, 1.0f, 10.0f);
+                ImGui::EndTabItem();
+            }
+            ImGui::EndTabBar();
+        }
     }
     ImGui::End();
     EndGUI();
