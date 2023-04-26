@@ -89,6 +89,10 @@ static void InitLights();
 static void TermLights();
 static void ResetRenderBounds();
 
+static auto DirectionLightTUIndex() {
+    return RendererInfo::MaxMaterialTextures();
+}
+
 void CheckForGLErrors(std::string_view origin) {
     GLenum glerr;
     while ((glerr = glGetError()) != GL_NO_ERROR) {
@@ -128,7 +132,7 @@ void InitLights() {
     glGenFramebuffers(1, &dirlight_fbo);
 
     glGenTextures(1, &dirlight_depthmap);
-    glActiveTexture(GL_TEXTURE0 + RendererInfo::MaxMaterialTextures());
+    glActiveTexture(GL_TEXTURE0 + DirectionLightTUIndex());
     glBindTexture(GL_TEXTURE_2D, dirlight_depthmap);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_MAP_WIDTH,
                  SHADOW_MAP_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT,
@@ -350,7 +354,7 @@ void DepthPass() {
     glCullFace(GL_FRONT);
     glClearDepthf(1.0f);
     glClear(GL_DEPTH_BUFFER_BIT);
-    glActiveTexture(GL_TEXTURE0 + RendererInfo::MaxMaterialTextures());
+    glActiveTexture(GL_TEXTURE0 + DirectionLightTUIndex());
     glBindTexture(GL_TEXTURE_2D, dirlight_depthmap);
 
     glUseProgram(dirlight_shader.id);

@@ -1,5 +1,6 @@
 #include <viverna/graphics/Mesh.hpp>
 #include <viverna/core/Debug.hpp>
+#include <viverna/maths/Quaternion.hpp>
 
 namespace verna {
 
@@ -55,34 +56,67 @@ Mesh LoadPrimitiveMesh(PrimitiveMeshType type) {
 
 static Mesh LoadPrimitiveCube() {
     Mesh output;
-    output.vertices.resize(8);
-    output.vertices[0].position =
-        Vec3f(-0.5f, -0.5f, -0.5f);  // btm left, front
-    output.vertices[0].texture_coords = Vec2f(0.0f, 0.0f);
-    output.vertices[1].position =
-        Vec3f(0.5f, -0.5f, -0.5f);  // btm right, front
-    output.vertices[1].texture_coords = Vec2f(1.0f, 0.0f);
-    output.vertices[2].position = Vec3f(0.5f, 0.5f, -0.5f);  // top right, front
-    output.vertices[2].texture_coords = Vec2f(1.0f, 1.0f);
-    output.vertices[3].position = Vec3f(-0.5f, 0.5f, -0.5f);  // top left, front
-    output.vertices[3].texture_coords = Vec2f(0.0f, 1.0f);
-    output.vertices[4].position = Vec3f(-0.5f, 0.5f, 0.5f);  // top left, back
-    output.vertices[4].texture_coords = Vec2f(1.0f, 1.0f);
-    output.vertices[5].position = Vec3f(-0.5f, -0.5f, 0.5f);  // btm left, back
-    output.vertices[5].texture_coords = Vec2f(1.0f, 0.0f);
-    output.vertices[6].position = Vec3f(0.5f, -0.5f, 0.5f);  // btm right, back
-    output.vertices[6].texture_coords = Vec2f(0.0f, 0.0f);
-    output.vertices[7].position = Vec3f(0.5f, 0.5f, 0.5f);  // top right, back
-    output.vertices[7].texture_coords = Vec2f(0.0f, 1.0f);
-    output.indices = {
-        0, 1, 2, 2, 3, 0,  // front
-        5, 0, 3, 3, 4, 5,  // left
-        4, 7, 6, 6, 5, 4,  // back
-        7, 2, 6, 2, 1, 6,  // right
-        2, 4, 3, 2, 7, 4,  // top
-        5, 1, 0, 5, 6, 1   // bottom
-    };
-    output.RecalculateNormals();
+    constexpr size_t N_VERTICES = 24;
+    output.vertices.resize(N_VERTICES);
+    // front
+    for (size_t i = 0; i < 4; i++)
+        output.vertices[i].normal = -Vec3f::UnitZ();
+    output.vertices[0].position = Vec3f(-0.5f, 1.0f, -0.5f);  // top left
+    output.vertices[1].position = Vec3f(-0.5f, 0.0f, -0.5f);  // btm left
+    output.vertices[2].position = Vec3f(0.5f, 0.0f, -0.5f);   // btm right
+    output.vertices[3].position = Vec3f(0.5f, 1.0f, -0.5f);   // top right
+    // left
+    for (size_t i = 4; i < 8; i++)
+        output.vertices[i].normal = -Vec3f::UnitX();
+    output.vertices[4].position = Vec3f(-0.5f, 1.0f, 0.5f);   // top left
+    output.vertices[5].position = Vec3f(-0.5f, 0.0f, 0.5f);   // btm left
+    output.vertices[6].position = Vec3f(-0.5f, 0.0f, -0.5f);  // btm right
+    output.vertices[7].position = Vec3f(-0.5f, 1.0f, -0.5f);  // top right
+    // back
+    for (size_t i = 8; i < 12; i++)
+        output.vertices[i].normal = Vec3f::UnitZ();
+    output.vertices[8].position = Vec3f(0.5f, 1.0f, 0.5f);    // top left
+    output.vertices[9].position = Vec3f(0.5f, 0.0f, 0.5f);    // btm left
+    output.vertices[10].position = Vec3f(-0.5f, 0.0f, 0.5f);  // btm right
+    output.vertices[11].position = Vec3f(-0.5f, 1.0f, 0.5f);  // top right
+    // right
+    for (size_t i = 12; i < 16; i++)
+        output.vertices[i].normal = Vec3f::UnitX();
+    output.vertices[12].position = Vec3f(0.5f, 1.0f, -0.5f);  // top left
+    output.vertices[13].position = Vec3f(0.5f, 0.0f, -0.5f);  // btm left
+    output.vertices[14].position = Vec3f(0.5f, 0.0f, 0.5f);   // btm right
+    output.vertices[15].position = Vec3f(0.5f, 1.0f, 0.5f);   // top right
+    // top
+    for (size_t i = 16; i < 20; i++)
+        output.vertices[i].normal = Vec3f::UnitY();
+    output.vertices[16].position = Vec3f(-0.5f, 1.0f, 0.5f);   // top left
+    output.vertices[17].position = Vec3f(-0.5f, 1.0f, -0.5f);  // btm left
+    output.vertices[18].position = Vec3f(0.5f, 1.0f, -0.5f);   // btm right
+    output.vertices[19].position = Vec3f(0.5f, 1.0f, 0.5f);    // top right
+    // bottom
+    for (size_t i = 20; i < 24; i++)
+        output.vertices[i].normal = -Vec3f::UnitY();
+    output.vertices[20].position = Vec3f(-0.5f, 0.0f, -0.5f);  // top left
+    output.vertices[21].position = Vec3f(-0.5f, 0.0f, 0.5f);   // btm left
+    output.vertices[22].position = Vec3f(0.5f, 0.0f, 0.5f);    // btm right
+    output.vertices[23].position = Vec3f(0.5f, 0.0f, -0.5f);   // top right
+    // texture_coords
+    for (size_t i = 0; i < N_VERTICES; i += 4) {
+        output.vertices[i].texture_coords = Vec2f(0.0f, 1.0f);
+        output.vertices[i + 1].texture_coords = Vec2f(0.0f, 0.0f);
+        output.vertices[i + 2].texture_coords = Vec2f(1.0f, 0.0f);
+        output.vertices[i + 3].texture_coords = Vec2f(1.0f, 1.0f);
+    }
+    // indices
+    constexpr size_t N_INDICES = 36;
+    output.indices.resize(N_INDICES);
+    std::array<Mesh::index_t, 6> triangles = {0, 1, 2, 2, 3, 0};
+    for (size_t i = 0; i < N_INDICES; i++) {
+        size_t j = i % 6;
+        size_t k = i / 6;
+        output.indices[i] = triangles[j] + (k * 4);
+    }
+
     output.RecalculateBounds();
     return output;
 }
