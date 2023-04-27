@@ -33,6 +33,8 @@ void OnAppResume(VivernaState& app_state) {
     scene = &Scene::GetActive();
     Camera& camera = scene->GetCamera();
     camera.position = Vec3f(0.0f, 0.0f, -3.0f);
+    DirectionLight& light = scene->GetDirectionLight();
+    light.direction = Vec3f(0.2f, -0.8f, 0.4f).Normalized();
     shader = LoadShader("blinn-phong");
     SpawnCube();
 }
@@ -57,7 +59,7 @@ void OnAppUpdate(VivernaState& app_state, DeltaTime<float, Seconds> dt) {
     for (size_t i = 0; i < meshes.size(); i++)
         Render(meshes[i], materials[i], transforms[i], shader);
 
-    static float camera_speed = 1.0f;
+    static float camera_speed = 2.0f;
     bool space_pressed = space.Pressed();
     editor::UpdateCamera(scene->GetCamera(), camera_speed, dt.count(),
                          space_pressed);
@@ -77,11 +79,20 @@ void OnAppUpdate(VivernaState& app_state, DeltaTime<float, Seconds> dt) {
                     SpawnCube(selected.position);
                 ImGui::EndTabItem();
             }
-            if (ImGui::BeginTabItem("Scene properties")) {
-                Vec3f& light_dir = scene->GetDirectionLight().direction;
-                vec3 = reinterpret_cast<float*>(&light_dir);
-                ImGui::DragFloat3("Light direction", vec3, 0.01, -1.0f, 1.0f);
-                light_dir = light_dir.Normalized();
+            if (ImGui::BeginTabItem("Lighting")) {
+                DirectionLight& light = scene->GetDirectionLight();
+                vec3 = reinterpret_cast<float*>(&light.direction);
+                ImGui::DragFloat3("Direction", vec3, 0.01, -1.0f, 1.0f);
+                light.direction = light.direction.Normalized();
+                vec3 = reinterpret_cast<float*>(&light.ambient);
+                ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+                ImGui::ColorPicker3("Ambient", vec3);
+                vec3 = reinterpret_cast<float*>(&light.diffuse);
+                ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+                ImGui::ColorPicker3("Diffuse", vec3);
+                vec3 = reinterpret_cast<float*>(&light.specular);
+                ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+                ImGui::ColorPicker3("Specular", vec3);
                 ImGui::EndTabItem();
             }
             if (ImGui::BeginTabItem("Camera")) {
