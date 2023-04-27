@@ -170,7 +170,14 @@ Mesh MakeMesh(const std::vector<Vec3f>& positions,
         }
         m.vertices.insert(m.vertices.end(), face.begin(), face.end());
         auto k = static_cast<Mesh::index_t>(i * 3);
-        m.indices.insert(m.indices.end(), {k, k + 1, k + 2});
+        std::array<Mesh::index_t, 3> indices = {k, k + 1, k + 2};
+        Vec3f computed_norm = CalculateNormal(
+            face[0].position, face[1].position, face[2].position);
+        Vec3f average_norm =
+            (face[0].normal + face[1].normal + face[2].normal).Normalized();
+        if (computed_norm.Dot(average_norm) < 0.0f)
+            std::swap(indices.front(), indices.back());
+        m.indices.insert(m.indices.end(), indices.begin(), indices.end());
     }
     return m;
 }
@@ -306,7 +313,8 @@ static Mesh LoadPrimitivePyramid() {
         a.texture_coords = Vec2f(0.0f, 0.0f);
         b.texture_coords = Vec2f(1.0f, 0.0f);
         c.texture_coords = Vec2f(0.5f, 1.0f);
-        Vec3f normal = CalculateNormal(a.position, b.position, c.position);
+        Vec3f normal =
+            CalculateNormal(a.position, b.position, c.position).Normalized();
         a.normal = normal;
         b.normal = normal;
         c.normal = normal;
