@@ -30,13 +30,15 @@ void Snake::Setup() {
     colliders[0].Recalculate(mesh, transforms[0]);
     colliders[1].Recalculate(mesh, transforms[1]);
 
-    material.textures[0] = verna::LoadTexture("snake.png");
-    material.textures[1] = verna::LoadTextureFromColor(0.0f, 0.0f, 0.0f, 1.0f);
+    material.textures[verna::Material::DIFFUSE_INDEX] =
+        verna::LoadTexture("snake.png");
+    material.textures[verna::Material::SPECULAR_INDEX] =
+        verna::LoadTextureFromColor(0.0f, 0.0f, 0.0f, 1.0f);
 }
 
 void Snake::Dispose() {
-    verna::FreeTexture(material.textures[0]);
-    verna::FreeTexture(material.textures[1]);
+    verna::FreeTexture(material.textures[verna::Material::DIFFUSE_INDEX]);
+    verna::FreeTexture(material.textures[verna::Material::SPECULAR_INDEX]);
     transforms.clear();
     colliders.clear();
 }

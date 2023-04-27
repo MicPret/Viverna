@@ -11,14 +11,16 @@ Fruit::Fruit(float distance) {
 
 void Fruit::Setup() {
     mesh = verna::LoadPrimitiveMesh(verna::PrimitiveMeshType::Sphere);
-    material.textures[0] = verna::LoadTexture("fruit.png");
-    material.textures[1] = verna::LoadTextureFromColor(0.0f, 0.0f, 0.0f, 1.0f);
+    material.textures[verna::Material::DIFFUSE_INDEX] =
+        verna::LoadTexture("fruit.png");
+    material.textures[verna::Material::SPECULAR_INDEX] =
+        verna::LoadTextureFromColor(0.0f, 0.0f, 0.0f, 1.0f);
     collider.Recalculate(mesh, transform);
 }
 
 void Fruit::Dispose() {
-    verna::FreeTexture(material.textures[0]);
-    verna::FreeTexture(material.textures[1]);
+    verna::FreeTexture(material.textures[verna::Material::DIFFUSE_INDEX]);
+    verna::FreeTexture(material.textures[verna::Material::SPECULAR_INDEX]);
 }
 
 void Fruit::Render(verna::ShaderId shader) {

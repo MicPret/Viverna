@@ -34,17 +34,19 @@ void Walls::Setup() {
     mesh = verna::LoadPrimitiveMesh(verna::PrimitiveMeshType::Cube);
     for (size_t i = 0; i < colliders.size(); i++)
         colliders[i].Recalculate(mesh, transforms[i]);
-    bg_material.textures[0] = verna::LoadTexture("bg.png");
-    wall_material.textures[0] = verna::LoadTexture("wall.png");
+    bg_material.textures[verna::Material::DIFFUSE_INDEX] =
+        verna::LoadTexture("bg.png");
+    wall_material.textures[verna::Material::DIFFUSE_INDEX] =
+        verna::LoadTexture("wall.png");
     auto black = verna::LoadTextureFromColor(0.0f, 0.0f, 0.0f, 1.0f);
-    bg_material.textures[1] = black;
-    wall_material.textures[1] = black;
+    bg_material.textures[verna::Material::SPECULAR_INDEX] = black;
+    wall_material.textures[verna::Material::SPECULAR_INDEX] = black;
 }
 
 void Walls::Dispose() {
-    verna::FreeTexture(bg_material.textures[0]);
-    verna::FreeTexture(wall_material.textures[0]);
-    verna::FreeTexture(wall_material.textures[1]);
+    verna::FreeTexture(bg_material.textures[verna::Material::DIFFUSE_INDEX]);
+    verna::FreeTexture(wall_material.textures[verna::Material::DIFFUSE_INDEX]);
+    verna::FreeTexture(wall_material.textures[verna::Material::SPECULAR_INDEX]);
 }
 
 void Walls::Render(verna::ShaderId shader) {
