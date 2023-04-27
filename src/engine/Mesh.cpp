@@ -4,6 +4,7 @@
 
 namespace verna {
 
+static Vec3f CalculateNormal(const Vec3f& a, const Vec3f& b, const Vec3f& c);
 void Mesh::RecalculateNormals() {
     if (vertices.size() < 3 || indices.size() < 3) {
         VERNA_LOGE("RecalculateNormals failed: there is no triangle!");
@@ -18,9 +19,8 @@ void Mesh::RecalculateNormals() {
         auto a = indices[i];
         auto b = indices[i + 1];
         auto c = indices[i + 2];
-        Vec3f v1 = vertices[a].position - vertices[b].position;
-        Vec3f v2 = vertices[c].position - vertices[b].position;
-        Vec3f normal = v1.Cross(v2);
+        Vec3f normal = CalculateNormal(
+            vertices[a].position, vertices[b].position, vertices[c].position);
         vertices[a].normal += normal;
         vertices[b].normal += normal;
         vertices[c].normal += normal;
@@ -123,27 +123,58 @@ static Mesh LoadPrimitiveCube() {
 
 static Mesh LoadPrimitivePyramid() {
     Mesh output;
-    output.vertices.resize(5);
-    output.vertices[0].position =
-        Vec3f(-0.5f, -0.5f, -0.5f);  // btm left, front
-    output.vertices[0].texture_coords = Vec2f(1.0f, 0.0f);
-    output.vertices[1].position =
-        Vec3f(0.5f, -0.5f, -0.5f);  // btm right, front
+    constexpr size_t N_VERTICES = 16;
+    constexpr size_t N_INDICES = 18;
+    output.vertices.resize(N_VERTICES);
+    output.indices.reserve(N_INDICES);
+    // base
+    output.vertices[0].position = Vec3f(-0.5f);
+    output.vertices[0].texture_coords = Vec2f(0.0f, 1.0f);
+    output.vertices[1].position = Vec3f(-0.5f, -0.5f, 0.5f);
     output.vertices[1].texture_coords = Vec2f(0.0f, 0.0f);
-    output.vertices[2].position = Vec3f(0.0f, 0.5f, 0.0f);  // top
-    output.vertices[2].texture_coords = Vec2f(0.5f, 1.0f);
-    output.vertices[3].position = Vec3f(-0.5f, -0.5f, 0.5f);  // btm left, back
+    output.vertices[2].position = Vec3f(0.5f, -0.5f, 0.5f);
+    output.vertices[2].texture_coords = Vec2f(1.0f, 0.0f);
+    output.vertices[3].position = Vec3f(0.5f, -0.5f, -0.5f);
     output.vertices[3].texture_coords = Vec2f(1.0f, 1.0f);
-    output.vertices[4].position = Vec3f(0.5f, -0.5f, 0.5f);  // btm right, back
-    output.vertices[4].texture_coords = Vec2f(0.0f, 1.0f);
-    output.indices = {
-        1, 0, 3, 3, 4, 1,  // bottom
-        0, 1, 2,           // front
-        3, 0, 2,           // left
-        4, 3, 2,           // back
-        1, 4, 2            // right
-    };
-    output.RecalculateNormals();
+    for (size_t i = 0; i < 4; i++)
+        output.vertices[i].normal = -Vec3f::UnitY();
+
+    Vec3f top(0.0f, 0.5f, 0.0f);
+    // front
+    output.vertices[4].position = Vec3f(-0.5f);
+    output.vertices[5].position = Vec3f(0.5f, -0.5f, -0.5f);
+    output.vertices[6].position = top;
+    // right
+    output.vertices[7].position = Vec3f(0.5f, -0.5f, -0.5f);
+    output.vertices[8].position = Vec3f(0.5f, -0.5f, 0.5f);
+    output.vertices[9].position = top;
+    // back
+    output.vertices[10].position = Vec3f(0.5f, -0.5f, 0.5f);
+    output.vertices[11].position = Vec3f(-0.5f, -0.5f, 0.5f);
+    output.vertices[12].position = top;
+    // left
+    output.vertices[13].position = Vec3f(-0.5f, -0.5f, 0.5f);
+    output.vertices[14].position = Vec3f(-0.5f);
+    output.vertices[15].position = top;
+    // edge tex_coords and normals
+    for (size_t i = 4; i < N_VERTICES; i += 3) {
+        Vertex& a = output.vertices[i];
+        Vertex& b = output.vertices[i + 1];
+        Vertex& c = output.vertices[i + 2];
+        a.texture_coords = Vec2f(0.0f, 0.0f);
+        b.texture_coords = Vec2f(1.0f, 0.0f);
+        c.texture_coords = Vec2f(0.5f, 1.0f);
+        Vec3f normal = CalculateNormal(a.position, b.position, c.position);
+        a.normal = normal;
+        b.normal = normal;
+        c.normal = normal;
+    }
+
+    // indices
+    output.indices.insert(output.indices.end(), {0, 1, 2, 2, 3, 0});
+    for (Mesh::index_t i = 4; i < N_INDICES; i += 3)
+        output.indices.insert(output.indices.end(), {i, i + 1, i + 2});
+
     output.RecalculateBounds();
     return output;
 }
@@ -198,6 +229,10 @@ static Mesh LoadPrimitiveSphere() {
     sphere.RecalculateNormals();
     sphere.RecalculateBounds();
     return sphere;
+}
+
+Vec3f CalculateNormal(const Vec3f& a, const Vec3f& b, const Vec3f& c) {
+    return (a - b).Cross(c - b);
 }
 
 }  // namespace verna
