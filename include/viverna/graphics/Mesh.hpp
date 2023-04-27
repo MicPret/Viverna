@@ -5,6 +5,7 @@
 #include <viverna/core/BoundingBox.hpp>
 
 #include <cstdint>
+#include <filesystem>
 #include <vector>
 
 namespace verna {
@@ -21,6 +22,8 @@ struct Mesh {
 enum class PrimitiveMeshType : uint8_t { Cube, Pyramid, Sphere };
 
 Mesh LoadPrimitiveMesh(PrimitiveMeshType type);
+
+std::vector<Mesh> LoadMeshesOBJ(const std::filesystem::path& mesh_path);
 
 }  // namespace verna
 
