@@ -75,6 +75,8 @@ std::vector<Mesh> LoadMeshesOBJ(std::filesystem::path& mesh_path) {
         std::stringstream linestream(line);
         std::string token;
         linestream >> token;
+        if (token == "#")
+            continue;
         if (token == "v") {
             Vec3f v;
             linestream >> v.x >> v.y >> v.z;
@@ -118,6 +120,7 @@ std::vector<Mesh> LoadMeshesOBJ(std::filesystem::path& mesh_path) {
                     return {};
             }
         } else if (token == "o" || token == "g") {
+            // object/group
             if (positions.empty())
                 continue;
             result.push_back(MakeMesh(positions, tex_coords, normals, tris));
@@ -125,6 +128,12 @@ std::vector<Mesh> LoadMeshesOBJ(std::filesystem::path& mesh_path) {
             tex_coords.clear();
             normals.clear();
             tris.clear();
+        } else if (token == "s") {
+            // smooth shading
+            linestream >> token;
+            if (token != "0" && token != "off")
+                VERNA_LOGW("Smoothing groups not supported! (" + path.string()
+                           + ")");
         } else {
             VERNA_LOGE("Unrecognized token while parsing " + path.string()
                        + ": " + token);
