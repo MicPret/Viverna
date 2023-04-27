@@ -313,7 +313,8 @@ static Mesh LoadPrimitivePyramid() {
         a.texture_coords = Vec2f(0.0f, 0.0f);
         b.texture_coords = Vec2f(1.0f, 0.0f);
         c.texture_coords = Vec2f(0.5f, 1.0f);
-        Vec3f normal = CalculateNormal(a.position, b.position, c.position);
+        Vec3f normal =
+            CalculateNormal(a.position, b.position, c.position).Normalized();
         a.normal = normal;
         b.normal = normal;
         c.normal = normal;
