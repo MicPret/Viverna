@@ -1,6 +1,10 @@
 #include <viverna/graphics/Mesh.hpp>
+#include <viverna/core/Assets.hpp>
 #include <viverna/core/Debug.hpp>
 #include <viverna/maths/Quaternion.hpp>
+
+#include <sstream>
+#include <utility>
 
 namespace verna {
 
@@ -31,6 +35,135 @@ void Mesh::RecalculateNormals() {
 
 void Mesh::RecalculateBounds() {
     bounds.Recalculate(*this);
+}
+
+// OBJ
+struct ObjVert {
+    unsigned pos_id;
+    unsigned tex_coords_id;
+    unsigned norm_id;
+};
+struct ObjTri {
+    std::array<ObjVert, 3> verts;
+};
+static Mesh MakeMesh(const std::vector<Vec3f>& positions,
+                     const std::vector<Vec2f>& tex_coords,
+                     const std::vector<Vec3f>& normals,
+                     const std::vector<ObjTri>& tris);
+
+std::vector<Mesh> LoadMeshesOBJ(std::filesystem::path& mesh_path) {
+    std::filesystem::path path = "meshes" / mesh_path;
+
+    auto raw = LoadRawAsset(path);
+    if (raw.empty()) {
+        VERNA_LOGE("Failed to load mesh at " + path.string());
+        return {};
+    }
+    std::vector<Mesh> result;
+    std::stringstream objstream(std::string(raw.data(), raw.size()));
+
+    std::string line;
+    std::vector<Vec3f> positions;
+    std::vector<Vec2f> tex_coords;
+    std::vector<Vec3f> normals;
+    std::vector<ObjTri> tris;
+    positions.reserve(8);
+    tex_coords.reserve(8);
+    normals.reserve(8);
+    tris.reserve(8);
+    while (std::getline(objstream, line)) {
+        std::stringstream linestream(line);
+        std::string token;
+        linestream >> token;
+        if (token == "v") {
+            Vec3f v;
+            linestream >> v.x >> v.y >> v.z;
+            positions.push_back(v);
+        } else if (token == "vt") {
+            Vec2f vt;
+            linestream >> vt.x >> vt.y;
+            tex_coords.push_back(vt);
+        } else if (token == "vn") {
+            Vec3f vn;
+            linestream >> vn.x >> vn.y >> vn.z;
+            normals.push_back(vn);
+        } else if (token == "f") {
+            std::vector<std::string> tokens;
+            tokens.reserve(4);
+            while (linestream >> token)
+                tokens.push_back(token);
+            std::vector<ObjVert> verts;
+            verts.resize(tokens.size());
+            for (size_t i = 0; i < tokens.size(); i++) {
+                std::stringstream tk(std::move(tokens[i]));
+                ObjVert v;
+                if (std::getline(tk, token, '/'))
+                    v.pos_id = std::stoul(token) - 1;
+                if (std::getline(tk, token, '/') && !token.empty())
+                    v.tex_coords_id = std::stoul(token) - 1;
+                if (std::getline(tk, token, '/') && !token.empty())
+                    v.norm_id = std::stoul(token) - 1;
+                verts[i] = v;
+            }
+            switch (verts.size()) {
+                case 4:
+                    tris.push_back({verts[2], verts[3], verts[0]});
+                    [[fallthrough]];
+                case 3:
+                    tris.push_back({verts[0], verts[1], verts[2]});
+                    break;
+                default:
+                    VERNA_LOGE("Unsupported number of faces in " + path.string()
+                               + ":\n" + line);
+                    return {};
+            }
+        } else if (token == "o" || token == "g") {
+            if (positions.empty())
+                continue;
+            result.push_back(MakeMesh(positions, tex_coords, normals, tris));
+            positions.clear();
+            tex_coords.clear();
+            normals.clear();
+            tris.clear();
+        } else {
+            VERNA_LOGE("Unrecognized token while parsing " + path.string()
+                       + ": " + token);
+            return {};
+        }
+    }
+    if (!positions.empty()) {
+        result.push_back(MakeMesh(positions, tex_coords, normals, tris));
+        positions.clear();
+        tex_coords.clear();
+        normals.clear();
+        tris.clear();
+    }
+
+    return result;
+}
+
+Mesh MakeMesh(const std::vector<Vec3f>& positions,
+              const std::vector<Vec2f>& tex_coords,
+              const std::vector<Vec3f>& normals,
+              const std::vector<ObjTri>& tris) {
+    Mesh m;
+    m.vertices.reserve(positions.size());
+    m.indices.reserve(tris.size() * 3);
+    for (size_t i = 0; i < tris.size(); i++) {
+        const ObjTri& tri = tris[i];
+        std::array<Vertex, 3> face;
+        for (size_t j = 0; j < 3; j++) {
+            Vertex v;
+            v.position = positions[tri.verts[j].pos_id];
+            v.texture_coords = tex_coords[tri.verts[j].tex_coords_id];
+            v.normal = normals[tri.verts[j].norm_id];
+            face[j] = v;
+        }
+        m.vertices.insert(m.vertices.end(), face.begin(), face.end());
+        auto k = static_cast<Mesh::index_t>(i * 3);
+        m.indices.insert(m.indices.end(), {k, k + 1, k + 2});
+    }
+    return m;
 }
 
 // Primitives
