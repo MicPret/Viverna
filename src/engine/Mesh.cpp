@@ -51,7 +51,7 @@ static Mesh MakeMesh(const std::vector<Vec3f>& positions,
                      const std::vector<Vec3f>& normals,
                      const std::vector<ObjTri>& tris);
 
-std::vector<Mesh> LoadMeshesOBJ(std::filesystem::path& mesh_path) {
+std::vector<Mesh> LoadMeshesOBJ(const std::filesystem::path& mesh_path) {
     std::filesystem::path path = "meshes" / mesh_path;
 
     auto raw = LoadRawAsset(path);
