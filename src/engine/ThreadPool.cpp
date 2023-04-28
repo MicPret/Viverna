@@ -14,7 +14,7 @@ void ThreadPool::ThreadFunction() {
     while (true) {
         {
             std::unique_lock lock(tasks_mtx);
-            condition.wait(lock, [this] { return stop || tasks.empty(); });
+            condition.wait(lock, [this] { return stop || !tasks.empty(); });
             if (stop && tasks.empty())
                 return;
             task = std::move(tasks.front());

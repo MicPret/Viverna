@@ -13,11 +13,24 @@ namespace verna {
 
 class ThreadPool {
    public:
-    template <class F, class... Args>
-    auto Enqueue(F&& f, Args&&... args)
-        -> std::future<decltype(f(std::forward<Args>(args)...))>;
-    ~ThreadPool();
     static ThreadPool& Get();
+    template <typename F, typename... Args>
+    auto Enqueue(F&& f, Args&&... args) {
+        using ret_t = decltype(f(std::forward<Args>(args)...));
+        auto task = std::make_shared<std::packaged_task<ret_t()>>(
+            std::bind(std::forward<F>(f), std::forward<Args>(args)...));
+        std::future result = task->get_future();
+        {
+            std::lock_guard lock(tasks_mtx);
+            if (!stop)
+                tasks.emplace([task]() { (*task)(); });
+            else
+                return std::future<ret_t>();
+        }
+        condition.notify_one();
+        return result;
+    }
+    ~ThreadPool();
 
    private:
     ThreadPool(size_t num_threads);
@@ -28,23 +41,6 @@ class ThreadPool {
     std::condition_variable condition;
     bool stop;
 };
-
-template <class F, class... Args>
-auto ThreadPool::Enqueue(F&& f, Args&&... args) {
-    using ret_t = decltype(f(std::forward<Args>(args)...));
-    auto task = std::make_shared<std::packaged_task<ret_t()>>(
-        std::bind(std::forward<F>(f), std::forward<Args>(args)...));
-    std::future result = task->get_future();
-    {
-        std::lock_guard lock(tasks_mtx);
-        if (!stop)
-            tasks.emplace([task]() { (*task)(); });
-        else
-            return std::future<ret_t>();
-    }
-    condition.notify_one();
-    return result;
-}
 }  // namespace verna
 
 #endif
