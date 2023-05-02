@@ -1,6 +1,8 @@
 #ifndef VERNA_DEBUG_HPP
 #define VERNA_DEBUG_HPP
 
+#include <cassert>
+#include <string>
 #include <string_view>
 
 namespace verna::detail {
@@ -22,8 +24,6 @@ void LogError(std::string_view message);
 #define VERNA_LOGE_IF(cond, x) \
     if (cond)                  \
     VERNA_LOGE(x)
-#include <cassert>
-#include <string>
 #define VERNA_ASSERT(x)                                      \
     if (!(x)) {                                              \
         VERNA_LOGE("ASSERT FAILED! File " __FILE__ ", line " \
