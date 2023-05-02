@@ -34,7 +34,18 @@ class World {
     bool HasComponent(Entity e) const;
     template <typename C>
     auto& GetComponentArray() {
-        return GetComponentBuffer<C>().GetComponents();
+        TypeId type = GetTypeId<C>();
+        SparseSet<TypeId>::index_t i;
+        ComponentBuffer<C>* b;
+        if (component_types.GetIndex(type, i)) {
+            BaseComponentBuffer* base_b = buffers[i].get();
+            b = static_cast<ComponentBuffer<C>*>(base_b);
+        } else {
+            component_types.Add(type);
+            b = new ComponentBuffer<C>();
+            buffers.emplace_back(b);
+        }
+        return b->GetComponents();
     }
 
    private:
@@ -82,8 +93,8 @@ void World::SetComponent(Entity e, const C& component) {
         b = static_cast<ComponentBuffer<C>*>(base_b);
     } else {
         component_types.Add(type);
-        buffers.push_back(std::make_unique<ComponentBuffer>());
-        b = buffers.back().get();
+        b = new ComponentBuffer<C>();
+        buffers.emplace_back(b);
     }
     if (b->SetComponent(e, component))
         return;
