@@ -29,7 +29,6 @@ void World::AddSystem(const System& system) {
 SystemId World::AddSystem(const Family& family, SystemUpdate update_func) {
     System& system = systems.emplace_back(family, update_func);
     std::set<Entity> set;
-    const auto& family = system.GetFamily();
     for (TypeId type : family) {
         uint32_t index;
         if (!component_types.GetIndex(type, index))
@@ -64,7 +63,6 @@ bool World::HasComponent(Entity e, TypeId comp_type) const {
 }
 
 bool World::Matches(Entity e, const Family& family) const {
-    uint32_t i;
     for (TypeId type : family)
         if (!HasComponent(e, type))
             return false;

@@ -19,6 +19,10 @@ constexpr bool operator==(Entity a, Entity b) {
     return a.id == b.id;
 }
 
+constexpr bool operator<(Entity a, Entity b) {
+    return a.id < b.id;
+}
+
 }  // namespace verna
 
 #endif

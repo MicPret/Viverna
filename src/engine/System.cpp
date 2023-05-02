@@ -8,9 +8,9 @@ namespace verna {
 SystemId System::next_id = 0;
 
 System::System(const Family& family_, SystemUpdate update_func) :
-    family(family_), update{update_func}, id(++next_id) {}
+    id(++next_id), update{update_func}, family(family_) {}
 System::System(Family&& family_, SystemUpdate update_func) :
-    family(std::move(family_)), update{update_func}, id(++next_id) {}
+    id(++next_id), update{update_func}, family(std::move(family_)) {}
 
 SystemId System::Id() const {
     return id;
