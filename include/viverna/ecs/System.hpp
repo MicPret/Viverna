@@ -9,8 +9,9 @@
 
 namespace verna {
 
-using SystemUpdate = void (*)(std::vector<Entity>& entities,
-                              DeltaTime<float, Seconds> dt);
+class World;
+
+using SystemUpdate = void (*)(World& world, std::vector<Entity>& entities);
 using SystemId = uint32_t;
 
 class System {
@@ -19,7 +20,7 @@ class System {
     System(Family&& family_, SystemUpdate update_func);
     SystemId Id() const;
     const Family& GetFamily() const;
-    void Run(DeltaTime<float, Seconds> dt);
+    void Run(World& world);
     void Notify(EntityEvent event);
     void ReassignEntities(std::vector<Entity>&& new_entities);
     bool operator==(const System& other) const;

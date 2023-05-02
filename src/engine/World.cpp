@@ -51,8 +51,9 @@ void World::RemoveSystem(SystemId system_id) {
 }
 
 void World::RunSystems(DeltaTime<float, Seconds> dt) {
+    delta_time = dt;
     for (System& s : systems)
-        s.Run(dt);
+        s.Run(*this);
 }
 
 bool World::HasComponent(Entity e, TypeId comp_type) const {
@@ -68,6 +69,10 @@ bool World::Matches(Entity e, const Family& family) const {
         if (!HasComponent(e, type))
             return false;
     return true;
+}
+
+DeltaTime<float, Seconds> World::GetDeltaTime() const {
+    return delta_time;
 }
 
 }  // namespace verna

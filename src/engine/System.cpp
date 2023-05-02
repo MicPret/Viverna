@@ -27,9 +27,9 @@ void System::ReassignEntities(std::vector<Entity>&& new_entities) {
     entities = std::move(new_entities);
 }
 
-void System::Run(DeltaTime<float, Seconds> dt) {
+void System::Run(World& world) {
     ResolveEvents();
-    update(entities, dt);
+    update(world, entities);
 }
 
 bool System::operator==(const System& other) const {

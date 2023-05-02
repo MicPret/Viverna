@@ -19,6 +19,7 @@ class World {
     void RemoveSystem(SystemId system_id);
     void Clear();
     void RunSystems(DeltaTime<float, Seconds> dt);
+    DeltaTime<float, Seconds> GetDeltaTime() const;
     template <typename... Comps>
     Entity NewEntity();
     template <typename C>
@@ -41,6 +42,7 @@ class World {
     std::vector<std::unique_ptr<BaseComponentBuffer>> buffers;
     std::vector<System> systems;
     EntityId next_id = 0;
+    DeltaTime<float, Seconds> delta_time = Seconds(0);
     template <typename T>
     ComponentBuffer<T>& GetComponentBuffer() {
         TypeId type = GetTypeId<T>();
