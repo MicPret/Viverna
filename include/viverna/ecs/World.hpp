@@ -61,7 +61,7 @@ class World {
 template <typename... Comps>
 Entity World::NewEntity() {
     Entity e(++next_id);
-    SetComponents<Comps...>(e, Comps());
+    SetComponents<Comps...>(e, Comps()...);
     for (auto& s : systems)
         if (Matches(e, s.GetFamily()))
             s.Notify(EntityEvent(e, EntityEvent::ADD));
@@ -75,7 +75,7 @@ C World::GetComponent(Entity e) const {
 
 template <typename... Comps>
 void World::GetComponents(Entity e, Comps&... comps) const {
-    (comps = GetComponent<Comps>(e), ...);
+    ((comps = GetComponent<Comps>(e)), ...);
 }
 
 template <typename C>
@@ -91,7 +91,7 @@ void World::SetComponent(Entity e, const C& component) {
 
 template <typename... Comps>
 void World::SetComponents(Entity e, const Comps&... comps) const {
-    SetComponent(e, comps)...;
+    (SetComponent(e, comps), ...);
 }
 
 template <typename C>
