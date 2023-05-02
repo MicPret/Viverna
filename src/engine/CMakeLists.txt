@@ -34,6 +34,7 @@ target_sources(${PROJECT_NAME} PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/Quaternion.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Scene.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Texture.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/ThreadPool.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Transform.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/UniformBuffer.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Vec3f.cpp"
