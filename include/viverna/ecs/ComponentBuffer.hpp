@@ -21,7 +21,7 @@ class BaseComponentBuffer {
 };
 
 template <typename C>
-class ComponentBuffer : BaseComponentBuffer {
+class ComponentBuffer : public BaseComponentBuffer {
    public:
     C GetComponent(Entity e) const;
     // Returns false if it's a new component
