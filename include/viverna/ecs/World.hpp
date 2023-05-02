@@ -29,7 +29,7 @@ class World {
     template <typename C>
     void SetComponent(Entity e, const C& component);
     template <typename... Comps>
-    void SetComponents(Entity e, const Comps&... comps) const;
+    void SetComponents(Entity e, const Comps&... comps);
     template <typename C>
     bool HasComponent(Entity e) const;
     template <typename C>
@@ -90,7 +90,7 @@ void World::SetComponent(Entity e, const C& component) {
 }
 
 template <typename... Comps>
-void World::SetComponents(Entity e, const Comps&... comps) const {
+void World::SetComponents(Entity e, const Comps&... comps) {
     (SetComponent(e, comps), ...);
 }
 
