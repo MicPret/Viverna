@@ -38,6 +38,7 @@ SystemId World::AddSystem(const Family& family, SystemUpdate update_func) {
             set.insert(Entity(entity_ids[i]));
     }
     system.ReassignEntities(std::vector(set.begin(), set.end()));
+    return system.Id();
 }
 
 void World::RemoveSystem(SystemId system_id) {
