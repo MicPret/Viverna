@@ -10,4 +10,5 @@ target_sources(${PROJECT_NAME} PRIVATE
     "${VIVERNA_GAME_PLATFORM_PATH}/main.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Application.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/CameraController.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/MeshRenderer.cpp"
 )

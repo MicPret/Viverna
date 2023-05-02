@@ -1,11 +1,13 @@
 #include <game/core/Application.hpp>
 #include <game/CameraController.hpp>
+#include <game/systems/MeshRenderer.hpp>
 
 #include <viverna/core/Input.hpp>
 #include <viverna/core/Scene.hpp>
 #include <viverna/graphics/Mesh.hpp>
 #include <viverna/graphics/Renderer.hpp>
 #include <viverna/graphics/Window.hpp>
+#include <viverna/ecs/World.hpp>
 
 #include <imgui/imgui.h>
 #include <imgui/backends/imgui_impl_opengl3.h>
@@ -20,13 +22,12 @@ static void InitGUI();
 static void TermGUI();
 static void BeginGUI();
 static void EndGUI();
-static void SpawnCube(const Vec3f& position = Vec3f());
+static Entity SpawnCube(const Vec3f& position = Vec3f());
 
 static Scene* scene;
+static World world;
 static ShaderId shader;
-static std::vector<Mesh> meshes;
-static std::vector<Transform> transforms;
-static std::vector<Material> materials;
+static Entity last_cube;
 
 void OnAppResume(VivernaState& app_state) {
     InitGUI();
@@ -36,15 +37,18 @@ void OnAppResume(VivernaState& app_state) {
     DirectionLight& light = scene->GetDirectionLight();
     light.direction = Vec3f(0.2f, -0.8f, 0.4f).Normalized();
     shader = LoadShader("blinn-phong");
-    SpawnCube();
+    last_cube = SpawnCube();
+    world.AddSystem(Family::From<Mesh, Material, Transform, ShaderId>(),
+                    editor::Render);
 }
 void OnAppPause(VivernaState& app_state) {
     TermGUI();
-    for (const auto& m : materials) {
-        FreeTexture(m.textures[0]);
-        FreeTexture(m.textures[1]);
-    }
+    auto& materials = world.GetComponentArray<Material>();
+    for (const Material& m : materials)
+        for (TextureId t : m.textures)
+            FreeTexture(t);
     FreeShader(shader);
+    world.Clear();
 }
 void OnAppUpdate(VivernaState& app_state, DeltaTime<float, Seconds> dt) {
     NextFrame();
@@ -56,8 +60,7 @@ void OnAppUpdate(VivernaState& app_state, DeltaTime<float, Seconds> dt) {
         return;
     }
 
-    for (size_t i = 0; i < meshes.size(); i++)
-        Render(meshes[i], materials[i], transforms[i], shader);
+    world.RunSystems(dt);
 
     static float camera_speed = 2.0f;
     bool space_pressed = space.Pressed();
@@ -66,7 +69,7 @@ void OnAppUpdate(VivernaState& app_state, DeltaTime<float, Seconds> dt) {
 
     Draw();
     BeginGUI();
-    Transform& selected = transforms.back();
+    Transform selected = world.GetComponent<Transform>(last_cube);
     float* vec3 = nullptr;
     if (ImGui::Begin("Viverna", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
         if (ImGui::BeginTabBar("TabBar")) {
@@ -75,8 +78,9 @@ void OnAppUpdate(VivernaState& app_state, DeltaTime<float, Seconds> dt) {
                 ImGui::DragFloat3("Position", vec3, 0.01f, -100.0f, 100.0f);
                 vec3 = reinterpret_cast<float*>(&selected.scale);
                 ImGui::DragFloat3("Scale", vec3, 0.01f, 0.01f, 100.0f);
+                world.SetComponent(last_cube, selected);
                 if (ImGui::Button("New Cube"))
-                    SpawnCube(selected.position);
+                    last_cube = SpawnCube(selected.position);
                 ImGui::EndTabItem();
             }
             if (ImGui::BeginTabItem("Lighting")) {
@@ -135,14 +139,16 @@ static void EndGUI() {
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
-static void SpawnCube(const Vec3f& position) {
-    meshes.push_back(LoadPrimitiveMesh(PrimitiveMeshType::Cube));
-    Transform t;
-    t.position = position;
-    transforms.push_back(t);
+static Entity SpawnCube(const Vec3f& position) {
     Material m;
-    m.textures[0] = LoadTextureFromColor(0.7f, 0.7f, 0.7f, 1.0f);
-    m.textures[1] = LoadTextureFromColor(0.0f, 0.0f, 0.0f, 1.0f);
-    materials.push_back(m);
+    m.textures[Material::DIFFUSE_INDEX] =
+        LoadTextureFromColor(0.7f, 0.7f, 0.7f, 1.0f);
+    m.textures[Material::SPECULAR_INDEX] =
+        LoadTextureFromColor(0.01f, 0.01f, 0.01f, 1.0f);
+
+    Entity cube = world.NewEntity<Mesh, Material, Transform, ShaderId>();
+    world.SetComponents(cube, LoadPrimitiveMesh(PrimitiveMeshType::Cube),
+                        Transform(), m, shader);
+    return cube;
 }
 }  // namespace verna
