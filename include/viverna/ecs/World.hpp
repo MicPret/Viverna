@@ -43,32 +43,6 @@ class World {
     std::vector<System> systems;
     EntityId next_id = 0;
     DeltaTime<float, Seconds> delta_time = Seconds(0);
-    template <typename C>
-    ComponentBuffer<C>& GetComponentBuffer() {
-        TypeId type = GetTypeId<C>();
-        SparseSet<TypeId>::index_t i;
-        if (component_types.GetIndex(type, i)) {
-            auto ptr = static_cast<ComponentBuffer<C>*>(buffers[i].get());
-            return *ptr;
-        } else {
-            component_types.Add(type);
-            buffers.push_back(std::make_unique<ComponentBuffer<C>>());
-            return *buffers.back();
-        }
-    }
-    template <typename C>
-    const ComponentBuffer<C>& GetComponentBuffer() const {
-        TypeId type = GetTypeId<C>();
-        SparseSet<TypeId>::index_t i;
-        if (component_types.GetIndex(type, i)) {
-            auto ptr = static_cast<ComponentBuffer<C>*>(buffers[i].get());
-            return *ptr;
-        } else {
-            component_types.Add(type);
-            buffers.push_back(std::make_unique<ComponentBuffer<C>>());
-            return *buffers.back();
-        }
-    }
 };
 
 template <typename... Comps>
@@ -83,7 +57,14 @@ Entity World::NewEntity() {
 
 template <typename C>
 C World::GetComponent(Entity e) const {
-    return GetComponentBuffer<C>().GetComponent(e);
+    TypeId type = GetTypeId<C>();
+    SparseSet<TypeId>::index_t i;
+    if (component_types.GetIndex(type, i)) {
+        BaseComponentBuffer* base_b = buffers[i].get();
+        ComponentBuffer<C>* b = static_cast<ComponentBuffer<C>*>(base_b);
+        return b->GetComponent(e);
+    }
+    return C();
 }
 
 template <typename... Comps>
@@ -93,7 +74,18 @@ void World::GetComponents(Entity e, Comps&... comps) const {
 
 template <typename C>
 void World::SetComponent(Entity e, const C& component) {
-    if (GetComponentBuffer<C>().SetComponent(e, component))
+    TypeId type = GetTypeId<C>();
+    SparseSet<TypeId>::index_t i;
+    ComponentBuffer<C>* b;
+    if (component_types.GetIndex(type, i)) {
+        BaseComponentBuffer* base_b = buffers[i].get();
+        b = static_cast<ComponentBuffer<C>*>(base_b);
+    } else {
+        component_types.Add(type);
+        buffers.push_back(std::make_unique<ComponentBuffer>());
+        b = buffers.back().get();
+    }
+    if (b->SetComponent(e, component))
         return;
     for (auto& s : systems) {
         const Family& family = s.GetFamily();
