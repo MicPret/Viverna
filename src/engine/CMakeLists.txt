@@ -23,6 +23,7 @@ target_sources(${PROJECT_NAME} PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/BoundingSphere.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Camera.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Collision.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/ComponentBuffer.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Entity.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Family.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Image.cpp"
@@ -43,4 +44,5 @@ target_sources(${PROJECT_NAME} PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/UniformBuffer.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Vec3f.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/VivernaInitializer.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/World.cpp"
 )

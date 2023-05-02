@@ -1,13 +1,16 @@
 #ifndef VERNA_FAMILY_HPP
 #define VERNA_FAMILY_HPP
 
-#include "TypeId.hpp"
+#include <viverna/core/TypeId.hpp>
 #include <vector>
 
 namespace verna {
 class Family {
    public:
     explicit Family(std::initializer_list<TypeId> types_);
+    size_t Size() const;
+    bool Contains(TypeId type) const;
+    bool operator==(const Family& other) const;
     auto begin() { return types.begin(); }
     auto end() { return types.end(); }
     auto begin() const { return types.begin(); }

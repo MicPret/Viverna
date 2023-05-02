@@ -1,7 +1,7 @@
 #ifndef VERNA_ENTITY_HPP
 #define VERNA_ENTITY_HPP
 
-#include "TypeId.hpp"
+#include <viverna/core/TypeId.hpp>
 #include <cstdint>
 
 namespace verna {
@@ -11,8 +11,8 @@ class Family;
 
 struct Entity {
     EntityId id;
-    bool Matches(const Family& family) const;
-    bool HasComponent(TypeId component_type) const;
+    constexpr Entity() : id(0) {}
+    explicit constexpr Entity(EntityId id_) : id(id_) {}
 };
 
 constexpr bool operator==(Entity a, Entity b) {

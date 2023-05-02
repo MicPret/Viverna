@@ -1,11 +1,3 @@
-#include <viverna/core/Entity.hpp>
-#include <viverna/core/Family.hpp>
+#include <viverna/ecs/Entity.hpp>
 
-namespace verna {
-bool Entity::Matches(const Family& family) const {
-    for (TypeId type : family)
-        if (!HasComponent(type))
-            return false;
-    return true;
-}
-}  // namespace verna
+namespace verna {}  // namespace verna
