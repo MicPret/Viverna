@@ -56,6 +56,19 @@ class World {
             return *buffers.back();
         }
     }
+    template <typename C>
+    const ComponentBuffer<C>& GetComponentBuffer() const {
+        TypeId type = GetTypeId<C>();
+        SparseSet<TypeId>::index_t i;
+        if (component_types.GetIndex(type, i)) {
+            auto ptr = static_cast<ComponentBuffer<C>*>(buffers[i].get());
+            return *ptr;
+        } else {
+            component_types.Add(type);
+            buffers.push_back(std::make_unique<ComponentBuffer<C>>());
+            return *buffers.back();
+        }
+    }
 };
 
 template <typename... Comps>
