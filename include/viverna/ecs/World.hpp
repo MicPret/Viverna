@@ -43,16 +43,16 @@ class World {
     std::vector<System> systems;
     EntityId next_id = 0;
     DeltaTime<float, Seconds> delta_time = Seconds(0);
-    template <typename T>
-    ComponentBuffer<T>& GetComponentBuffer() {
-        TypeId type = GetTypeId<T>();
+    template <typename C>
+    ComponentBuffer<C>& GetComponentBuffer() {
+        TypeId type = GetTypeId<C>();
         SparseSet<TypeId>::index_t i;
         if (component_types.GetIndex(type, i)) {
-            auto ptr = static_cast<ComponentBuffer<T>*>(buffers[i].get());
+            auto ptr = static_cast<ComponentBuffer<C>*>(buffers[i].get());
             return *ptr;
         } else {
             component_types.Add(type);
-            buffers.push_back(std::make_unique<ComponentBuffer>());
+            buffers.push_back(std::make_unique<ComponentBuffer<C>>());
             return *buffers.back();
         }
     }
