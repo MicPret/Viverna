@@ -59,11 +59,6 @@ constexpr GLsizei SHADOW_MAP_WIDTH = SHADOW_MAP_SIZE;
 constexpr GLsizei SHADOW_MAP_HEIGHT = SHADOW_MAP_SIZE;
 
 BoundingBox render_bounds;
-
-#ifndef NDEBUG
-std::vector<Vertex> dbg_vertices;
-std::vector<Mesh::index_t> dbg_indices;
-#endif
 }  // namespace
 
 static void CheckForGLErrors(std::string_view origin);
@@ -165,7 +160,7 @@ void TermLights() {
 }
 
 void LoadPrivateShaders() {
-    wireframe_shader = LoadShader("debug");
+    wireframe_shader = LoadShader("wireframe");
     dirlight_shader = LoadShader("dirlight_depth");
 }
 
@@ -476,29 +471,6 @@ void Render(const Mesh& mesh,
     Render(mesh, material, transform.GetMatrix(), shader_id);
 }
 
-#ifndef NDEBUG
-static void DrawDebug() {
-#if defined(VERNA_DESKTOP)
-    constexpr GLenum gl_mode = GL_TRIANGLES;
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-#else
-    constexpr GLenum gl_mode = GL_POINTS;
-#endif
-    glBufferSubData(GL_ARRAY_BUFFER, 0, dbg_vertices.size() * sizeof(Vertex),
-                    dbg_vertices.data());
-    glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0,
-                    dbg_indices.size() * sizeof(Mesh::index_t),
-                    dbg_indices.data());
-    glUseProgram(wireframe_shader.id);
-    glDrawElements(gl_mode, dbg_indices.size(), GL_UNSIGNED_INT, nullptr);
-#if defined(VERNA_DESKTOP)
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-#endif
-    dbg_vertices.clear();
-    dbg_indices.clear();
-}
-#endif
-
 void DrawGlCommand(const GlDrawCommand& cmd) {
 #if defined(VERNA_ANDROID)
     constexpr GLint draw_id_uniloc = 0;
@@ -542,7 +514,7 @@ void Draw() {
         return;
     }
 #ifndef NDEBUG
-    GLenum glerr;
+    [[maybe_unused]] GLenum glerr;
     while ((glerr = glGetError()) != GL_NO_ERROR)
         VERNA_LOGE("Caught OpenGL error in Draw(): " + std::to_string(glerr));
 #endif
@@ -569,9 +541,6 @@ void Draw() {
             DrawBatch(batch);
         }
     }
-#ifndef NDEBUG
-    DrawDebug();
-#endif
 }
 
 void NextFrame() {
@@ -580,38 +549,24 @@ void NextFrame() {
     ResetRenderBounds();
 }
 
-void RenderDebug(const BoundingBox& box) {
-#ifndef NDEBUG
-    Mesh::index_t offset = dbg_vertices.size();
+void Render(const BoundingBox& box) {
     Transform t;
     t.position = box.Center();
     t.scale = box.Size();
     Mesh cube = LoadPrimitiveMesh(PrimitiveMeshType::Cube);
-    for (Vertex& v : cube.vertices) {
+    for (Vertex& v : cube.vertices)
         v.position = t.Apply(v.position);
-        dbg_vertices.push_back(v);
-    }
-    for (Mesh::index_t id : cube.indices) {
-        dbg_indices.push_back(id + offset);
-    }
-#endif
+    Render(cube, Material(), t, wireframe_shader);
 }
 
-void RenderDebug(const BoundingSphere& sphere) {
-#ifndef NDEBUG
-    Mesh::index_t offset = dbg_vertices.size();
+void Render(const BoundingSphere& sphere) {
     Transform t;
     t.position = sphere.Position();
     t.scale = Vec3f(sphere.Radius());
     Mesh mesh = LoadPrimitiveMesh(PrimitiveMeshType::Sphere);
-    for (Vertex& v : mesh.vertices) {
+    for (Vertex& v : mesh.vertices)
         v.position = t.Apply(v.position);
-        dbg_vertices.push_back(v);
-    }
-    for (Mesh::index_t id : mesh.indices) {
-        dbg_indices.push_back(id + offset);
-    }
-#endif
+    Render(mesh, Material(), t, wireframe_shader);
 }
 
 void ResetRenderBounds() {

@@ -42,8 +42,8 @@ void Render(const Mesh& mesh,
             const Transform& transform,
             ShaderId shader_id);
 
-void RenderDebug(const BoundingBox& box);
-void RenderDebug(const BoundingSphere& sphere);
+void Render(const BoundingBox& box);
+void Render(const BoundingSphere& sphere);
 
 /**
  * @brief Draws the batch on the back buffer, which is not shown until
