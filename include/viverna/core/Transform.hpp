@@ -36,11 +36,7 @@ struct Transform {
         return t_r * s;
     }
 
-    constexpr void LookAt(const Vec3f& pos) {
-        Mat4f rot =
-            Mat4f::LookAt(position, position + Forward(), Vec3f::UnitY());
-        rotation = Quaternion(rot);
-    }
+    void LookAt(const Vec3f& pos);
 
     constexpr Vec3f Apply(const Vec3f& v) const {
         return position + rotation.Rotate(scale.ComponentProduct(v));
