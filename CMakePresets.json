@@ -46,7 +46,7 @@
       "toolchainFile": "${sourceDir}/android_toolchain.cmake",
       "condition": {
         "type": "notEquals",
-        "lhs": "$env{ANDROID_NDK}",
+        "lhs": "$env{ANDROID_HOME}",
         "rhs": ""
       }
     },
