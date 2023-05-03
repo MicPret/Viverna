@@ -2,6 +2,7 @@
 #define VERNA_FAMILY_HPP
 
 #include <viverna/core/TypeId.hpp>
+#include <cstddef>
 #include <vector>
 
 namespace verna {
