@@ -20,8 +20,7 @@ void Snake::Setup() {
     mesh = verna::LoadPrimitiveMesh(verna::PrimitiveMeshType::Sphere);
     transforms.resize(2);
     transforms[0].position = distance * verna::Vec3f::UnitZ();
-    transforms[0].rotation =
-        verna::Quaternion(-verna::Vec3f::UnitX(), verna::maths::Radians(90.0f));
+    transforms[0].LookAt(transforms[0].position + verna::Vec3f::UnitY());
     transforms[0].scale = verna::Vec3f(0.5f);
     transforms[1] = transforms[0];
     transforms[1].position =
@@ -57,20 +56,11 @@ void Snake::MoveTowards(float dt, const verna::Vec3f& target) {
     auto& head = transforms.front();
     auto forward = Direction();
     float interp = verna::maths::Min(dt * rot_speed, 1.0f);
-    auto direction =
-        verna::Vec3f::Lerp(forward, (target - HeadPosition()).Normalized(),
-                           interp)
-            .Normalized();
-    float cos_angle = forward.Dot(direction);
-    if (cos_angle < 0.999999f) {
-        float angle =
-            cos_angle <= -1.0f ? verna::maths::Pi() : std::acos(cos_angle);
-        verna::Quaternion rot(forward.Cross(direction).Normalized(), angle);
-        head.rotation = rot * head.rotation;
-        forward = Direction();
-    }
+    auto direction = verna::Vec3f::Lerp(
+        forward, (target - head.position).Normalized(), interp);
+    head.LookAt(head.position + direction);
     float scaled_speed = dt * mov_speed;
-    auto new_pos = HeadPosition() + scaled_speed * forward;
+    auto new_pos = head.position + scaled_speed * Direction();
     for (size_t i = transforms.size() - 1; i > 0; i--) {
         auto dir =
             (transforms[i - 1].position - transforms[i].position).Normalized();
@@ -78,6 +68,13 @@ void Snake::MoveTowards(float dt, const verna::Vec3f& target) {
     }
     head.position = new_pos;
     Adjust();
+    for (size_t i = 1; i < transforms.size(); i++) {
+        direction = verna::Vec3f::Lerp(
+            transforms[i].Forward(),
+            (transforms[i - 1].position - transforms[i].position).Normalized(),
+            interp);
+        transforms[i].LookAt(transforms[i].position + direction);
+    }
 }
 
 void Snake::Adjust() {
