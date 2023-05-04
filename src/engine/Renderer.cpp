@@ -554,8 +554,6 @@ void Render(const BoundingBox& box) {
     t.position = box.Center();
     t.scale = box.Size();
     Mesh cube = LoadPrimitiveMesh(PrimitiveMeshType::Cube);
-    for (Vertex& v : cube.vertices)
-        v.position = t.Apply(v.position);
     Render(cube, Material(), t, wireframe_shader);
 }
 
@@ -564,8 +562,6 @@ void Render(const BoundingSphere& sphere) {
     t.position = sphere.Position();
     t.scale = Vec3f(sphere.Radius());
     Mesh mesh = LoadPrimitiveMesh(PrimitiveMeshType::Sphere);
-    for (Vertex& v : mesh.vertices)
-        v.position = t.Apply(v.position);
     Render(mesh, Material(), t, wireframe_shader);
 }
 
