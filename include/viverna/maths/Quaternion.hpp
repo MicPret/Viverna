@@ -19,6 +19,7 @@ struct Quaternion {
     constexpr Quaternion(float x_, float y_, float z_, float w_) :
         x(x_), y(y_), z(z_), w(w_) {}
     Quaternion(const Vec3f& unit_axis, float radians);
+    Quaternion(const Mat4f& rot_matrix);
 
     constexpr float SquaredMagnitude() const {
         return x * x + y * y + z * z + w * w;

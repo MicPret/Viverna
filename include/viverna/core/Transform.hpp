@@ -36,6 +36,8 @@ struct Transform {
         return t_r * s;
     }
 
+    void LookAt(const Vec3f& target);
+
     constexpr Vec3f Apply(const Vec3f& v) const {
         return position + rotation.Rotate(scale.ComponentProduct(v));
     }
