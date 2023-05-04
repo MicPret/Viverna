@@ -3,16 +3,15 @@
 #include <cmath>
 
 namespace verna {
-void Transform::LookAt(const Vec3f& pos, const Vec3f& up) {
-    Vec3f forward = up.x < 0.99999f ? Vec3f::UnitX().Cross(up).Normalized()
-                                    : Vec3f::UnitY();
-    Vec3f to_pos = (pos - position).Normalized();
-    Vec3f axis = forward.Cross(to_pos);
-    float cosangle = forward.Dot(to_pos);
+void Transform::LookAt(const Vec3f& target) {
+    Vec3f forward = Forward();
+    Vec3f to_target = (target - position).Normalized();
+    float cosangle = forward.Dot(to_target);
     if (cosangle < 0.99999f) {
         float angle =
             cosangle <= -1.0f ? verna::maths::Pi() : std::acos(cosangle);
-        rotation = Quaternion(axis.Normalized(), angle);
+        rotation =
+            Quaternion(forward.Cross(to_target).Normalized(), angle) * rotation;
     }
 }
 }  // namespace verna
