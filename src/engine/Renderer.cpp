@@ -553,20 +553,20 @@ void Render(const BoundingBox& box) {
     Transform t;
     t.position = box.Center();
     t.scale = box.Size();
+    Material mat;
+    mat.SetCastsShadow(false);
     Mesh cube = LoadPrimitiveMesh(PrimitiveMeshType::Cube);
-    for (Vertex& v : cube.vertices)
-        v.position = t.Apply(v.position);
-    Render(cube, Material(), t, wireframe_shader);
+    Render(cube, mat, t, wireframe_shader);
 }
 
 void Render(const BoundingSphere& sphere) {
     Transform t;
     t.position = sphere.Position();
     t.scale = Vec3f(sphere.Radius());
+    Material mat;
+    mat.SetCastsShadow(false);
     Mesh mesh = LoadPrimitiveMesh(PrimitiveMeshType::Sphere);
-    for (Vertex& v : mesh.vertices)
-        v.position = t.Apply(v.position);
-    Render(mesh, Material(), t, wireframe_shader);
+    Render(mesh, mat, t, wireframe_shader);
 }
 
 void ResetRenderBounds() {
