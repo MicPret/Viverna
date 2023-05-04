@@ -1,5 +1,6 @@
 #include <game/core/Application.hpp>
 #include <game/CameraController.hpp>
+#include <game/components/EntityName.hpp>
 #include <game/systems/MeshRenderer.hpp>
 
 #include <viverna/core/Input.hpp>
@@ -13,7 +14,6 @@
 #include <imgui/backends/imgui_impl_opengl3.h>
 #include <imgui/backends/imgui_impl_glfw.h>
 
-#include <glad/gl.h>
 #include <GLFW/glfw3.h>
 
 namespace verna {
@@ -27,7 +27,8 @@ static Entity SpawnCube(const Vec3f& position = Vec3f());
 static Scene* scene;
 static World world;
 static ShaderId shader;
-static Entity last_cube;
+static std::vector<Entity> renderables;
+static int selected_id = 0;
 
 void OnAppResume(VivernaState& app_state) {
     InitGUI();
@@ -37,7 +38,7 @@ void OnAppResume(VivernaState& app_state) {
     DirectionLight& light = scene->GetDirectionLight();
     light.direction = Vec3f(0.2f, -0.8f, 0.4f).Normalized();
     shader = LoadShader("blinn-phong");
-    last_cube = SpawnCube();
+    renderables.push_back(SpawnCube());
     world.AddSystem(Family::From<Mesh, Material, Transform, ShaderId>(),
                     editor::Render);
 }
@@ -62,6 +63,14 @@ void OnAppUpdate(VivernaState& app_state, DeltaTime<float, Seconds> dt) {
 
     world.RunSystems(dt);
 
+    Transform target_transform;
+    Mesh target_mesh;
+    world.GetComponents(renderables[selected_id], target_transform,
+                        target_mesh);
+    auto bounds = target_mesh.bounds;
+    bounds.ApplyTransform(target_transform);
+    Render(bounds);
+
     static float camera_speed = 2.0f;
     bool space_pressed = space.Pressed();
     editor::UpdateCamera(scene->GetCamera(), camera_speed, dt.count(),
@@ -69,18 +78,35 @@ void OnAppUpdate(VivernaState& app_state, DeltaTime<float, Seconds> dt) {
 
     Draw();
     BeginGUI();
-    Transform selected = world.GetComponent<Transform>(last_cube);
     float* vec3 = nullptr;
     if (ImGui::Begin("Viverna", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
         if (ImGui::BeginTabBar("TabBar")) {
-            if (ImGui::BeginTabItem("Game objects")) {
-                vec3 = reinterpret_cast<float*>(&selected.position);
+            if (ImGui::BeginTabItem("Entities")) {
+                auto temp = selected_id;
+                std::vector<std::string> names;
+                names.reserve(renderables.size());
+                for (Entity e : renderables)
+                    names.push_back(
+                        world.GetComponent<editor::EntityName>(e).String());
+                std::vector<const char*> labels;
+                labels.reserve(names.size());
+                for (const auto& s : names)
+                    labels.push_back(s.c_str());
+
+                ImGui::ListBox("Entity list", &temp, labels.data(),
+                               labels.size());
+                if (temp != selected_id) {
+                    selected_id = temp;
+                    world.GetComponents(renderables[temp], target_transform,
+                                        target_mesh);
+                }
+                vec3 = reinterpret_cast<float*>(&target_transform.position);
                 ImGui::DragFloat3("Position", vec3, 0.01f, -100.0f, 100.0f);
-                vec3 = reinterpret_cast<float*>(&selected.scale);
+                vec3 = reinterpret_cast<float*>(&target_transform.scale);
                 ImGui::DragFloat3("Scale", vec3, 0.01f, 0.01f, 100.0f);
-                world.SetComponent(last_cube, selected);
+                world.SetComponent(renderables[selected_id], target_transform);
                 if (ImGui::Button("New Cube"))
-                    last_cube = SpawnCube(selected.position);
+                    renderables.push_back(SpawnCube());
                 ImGui::EndTabItem();
             }
             if (ImGui::BeginTabItem("Lighting")) {
@@ -145,10 +171,12 @@ static Entity SpawnCube(const Vec3f& position) {
         LoadTextureFromColor(0.7f, 0.7f, 0.7f, 1.0f);
     m.textures[Material::SPECULAR_INDEX] =
         LoadTextureFromColor(0.01f, 0.01f, 0.01f, 1.0f);
+    editor::EntityName name = "New entity";
 
-    Entity cube = world.NewEntity<Mesh, Material, Transform, ShaderId>();
+    Entity cube = world.NewEntity<Mesh, Material, Transform, ShaderId,
+                                  editor::EntityName>();
     world.SetComponents(cube, LoadPrimitiveMesh(PrimitiveMeshType::Cube),
-                        Transform(), m, shader);
+                        Transform(), m, shader, name);
     return cube;
 }
 }  // namespace verna
