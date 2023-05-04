@@ -61,3 +61,5 @@ layout(std140) uniform DrawData {
 #define MODEL_MATRIX draw_data[DRAW_ID].model
 #define TRANSPOSE_INVERSE_MODEL_MATRIX \
     draw_data[DRAW_ID].transpose_inverse_model
+
+#define DOES_NOT_CAST_SHADOW MATERIAL_PARAM3
