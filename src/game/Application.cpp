@@ -170,7 +170,8 @@ static Entity SpawnCube(const Vec3f& position) {
     m.textures[Material::DIFFUSE_INDEX] =
         LoadTextureFromColor(0.7f, 0.7f, 0.7f, 1.0f);
     m.textures[Material::SPECULAR_INDEX] =
-        LoadTextureFromColor(0.01f, 0.01f, 0.01f, 1.0f);
+        LoadTextureFromColor(0.3f, 0.3f, 0.3f, 1.0f);
+    m.parameters[Material::SHININESS_INDEX] = 0.06f;
     editor::EntityName name = "New entity";
 
     Entity cube = world.NewEntity<Mesh, Material, Transform, ShaderId,
