@@ -61,7 +61,7 @@ vec3 CalculateLight(in vec3 to_light_normalized,
 
 void main() {
     vec3 normal = normalize(v.normal);
-    vec3 cam_pos = vec3(camera.view_matrix[3]);
+    vec3 cam_pos = GetCameraPosition();
     vec3 to_camera_normalized = normalize(cam_pos - v.position);
 
     vec3 diffuse_map = vec3(texture(DIFFUSE_TEXTURE, v.tex_coords));
