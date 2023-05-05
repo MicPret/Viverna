@@ -66,8 +66,8 @@ layout(std140) uniform DrawData {
 
 vec3 GetCameraPosition() {
     vec3 p;
-    p.x = camera.view_matrix[12];
-    p.y = camera.view_matrix[13];
-    p.z = camera.view_matrix[14];
+    p.x = camera.view_matrix[3][0];
+    p.y = camera.view_matrix[3][1];
+    p.z = camera.view_matrix[3][2]];
     return p;
 }
