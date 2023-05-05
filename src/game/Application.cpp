@@ -22,7 +22,7 @@ static void InitGUI();
 static void TermGUI();
 static void BeginGUI();
 static void EndGUI();
-static Entity SpawnCube(const Vec3f& position = Vec3f());
+static Entity AddRenderable(const Mesh& mesh);
 
 static Scene* scene;
 static World world;
@@ -38,7 +38,8 @@ void OnAppResume(VivernaState& app_state) {
     DirectionLight& light = scene->GetDirectionLight();
     light.direction = Vec3f(0.2f, -0.8f, 0.4f).Normalized();
     shader = LoadShader("blinn-phong");
-    renderables.push_back(SpawnCube());
+    renderables.push_back(
+        AddRenderable(LoadPrimitiveMesh(PrimitiveMeshType::Cube)));
     world.AddSystem(Family::From<Mesh, Material, Transform, ShaderId>(),
                     editor::Render);
 }
@@ -105,8 +106,11 @@ void OnAppUpdate(VivernaState& app_state, DeltaTime<float, Seconds> dt) {
                 vec3 = reinterpret_cast<float*>(&target_transform.scale);
                 ImGui::DragFloat3("Scale", vec3, 0.01f, 0.01f, 100.0f);
                 world.SetComponent(renderables[selected_id], target_transform);
-                if (ImGui::Button("New Cube"))
-                    renderables.push_back(SpawnCube());
+                if (ImGui::Button("New Cube")) {
+                    selected_id = renderables.size();
+                    renderables.push_back(AddRenderable(
+                        LoadPrimitiveMesh(PrimitiveMeshType::Cube)));
+                }
                 ImGui::EndTabItem();
             }
             if (ImGui::BeginTabItem("Lighting")) {
@@ -165,19 +169,18 @@ static void EndGUI() {
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
-static Entity SpawnCube(const Vec3f& position) {
+static Entity AddRenderable(const Mesh& mesh) {
     Material m;
     m.textures[Material::DIFFUSE_INDEX] =
         LoadTextureFromColor(0.7f, 0.7f, 0.7f, 1.0f);
     m.textures[Material::SPECULAR_INDEX] =
         LoadTextureFromColor(0.3f, 0.3f, 0.3f, 1.0f);
-    m.parameters[Material::SHININESS_INDEX] = 0.06f;
+    m.parameters[Material::SHININESS_INDEX] = 20.06f;
     editor::EntityName name = "New entity";
 
-    Entity cube = world.NewEntity<Mesh, Material, Transform, ShaderId,
-                                  editor::EntityName>();
-    world.SetComponents(cube, LoadPrimitiveMesh(PrimitiveMeshType::Cube),
-                        Transform(), m, shader, name);
-    return cube;
+    Entity e = world.NewEntity<Mesh, Material, Transform, ShaderId,
+                               editor::EntityName>();
+    world.SetComponents(e, mesh, Transform(), m, shader, name);
+    return e;
 }
 }  // namespace verna
