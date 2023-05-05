@@ -65,9 +65,6 @@ layout(std140) uniform DrawData {
 #define DOES_NOT_CAST_SHADOW MATERIAL_PARAM3
 
 vec3 GetCameraPosition() {
-    vec3 p;
-    p.x = camera.view_matrix[3][0];
-    p.y = camera.view_matrix[3][1];
-    p.z = camera.view_matrix[3][2];
-    return p;
+    mat4 i_v = inverse(camera.view_matrix);
+    return vec3(i_v[3]);
 }
