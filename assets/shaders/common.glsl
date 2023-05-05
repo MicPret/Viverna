@@ -63,3 +63,11 @@ layout(std140) uniform DrawData {
     draw_data[DRAW_ID].transpose_inverse_model
 
 #define DOES_NOT_CAST_SHADOW MATERIAL_PARAM3
+
+vec3 GetCameraPosition() {
+    vec3 p;
+    p.x = camera.view_matrix[12];
+    p.y = camera.view_matrix[13];
+    p.z = camera.view_matrix[14];
+    return p;
+}
