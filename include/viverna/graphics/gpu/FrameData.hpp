@@ -5,6 +5,7 @@
 #include "DirectionLightData.hpp"
 
 #include <array>
+#include <cstdint>
 
 namespace verna::gpu {
 struct FrameData {
