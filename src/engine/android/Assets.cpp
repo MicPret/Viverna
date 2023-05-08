@@ -3,6 +3,8 @@
 
 #include <android_native_app_glue.h>
 
+#include <stack>
+
 namespace verna {
 
 static AAssetManager* asset_manager = nullptr;
@@ -69,10 +71,45 @@ bool AssetExists(const std::filesystem::path& path) {
                   "AssetExists failed: Call InitializeAssets!");
     AAsset* asset =
         AAssetManager_open(asset_manager, path.c_str(), AASSET_MODE_UNKNOWN);
-    if (asset == nullptr) {
+    if (asset == nullptr)
         return false;
-    }
     AAsset_close(asset);
     return true;
+}
+
+std::vector<std::filesystem::path> GetAssetsInDirectory(
+    const std::filesystem::path& path) {
+    VERNA_LOGE_IF(asset_manager == nullptr,
+                  "GetAssetsInDirectory failed: Call InitializeAssets!");
+    std::vector<std::filesystem::path> result;
+    std::stack<std::filesystem::path> dir_stack;
+    dir_stack.push(path);
+
+    while (!dirStack.empty()) {
+        std::filesystem::path current_dir = dir_stack.top();
+        dir_stack.pop();
+
+        AAssetDir* asset_dir =
+            AAssetManager_openDir(asset_manager, current_dir.c_str());
+        if (asset_dir == nullptr) {
+            VERNA_LOGW("Failed to open directory " + current_dir.string());
+            continue;
+        }
+
+        const char* filename = nullptr;
+        while ((filename = AAssetDir_getNextFileName(asset_dir)) != nullptr) {
+            std::filesystem::path fullpath = current_dir / filename;
+            AAsset* asset = AAssetManager_open(asset_manager, fullpath.c_str(),
+                                               AASSET_MODE_UNKNOWN);
+            if (asset != nullptr) {
+                result.push_back(fullpath);
+                AAsset_close(asset);
+            } else {
+                dir_stack.push(fullpath);
+            }
+        }
+
+        AAssetDir_close(asset_dir);
+    }
 }
 }  // namespace verna

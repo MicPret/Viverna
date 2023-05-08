@@ -78,4 +78,19 @@ bool AssetExists(const std::filesystem::path& path) {
     return std::filesystem::is_regular_file(assets_folder_path / path,
                                             err_code);
 }
+
+std::vector<std::filesystem::path> GetAssetsInDirectory(
+    const std::filesystem::path& path) {
+    std::vector<std::filesystem::path> result;
+    auto in_path = assets_folder_path / path;
+    if (!std::filesystem::exists(in_path)) {
+        VERNA_LOGW("Failed to open directory " + in_path.string());
+        return result;
+    }
+    for (const auto& entry :
+         std::filesystem::recursive_directory_iterator(in_path))
+        if (!entry.is_directory())
+            result.push_back(entry.path());
+
+    return result;
 }  // namespace verna
