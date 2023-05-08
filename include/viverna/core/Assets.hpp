@@ -26,6 +26,15 @@ std::vector<char> LoadRawAsset(const std::filesystem::path& path);
  * otherwise
  */
 bool AssetExists(const std::filesystem::path& path);
+
+/**
+ * @brief Retrieves all assets inside the specified directory (recursively)
+ *
+ * @param path Base folder
+ * @return Every asset inside path
+ */
+std::vector<std::filesystem::path> GetAssetsInDirectory(
+    const std::filesystem::path& path);
 }  // namespace verna
 
 #endif
