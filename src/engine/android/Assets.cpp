@@ -78,7 +78,8 @@ bool AssetExists(const std::filesystem::path& path) {
 }
 
 std::vector<std::filesystem::path> GetAssetsInDirectory(
-    const std::filesystem::path& path) {
+    const std::filesystem::path& path,
+    [[maybe_unused]] bool fullpath) {
     VERNA_LOGE_IF(asset_manager == nullptr,
                   "GetAssetsInDirectory failed: Call InitializeAssets!");
     std::vector<std::filesystem::path> result;
@@ -98,14 +99,14 @@ std::vector<std::filesystem::path> GetAssetsInDirectory(
 
         const char* filename = nullptr;
         while ((filename = AAssetDir_getNextFileName(asset_dir)) != nullptr) {
-            std::filesystem::path fullpath = current_dir / filename;
-            AAsset* asset = AAssetManager_open(asset_manager, fullpath.c_str(),
+            std::filesystem::path full_path = current_dir / filename;
+            AAsset* asset = AAssetManager_open(asset_manager, full_path.c_str(),
                                                AASSET_MODE_UNKNOWN);
             if (asset != nullptr) {
-                result.push_back(fullpath);
+                result.push_back(full_path);
                 AAsset_close(asset);
             } else {
-                dir_stack.push(fullpath);
+                dir_stack.push(full_path);
             }
         }
 

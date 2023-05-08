@@ -80,17 +80,35 @@ bool AssetExists(const std::filesystem::path& path) {
 }
 
 std::vector<std::filesystem::path> GetAssetsInDirectory(
-    const std::filesystem::path& path) {
+    const std::filesystem::path& path,
+    bool fullpath) {
     std::vector<std::filesystem::path> result;
     auto in_path = assets_folder_path / path;
+    auto in_path_str = in_path.string();
     if (!std::filesystem::exists(in_path)) {
-        VERNA_LOGW("Failed to open directory " + in_path.string());
+        VERNA_LOGW("Failed to open directory " + in_path_str);
         return result;
     }
-    for (const auto& entry :
-         std::filesystem::recursive_directory_iterator(in_path))
-        if (!entry.is_directory())
-            result.push_back(entry.path());
+    if (fullpath) {
+        for (const auto& entry :
+             std::filesystem::recursive_directory_iterator(in_path))
+            if (!entry.is_directory())
+                result.push_back(entry.path());
+    } else {
+        for (const auto& entry :
+             std::filesystem::recursive_directory_iterator(in_path))
+            if (!entry.is_directory()) {
+                std::string entry_str = entry.path().string();
+                std::string result_str = entry_str.substr(in_path_str.length());
+                size_t n = 0;
+                while (result_str[n]
+                       == std::filesystem::path::preferred_separator)
+                    n++;
+                if (n > 0)
+                    result_str = result_str.substr(n);
+                result.push_back(std::filesystem::path(result_str));
+            }
+    }
 
     return result;
 }
