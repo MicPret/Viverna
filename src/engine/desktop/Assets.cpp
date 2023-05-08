@@ -93,4 +93,5 @@ std::vector<std::filesystem::path> GetAssetsInDirectory(
             result.push_back(entry.path());
 
     return result;
+}
 }  // namespace verna
