@@ -31,10 +31,12 @@ bool AssetExists(const std::filesystem::path& path);
  * @brief Retrieves all assets inside the specified directory (recursively)
  *
  * @param path Base folder
+ * @param fullpath Assets directories are returned as fullpaths
  * @return Every asset inside path
  */
 std::vector<std::filesystem::path> GetAssetsInDirectory(
-    const std::filesystem::path& path);
+    const std::filesystem::path& path,
+    bool fullpath = false);
 }  // namespace verna
 
 #endif
