@@ -4,6 +4,8 @@
 #include <viverna/core/Input.hpp>
 #include <viverna/core/Scene.hpp>
 #include <viverna/core/Transform.hpp>
+#include <viverna/data/SparseSet.hpp>
+#include <viverna/graphics/Material.hpp>
 #include <viverna/graphics/Window.hpp>
 
 #include <imgui/imgui.h>
@@ -18,6 +20,7 @@ namespace editor {
 
 static void RenameButton(verna::World& world, verna::Entity entity);
 static void TransformGUI(verna::World& world, verna::Entity entity);
+static void MaterialGUI(verna::World& world, verna::Entity entity);
 
 void InitGUI() {
     ImGui::CreateContext();
@@ -90,6 +93,11 @@ void EntityTab(verna::World& world,
             selected_id = static_cast<int>(entities_size);
             entities.push_back(on_new_entity(world));
         }
+        // Material
+        if (selected_id >= 0) {
+            auto e = entities[selected_id];
+            MaterialGUI(world, e);
+        }
         ImGui::EndTabItem();
     }
 }
@@ -145,5 +153,31 @@ void TransformGUI(verna::World& world, verna::Entity entity) {
                       100.0f);
     ImGui::DragFloat3("Scale", &transform.scale.x, 0.01f, 0.01f, 100.0f);
     world.SetComponent(entity, transform);
+}
+
+void MaterialGUI(verna::World& world, verna::Entity entity) {
+    auto material = world.GetComponent<verna::Material>(entity);
+
+    std::string s;
+    std::string label;
+    for (size_t i = 0; i < material.textures.size(); i++) {
+        auto texture = material.textures[i];
+        if (!texture.IsValid())
+            continue;
+        label = "Texture #" + std::to_string(i);
+
+        ImGui::TextUnformatted(label.c_str());
+        ImGui::SameLine();
+        ImGui::Image(reinterpret_cast<ImTextureID>(texture.id),
+                     ImVec2(64.0f, 64.0f));
+    }
+    bool modified = false;
+    for (size_t i = 0; i < material.parameters.size(); i++) {
+        label = "Parameter #" + std::to_string(i);
+        modified |= ImGui::DragFloat(label.c_str(), &material.parameters[i],
+                                     0.01f, -100.0f, 100.0f);
+    }
+    if (modified)
+        world.SetComponent(entity, material);
 }
 }  // namespace editor
