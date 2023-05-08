@@ -2,6 +2,7 @@
 #define VERNA_EDITOR_EDITOR_GUI
 
 #include <viverna/ecs/World.hpp>
+#include <viverna/graphics/DirectionLight.hpp>
 
 #include <vector>
 
@@ -24,7 +25,7 @@ void EntityTab(verna::World& world,
                std::vector<verna::Entity>& entities,
                int& selected_id,
                NewEntityFunc on_new_entity);
-void LightingTab();
+void LightingTab(verna::DirectionLight& dirlight);
 void CameraTab(float& camera_speed);
 
 }  // namespace editor

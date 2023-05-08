@@ -82,7 +82,7 @@ void OnAppUpdate(VivernaState& app_state, DeltaTime<float, Seconds> dt) {
                                          verna::LoadPrimitiveMesh(
                                              verna::PrimitiveMeshType::Cube));
                 });
-            editor::LightingTab();
+            editor::LightingTab(scene->GetDirectionLight());
             editor::CameraTab(camera_speed);
             editor::EndTabs();
         }
