@@ -6,6 +6,7 @@
 #include <yaml-cpp/yaml.h>
 
 #include <cmath>
+#include <string>
 
 namespace YAML {
 template <>
@@ -17,9 +18,12 @@ struct convert<verna::Material> {
 inline Node convert<verna::Material>::encode(const verna::Material& rhs) {
     Node node;
     using t_t = decltype(verna::Material::textures);
-    std::array<verna::TextureId::id_type, t_t().size()> arr;
-    for (size_t i = 0; i < arr.size(); i++)
-        arr[i] = rhs.textures[i].id;
+    std::array<std::string, t_t().size()> arr;
+    for (size_t i = 0; i < arr.size(); i++) {
+        auto p = verna::GetTexturePath(rhs.textures[i]);
+        // TODO get color
+        arr[i] = (p.empty() ? std::string("unknown_texture") : p.string());
+    }
     node["textures"] = arr;
     node["parameters"] = rhs.parameters;
     return node;
