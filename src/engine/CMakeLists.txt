@@ -38,6 +38,7 @@ target_sources(${PROJECT_NAME} PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/Quaternion.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/QuaternionSerializer.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Scene.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/ShaderSerializer.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/System.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Texture.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/ThreadPool.cpp"
