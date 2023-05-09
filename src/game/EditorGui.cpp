@@ -199,7 +199,9 @@ void MaterialGUI(verna::World& world, verna::Entity entity) {
         auto texture = material.textures[i];
         if (!texture.IsValid())
             continue;
-        label = "Texture #" + std::to_string(i);
+        label = "Texture #" + std::to_string(i) + ": ";
+        auto path = verna::GetTexturePath(texture);
+        label += path.empty() ? std::to_string(texture.id) : path.string();
 
         ImGui::TextUnformatted(label.c_str());
         ImGui::SameLine();
