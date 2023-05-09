@@ -43,6 +43,7 @@ target_sources(${PROJECT_NAME} PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/TypeId.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/UniformBuffer.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Vec3f.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Vec3fSerializer.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/VivernaInitializer.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/World.cpp"
 )
