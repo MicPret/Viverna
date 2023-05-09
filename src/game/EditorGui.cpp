@@ -1,6 +1,7 @@
 #include <game/gui/EditorGui.hpp>
 #include <game/components/EntityName.hpp>
 
+#include <viverna/core/Assets.hpp>
 #include <viverna/core/Input.hpp>
 #include <viverna/core/Scene.hpp>
 #include <viverna/core/Transform.hpp>
@@ -128,6 +129,40 @@ void CameraTab(float& camera_speed) {
     bool space_pressed = space.Pressed();
     ImGui::Checkbox("Press space to enable camera rotation", &space_pressed);
     ImGui::SliderFloat("Camera speed", &camera_speed, 1.0f, 10.0f);
+    ImGui::EndTabItem();
+}
+
+void AssetsTab() {
+    if (!ImGui::BeginTabItem("Assets"))
+        return;
+    auto dirs = verna::GetAssetsInDirectory("meshes");
+    ImGui::SeparatorText("Meshes");
+    static int last_selected_mesh = -1;
+    bool is_selected;
+    for (size_t i = 0; i < dirs.size(); i++) {
+        is_selected = (last_selected_mesh == static_cast<int>(i));
+        const char* label = dirs[i].string().c_str();
+        if (ImGui::Selectable(label, is_selected))
+            last_selected_mesh = static_cast<int>(i);
+    }
+    dirs = verna::GetAssetsInDirectory("shaders");
+    ImGui::SeparatorText("Shaders");
+    static int last_selected_shader = -1;
+    for (size_t i = 0; i < dirs.size(); i++) {
+        is_selected = (last_selected_shader == static_cast<int>(i));
+        const char* label = dirs[i].string().c_str();
+        if (ImGui::Selectable(label, is_selected))
+            last_selected_shader = static_cast<int>(i);
+    }
+    dirs = verna::GetAssetsInDirectory("textures");
+    ImGui::SeparatorText("Textures");
+    static int last_selected_texture = -1;
+    for (size_t i = 0; i < dirs.size(); i++) {
+        is_selected = (last_selected_texture == static_cast<int>(i));
+        const char* label = dirs[i].string().c_str();
+        if (ImGui::Selectable(label, is_selected))
+            last_selected_texture = static_cast<int>(i);
+    }
     ImGui::EndTabItem();
 }
 

@@ -25,6 +25,7 @@ void EntityTab(verna::World& world,
                std::vector<verna::Entity>& entities,
                int& selected_id,
                NewEntityFunc on_new_entity);
+void AssetsTab();
 void LightingTab(verna::DirectionLight& dirlight);
 void CameraTab(float& camera_speed);
 
