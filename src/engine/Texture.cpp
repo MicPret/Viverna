@@ -1,6 +1,7 @@
 #include <viverna/graphics/Texture.hpp>
 #include <viverna/core/Assets.hpp>
 #include <viverna/core/Debug.hpp>
+#include <viverna/data/SparseSet.hpp>
 #include <viverna/graphics/Image.hpp>
 #include "ResourceTracker.hpp"
 
@@ -14,11 +15,14 @@
 
 #include <array>
 #include <cstdint>
+#include <vector>
 
 namespace verna {
 #ifndef NDEBUG
 static ResourceTracker<TextureId::id_type> texture_tracker("Texture");
 #endif
+static SparseSet<TextureId::id_type> textures_mapper;
+static std::vector<std::string> texture_names;
 
 static GLuint GenTexture(const void* pixels, int width, int height);
 static TextureId LoadTextureFromBuffer(const void* buffer,
@@ -26,6 +30,14 @@ static TextureId LoadTextureFromBuffer(const void* buffer,
                                        int height);
 
 TextureId LoadTexture(const std::filesystem::path& texture_path) {
+    std::string name = texture_path.string();
+    for (size_t i = 0; i < texture_names.size(); i++) {
+        if (name != texture_names[i])
+            continue;
+        const auto& ids = textures_mapper.GetDense();
+        return TextureId(ids[i]);
+    }
+
     std::filesystem::path fullpath = "textures" / texture_path;
     ImageId img = LoadImage(fullpath);
     if (!img.IsValid()) {
@@ -34,8 +46,12 @@ TextureId LoadTexture(const std::filesystem::path& texture_path) {
     }
     auto output = LoadTextureFromImage(img);
     FreeImage(img);
-    VERNA_LOGE_IF(!output.IsValid(),
-                  "LoadTextureFromImage failed: " + fullpath.string());
+    if (output.IsValid()) {
+        textures_mapper.Add(output.id);
+        texture_names.push_back(name);
+    } else {
+        VERNA_LOGE("LoadTextureFromImage failed: " + fullpath.string());
+    }
     return output;
 }
 
@@ -81,6 +97,12 @@ TextureId LoadTextureFromImageInfo(const Image& img_info) {
 void FreeTexture(TextureId texture) {
     if (!texture.IsValid())
         return;
+    SparseSet<TextureId::id_type>::index_t index;
+    if (textures_mapper.GetIndex(texture.id, index)) {
+        textures_mapper.Remove(texture.id);
+        texture_names[index].clear();
+        texture_names[index].shrink_to_fit();
+    }
     glDeleteTextures(1, &texture.id);
 #ifndef NDEBUG
     texture_tracker.Remove(texture.id);
@@ -116,5 +138,12 @@ static GLuint GenTexture(const void* pixels, int width, int height) {
                     GL_UNSIGNED_BYTE, pixels);
 
     return texture;
+}
+
+std::filesystem::path GetTexturePath(TextureId texture) {
+    SparseSet<TextureId::id_type>::index_t index;
+    return textures_mapper.GetIndex(texture.id, index)
+               ? texture_names[index]
+               : std::filesystem::path();
 }
 }  // namespace verna
