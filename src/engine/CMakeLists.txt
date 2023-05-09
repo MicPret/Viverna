@@ -32,6 +32,7 @@ target_sources(${PROJECT_NAME} PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/Shader.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Mat4f.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/MathUtils.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/MaterialSerializer.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Model.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/PointLightData.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Quaternion.cpp"
