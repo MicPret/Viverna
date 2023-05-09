@@ -67,7 +67,7 @@ static size_t GetImageIndex(ImageId img_id) {
 }
 
 #if defined(VERNA_ANDROID)
-static Image LoadImageFromBuffer(const std::vector<char>& buffer) {
+Image LoadImageFromBuffer(const std::vector<char>& buffer) {
     AImageDecoder* decoder;
     int result =
         AImageDecoder_createFromBuffer(buffer.data(), buffer.size(), &decoder);
@@ -105,12 +105,14 @@ static Image LoadImageFromBuffer(const std::vector<char>& buffer) {
     }
     return output;
 }
-static void FreeImageImpl(Image& img) {
+void FreeImageImpl(Image& img) {
     std::free(img.pixels);
     img = Image();
 }
 #elif defined(VERNA_DESKTOP)
-static Image LoadImageFromBuffer(const std::vector<char>& buffer) {
+static bool StbiSetFlip();
+Image LoadImageFromBuffer(const std::vector<char>& buffer) {
+    [[maybe_unused]] static bool init = StbiSetFlip();
     auto b = reinterpret_cast<const stbi_uc*>(buffer.data());
     Image output;
     int comp;
@@ -119,9 +121,13 @@ static Image LoadImageFromBuffer(const std::vector<char>& buffer) {
     VERNA_LOGE_IF(output.pixels == nullptr, "stbi_load_from_memory failed!");
     return output;
 }
-static void FreeImageImpl(Image& img) {
+void FreeImageImpl(Image& img) {
     stbi_image_free(img.pixels);
     img = Image();
+}
+bool StbiSetFlip() {
+    stbi_set_flip_vertically_on_load(true);
+    return true;
 }
 #endif
 
