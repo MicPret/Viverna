@@ -37,6 +37,14 @@ TextureId LoadTextureFromColor(uint8_t red,
 TextureId LoadTextureFromImage(ImageId img);
 TextureId LoadTextureFromImageInfo(const Image& img_info);
 void FreeTexture(TextureId texture);
+/**
+ * @brief Retrieves the filepath of the loaded texture, as passed in
+ * LoadTexture. Won't work if FreeTexture(texture) was called
+ *
+ * @param texture Texture returned by LoadTexture
+ * @return Path of the loaded texture
+ */
+std::filesystem::path GetTexturePath(TextureId texture);
 
 }  // namespace verna
 
