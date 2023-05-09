@@ -73,6 +73,7 @@ add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src")
 # link
 target_link_libraries(${VIVERNA_TARGET_NAME} PUBLIC
     stb
+    yaml_cpp
 )
 if(CMAKE_SYSTEM_NAME STREQUAL Android)
     target_link_libraries(${VIVERNA_TARGET_NAME} PUBLIC
