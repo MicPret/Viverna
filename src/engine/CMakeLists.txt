@@ -25,6 +25,7 @@ target_sources(${PROJECT_NAME} PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/Collision.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/ComponentBuffer.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Entity.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/EntityName.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Family.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Image.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Mesh.cpp"
@@ -51,4 +52,5 @@ target_sources(${PROJECT_NAME} PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/Vec4fSerializer.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/VivernaInitializer.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/World.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/WorldSerializer.cpp"
 )
