@@ -6,27 +6,27 @@
 #include <viverna/serialization/TransformSerializer.hpp>
 
 namespace verna {
-YAML::Emitter SerializeEntities(const World& world,
-                                const std::vector<Entity>& entities) {
-    YAML::Emitter result;
+YAML::Emitter& SerializeEntities(YAML::Emitter& emitter,
+                                 const World& world,
+                                 const std::vector<Entity>& entities) {
     EntityName name;
     Material material;
     Mesh mesh;
     ShaderId shader;
     Transform transform;
-    result << YAML::BeginMap;
+    emitter << YAML::BeginMap;
     for (size_t i = 0; i < entities.size(); i++) {
         world.GetComponents(entities[i], name, material, mesh, shader,
                             transform);
-        result << YAML::Key << name.str;
-        result << YAML::Value << YAML::BeginMap;
-        result << YAML::Key << "material" << YAML::Value << material;
-        result << YAML::Key << "mesh" << YAML::Value << GetMeshName(mesh.id);
-        result << YAML::Key << "shader" << YAML::Value << shader;
-        result << YAML::Key << "transform" << YAML::Value << transform;
-        result << YAML::EndMap;
+        emitter << YAML::Key << name.str;
+        emitter << YAML::Value << YAML::BeginMap;
+        emitter << YAML::Key << "material" << YAML::Value << material;
+        emitter << YAML::Key << "mesh" << YAML::Value << GetMeshName(mesh.id);
+        emitter << YAML::Key << "shader" << YAML::Value << shader;
+        emitter << YAML::Key << "transform" << YAML::Value << transform;
+        emitter << YAML::EndMap;
     }
-    result << YAML::EndMap;
-    return result;
+    emitter << YAML::EndMap;
+    return emitter;
 }
 }  // namespace verna

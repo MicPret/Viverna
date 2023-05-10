@@ -5,8 +5,9 @@
 
 #include <yaml-cpp/yaml.h>
 namespace verna {
-YAML::Emitter SerializeEntities(const World& world,
-                                const std::vector<Entity>& entities);
+YAML::Emitter& SerializeEntities(YAML::Emitter& emitter,
+                                 const World& world,
+                                 const std::vector<Entity>& entities);
 }  // namespace verna
 
 #endif
