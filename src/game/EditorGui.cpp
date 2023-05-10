@@ -1,13 +1,16 @@
 #include <game/gui/EditorGui.hpp>
-#include <game/components/EntityName.hpp>
 
 #include <viverna/core/Assets.hpp>
 #include <viverna/core/Input.hpp>
 #include <viverna/core/Scene.hpp>
 #include <viverna/core/Transform.hpp>
 #include <viverna/data/SparseSet.hpp>
+#include <viverna/ecs/EntityName.hpp>
 #include <viverna/graphics/Material.hpp>
 #include <viverna/graphics/Window.hpp>
+#include <viverna/serialization/WorldSerializer.hpp>
+
+#include <yaml-cpp/emitter.h>
 
 #include <imgui/imgui.h>
 #include <imgui/backends/imgui_impl_opengl3.h>
@@ -17,10 +20,14 @@
 #include <GLFW/glfw3.h>
 
 #include <array>
+#include <fstream>
+#include <string>
 
 namespace editor {
 
 static void RenameButton(verna::World& world, verna::Entity entity);
+static void SerializeButton(verna::World& world,
+                            const std::vector<verna::Entity>& entities);
 static void TransformGUI(verna::World& world, verna::Entity entity);
 static void MaterialGUI(verna::World& world, verna::Entity entity);
 
@@ -76,8 +83,7 @@ void EntityTab(verna::World& world,
         names.resize(entities_size);
         labels.resize(entities_size);
         for (size_t i = 0; i < entities_size; i++) {
-            names[i] =
-                world.GetComponent<editor::EntityName>(entities[i]).String();
+            names[i] = world.GetComponent<verna::EntityName>(entities[i]).str;
             labels[i] = names[i].c_str();
         }
         // Entity list
@@ -95,6 +101,7 @@ void EntityTab(verna::World& world,
             selected_id = static_cast<int>(entities_size);
             entities.push_back(on_new_entity(world));
         }
+        SerializeButton(world, entities);
         // Material
         if (selected_id >= 0) {
             auto e = entities[selected_id];
@@ -178,8 +185,20 @@ void RenameButton(verna::World& world, verna::Entity entity) {
         if (ImGui::InputText("New name", buf.data(), buf.size() - 1,
                              ImGuiInputTextFlags_EnterReturnsTrue)) {
             rename_pressed = false;
-            world.SetComponent(entity, editor::EntityName(buf.data()));
+            std::string s(buf.data());
+            world.SetComponent(entity, verna::EntityName(std::move(s)));
         }
+    }
+}
+
+void SerializeButton(verna::World& world,
+                     const std::vector<verna::Entity>& entities) {
+    if (ImGui::Button("Serialize")) {
+        YAML::Emitter emitter;
+        verna::SerializeEntities(emitter, world, entities);
+        VERNA_LOGI(emitter.c_str());
+        std::ofstream file("scene.viv");
+        file << "# viv 0.3\n" << emitter.c_str();
     }
 }
 

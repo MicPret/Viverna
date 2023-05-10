@@ -1,6 +1,5 @@
 #include <game/core/Application.hpp>
 #include <game/CameraController.hpp>
-#include <game/components/EntityName.hpp>
 #include <game/systems/MeshRenderer.hpp>
 #include <game/gui/EditorGui.hpp>
 
@@ -9,6 +8,7 @@
 #include <viverna/graphics/Mesh.hpp>
 #include <viverna/graphics/Renderer.hpp>
 #include <viverna/graphics/Window.hpp>
+#include <viverna/ecs/EntityName.hpp>
 #include <viverna/ecs/World.hpp>
 
 #include <vector>
@@ -99,10 +99,11 @@ verna::Entity NewRenderable(World& world_, Mesh&& mesh) {
     mat.textures[Material::SPECULAR_INDEX] =
         LoadTextureFromColor(0.3f, 0.3f, 0.3f, 1.0f);
     mat.parameters[Material::SHININESS_INDEX] = 20.06f;
-    editor::EntityName name = "New entity";
+    EntityName name;
+    name.str = "New entity";
 
-    Entity e = world_.NewEntity<Mesh, Material, Transform, ShaderId,
-                                editor::EntityName>();
+    Entity e =
+        world_.NewEntity<Mesh, Material, Transform, ShaderId, EntityName>();
     world_.SetComponents(e, mesh, mat, Transform(), shader, name);
     return e;
 }
