@@ -8,7 +8,7 @@
 #include <viverna/ecs/EntityName.hpp>
 #include <viverna/graphics/Material.hpp>
 #include <viverna/graphics/Window.hpp>
-#include <viverna/serialization/WorldSerializer.hpp>
+#include <viverna/serialization/VivSerializer.hpp>
 
 #include <yaml-cpp/emitter.h>
 
@@ -195,7 +195,7 @@ void SerializeButton(verna::World& world,
                      const std::vector<verna::Entity>& entities) {
     if (ImGui::Button("Serialize")) {
         YAML::Emitter emitter;
-        verna::SerializeEntities(emitter, world, entities);
+        verna::Serialize(emitter, verna::Scene::GetActive(), world, entities);
         VERNA_LOGI(emitter.c_str());
         std::ofstream file("scene.viv");
         file << "# viv 0.3\n" << emitter.c_str();
