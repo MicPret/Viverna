@@ -170,6 +170,8 @@ std::vector<Mesh> LoadMeshesOBJ(const std::filesystem::path& mesh_path) {
         mesh_names.push_back(std::move(name));
         result.push_back(std::move(mesh));
     }
+    for (Mesh& m : result)
+        m.RecalculateBounds();
 
     return result;
 }
