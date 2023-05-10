@@ -140,13 +140,10 @@ std::vector<Mesh> LoadMeshesOBJ(const std::filesystem::path& mesh_path) {
             return {};
         }
     }
-    if (!positions.empty()) {
+    if (!positions.empty())
         result.push_back(MakeMesh(positions, tex_coords, normals, tris));
-        positions.clear();
-        tex_coords.clear();
-        normals.clear();
-        tris.clear();
-    }
+    for (Mesh& m : result)
+        m.RecalculateBounds();
 
     return result;
 }
