@@ -7,6 +7,7 @@
 #include <viverna/data/SparseSet.hpp>
 #include <viverna/ecs/EntityName.hpp>
 #include <viverna/graphics/Material.hpp>
+#include <viverna/graphics/Mesh.hpp>
 #include <viverna/graphics/Window.hpp>
 #include <viverna/serialization/VivSerializer.hpp>
 
@@ -74,7 +75,7 @@ void EndTabs() {
 void EntityTab(verna::World& world,
                std::vector<verna::Entity>& entities,
                int& selected_id,
-               NewEntityFunc on_new_entity) {
+               NewEntityFunc entity_generator) {
     if (ImGui::BeginTabItem("Entities")) {
         // Get entities' names
         std::vector<std::string> names;
@@ -99,7 +100,7 @@ void EntityTab(verna::World& world,
         // New Entity button
         if (ImGui::Button("New Entity")) {
             selected_id = static_cast<int>(entities_size);
-            entities.push_back(on_new_entity(world));
+            entity_generator(world, entities);
         }
         SerializeButton(world, entities);
         // Material
@@ -140,7 +141,9 @@ void CameraTab(float& camera_speed) {
     ImGui::EndTabItem();
 }
 
-void AssetsTab() {
+void AssetsTab(verna::World& world,
+               std::vector<verna::Entity>& entities,
+               NewEntityFunc entity_generator) {
     if (!ImGui::BeginTabItem("Assets"))
         return;
     auto dirs = verna::GetAssetsInDirectory("meshes");
@@ -152,6 +155,13 @@ void AssetsTab() {
         const char* label = dirs[i].string().c_str();
         if (ImGui::Selectable(label, is_selected))
             last_selected_mesh = static_cast<int>(i);
+    }
+    if (ImGui::Button("Load") && last_selected_mesh >= 0) {
+        auto meshes = verna::LoadMeshesOBJ(dirs[last_selected_mesh]);
+        for (const verna::Mesh& m : meshes) {
+            verna::Entity e = entity_generator(world, entities);
+            world.SetComponent(e, m);
+        }
     }
     dirs = verna::GetAssetsInDirectory("shaders");
     ImGui::SeparatorText("Shaders");

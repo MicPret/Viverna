@@ -8,7 +8,8 @@
 
 namespace editor {
 
-using NewEntityFunc = verna::Entity (*)(verna::World& world);
+using NewEntityFunc = verna::Entity (*)(verna::World& world,
+                                        std::vector<verna::Entity>& entities);
 
 void InitGUI();
 void TermGUI();
@@ -24,8 +25,10 @@ void EndTabs();
 void EntityTab(verna::World& world,
                std::vector<verna::Entity>& entities,
                int& selected_id,
-               NewEntityFunc on_new_entity);
-void AssetsTab();
+               NewEntityFunc entity_generator);
+void AssetsTab(verna::World& world,
+               std::vector<verna::Entity>& entities,
+               NewEntityFunc entity_generator);
 void LightingTab(verna::DirectionLight& dirlight);
 void CameraTab(float& camera_speed);
 

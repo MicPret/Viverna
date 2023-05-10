@@ -76,13 +76,17 @@ void OnAppUpdate(VivernaState& app_state, DeltaTime<float, Seconds> dt) {
     editor::BeginGUI();
     if (editor::BeginWindow("Viverna")) {
         if (editor::BeginTabs()) {
-            editor::EntityTab(
-                world, renderables, selected_id, [](World& world_) {
-                    return NewRenderable(world_,
-                                         verna::LoadPrimitiveMesh(
-                                             verna::PrimitiveMeshType::Cube));
-                });
-            editor::AssetsTab();
+            auto entity_generator = [](World& world_,
+                                       std::vector<Entity>& entities_) {
+                Entity e = NewRenderable(
+                    world_,
+                    verna::LoadPrimitiveMesh(verna::PrimitiveMeshType::Cube));
+                entities_.push_back(e);
+                return e;
+            };
+            editor::EntityTab(world, renderables, selected_id,
+                              entity_generator);
+            editor::AssetsTab(world, renderables, entity_generator);
             editor::LightingTab(scene->GetDirectionLight());
             editor::CameraTab(camera_speed);
             editor::EndTabs();
