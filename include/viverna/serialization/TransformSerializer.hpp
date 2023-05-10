@@ -16,18 +16,23 @@ struct convert<verna::Transform> {
 
 inline Node convert<verna::Transform>::encode(const verna::Transform& rhs) {
     Node node;
-    node.push_back(rhs.position);
-    node.push_back(rhs.rotation);
-    node.push_back(rhs.scale);
+    node["position"] = rhs.position;
+    node["rotation"] = rhs.rotation;
+    node["scale"] = rhs.scale;
     return node;
 }
 inline bool convert<verna::Transform>::decode(const Node& node,
                                               verna::Transform& rhs) {
-    if (!node.IsSequence() || node.size() != 3)
+    if (!node.IsMap())
         return false;
-    rhs.position = node[0].as<verna::Vec3f>();
-    rhs.rotation = node[1].as<verna::Quaternion>();
-    rhs.scale = node[2].as<verna::Vec3f>();
+    YAML::Node position = node["position"];
+    YAML::Node rotation = node["rotation"];
+    YAML::Node scale = node["scale"];
+    if (!position || !rotation || !scale)
+        return false;
+    rhs.position = position.as<verna::Vec3f>();
+    rhs.rotation = rotation.as<verna::Quaternion>();
+    rhs.scale = scale.as<verna::Vec3f>();
     return true;
 }
 

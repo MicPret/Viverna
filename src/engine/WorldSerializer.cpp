@@ -6,22 +6,27 @@
 #include <viverna/serialization/TransformSerializer.hpp>
 
 namespace verna {
-YAML::Node SerializeEntities(const World& world,
-                             const std::vector<Entity>& entities) {
-    YAML::Node result;
+YAML::Emitter SerializeEntities(const World& world,
+                                const std::vector<Entity>& entities) {
+    YAML::Emitter result;
     EntityName name;
     Material material;
     Mesh mesh;
-    Transform transform;
     ShaderId shader;
+    Transform transform;
+    result << YAML::BeginMap;
     for (size_t i = 0; i < entities.size(); i++) {
         world.GetComponents(entities[i], name, material, mesh, shader,
                             transform);
-        result[name.str]["material"] = material;
-        result[name.str]["mesh"] = GetMeshName(mesh.id);
-        result[name.str]["shader"] = shader;
-        result[name.str]["transform"] = transform;
+        result << YAML::Key << name.str;
+        result << YAML::Value << YAML::BeginMap;
+        result << YAML::Key << "material" << YAML::Value << material;
+        result << YAML::Key << "mesh" << YAML::Value << GetMeshName(mesh.id);
+        result << YAML::Key << "shader" << YAML::Value << shader;
+        result << YAML::Key << "transform" << YAML::Value << transform;
+        result << YAML::EndMap;
     }
+    result << YAML::EndMap;
     return result;
 }
 }  // namespace verna
