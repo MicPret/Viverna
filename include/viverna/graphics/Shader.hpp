@@ -56,6 +56,15 @@ ShaderId LoadShaderFromSource(std::string_view vertex_src,
  */
 void FreeShader(ShaderId shader_program);
 
+/**
+ * @brief Retrieves the argument of LoadShader. Won't work if
+ * FreeShader(shader_program) was called
+ *
+ * @param shader_program Shader returned by LoadShader
+ * @return Argument passed to LoadShader
+ */
+std::string GetShaderName(ShaderId shader_program);
+
 int32_t GetShaderUniformLocation(ShaderId shader_program,
                                  std::string_view uniform_name);
 

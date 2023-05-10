@@ -7,3 +7,4 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL Android)
 endif()
 
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/stb")
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/yaml_cpp")

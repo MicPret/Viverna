@@ -1,6 +1,7 @@
 #include <viverna/graphics/Shader.hpp>
 #include <viverna/core/Assets.hpp>
 #include <viverna/core/Debug.hpp>
+#include <viverna/data/SparseSet.hpp>
 #include <viverna/graphics/Renderer.hpp>
 #include <viverna/graphics/gpu/FrameData.hpp>
 #include <viverna/graphics/gpu/DrawData.hpp>
@@ -26,6 +27,8 @@ namespace verna {
 #ifndef NDEBUG
 static ResourceTracker<ShaderId::id_type> shader_tracker("Shader");
 #endif
+static SparseSet<ShaderId::id_type> shaders_mapper;
+static std::vector<std::string> shader_names;
 
 static void CheckForGLErrors(std::string_view origin) {
     GLenum glerr;
@@ -236,6 +239,12 @@ static ShaderId LoadShaderFromSource(
 }
 
 ShaderId LoadShader(std::string_view shader_name) {
+    for (size_t i = 0; i < shader_names.size(); i++) {
+        if (shader_names[i] != shader_name)
+            continue;
+        const auto& ids = shaders_mapper.GetDense();
+        return ShaderId(ids[i]);
+    }
     std::filesystem::path path = std::filesystem::path("shaders") / shader_name;
     std::filesystem::path vertex_path = path.string() + ".vert";
     std::filesystem::path fragment_path = path.string() + ".frag";
@@ -284,7 +293,12 @@ ShaderId LoadShader(std::string_view shader_name) {
         }
     }
 
-    return LoadShaderFromSource(sources, shader_types);
+    ShaderId result = LoadShaderFromSource(sources, shader_types);
+    if (result.IsValid()) {
+        shaders_mapper.Add(result.id);
+        shader_names.emplace_back(shader_name);
+    }
+    return result;
 }
 
 ShaderId LoadShaderFromSource(std::string_view vertex_src,
@@ -297,10 +311,23 @@ ShaderId LoadShaderFromSource(std::string_view vertex_src,
 void FreeShader(ShaderId shader_program) {
     if (!shader_program.IsValid())
         return;
+    SparseSet<ShaderId::id_type>::index_t index;
+    if (shaders_mapper.GetIndex(shader_program.id, index)) {
+        shaders_mapper.Remove(shader_program.id);
+        shader_names[index].clear();
+        shader_names[index].shrink_to_fit();
+    }
     glDeleteProgram(shader_program.id);
 #ifndef NDEBUG
     shader_tracker.Remove(shader_program.id);
 #endif
+}
+
+std::string GetShaderName(ShaderId shader_program) {
+    SparseSet<ShaderId::id_type>::index_t index;
+    return shaders_mapper.GetIndex(shader_program.id, index)
+               ? shader_names[index]
+               : std::string();
 }
 
 int32_t GetShaderUniformLocation(ShaderId shader_program,
