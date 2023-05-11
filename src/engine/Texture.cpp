@@ -146,4 +146,26 @@ std::filesystem::path GetTexturePath(TextureId texture) {
                ? texture_names[index]
                : std::filesystem::path();
 }
+
+std::array<uint8_t, 4> GetTextureColor(TextureId texture,
+                                       unsigned width,
+                                       unsigned height,
+                                       unsigned pixel_x,
+                                       unsigned pixel_y) {
+    unsigned data_size = width * height * 4;
+    std::vector<GLubyte> pixels;
+    pixels.resize(data_size);
+    GLuint fbo;
+    glGenFramebuffers(1, &fbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
+                           texture.id, 0);
+    glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glDeleteFramebuffers(1, &fbo);
+    unsigned index = pixel_y * width * 4 + pixel_x * 4;
+    return {pixels[index], pixels[index + 1], pixels[index + 2],
+            pixels[index + 3]};
+}
 }  // namespace verna
