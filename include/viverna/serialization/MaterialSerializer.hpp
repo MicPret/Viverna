@@ -1,6 +1,7 @@
 #ifndef VERNA_MATERIAL_SERIALIZER_HPP
 #define VERNA_MATERIAL_SERIALIZER_HPP
 
+#include "TextureSerializer.hpp"
 #include <viverna/graphics/Material.hpp>
 
 #include <yaml-cpp/yaml.h>
@@ -17,14 +18,8 @@ struct convert<verna::Material> {
 
 inline Node convert<verna::Material>::encode(const verna::Material& rhs) {
     Node node;
-    using t_t = decltype(verna::Material::textures);
-    std::array<std::string, t_t().size()> arr;
-    for (size_t i = 0; i < arr.size(); i++) {
-        auto p = verna::GetTexturePath(rhs.textures[i]);
-        // TODO get color
-        arr[i] = (p.empty() ? std::string("unknown_texture") : p.string());
-    }
-    node["textures"] = arr;
+    for (auto t : rhs.textures)
+        node["textures"].push_back(t);
     node["parameters"] = rhs.parameters;
     return node;
 }
@@ -37,11 +32,8 @@ inline bool convert<verna::Material>::decode(const Node& node,
     if (!tex_node.IsSequence() || !par_node.IsSequence())
         return false;
     size_t size = std::min(tex_node.size(), rhs.textures.size());
-    for (size_t i = 0; i < size; i++) {
-        auto str = tex_node[i].as<std::string>();
-        if (str != "0")
-            rhs.textures[i] = verna::LoadTexture(str);
-    }
+    for (size_t i = 0; i < size; i++)
+        rhs.textures[i] = tex_node[i].as<verna::TextureId>(verna::TextureId());
     size = std::min(par_node.size(), rhs.parameters.size());
     for (size_t i = 0; i < size; i++)
         rhs.parameters[i] = par_node[i].as<float>();
