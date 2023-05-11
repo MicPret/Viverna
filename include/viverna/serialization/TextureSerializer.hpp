@@ -20,10 +20,10 @@ inline Node convert<verna::TextureId>::encode(const verna::TextureId& rhs) {
         return Node(path.string());
     auto color = verna::GetTextureColor(rhs, 1, 1, 0, 0);
     Node node;
-    node.push_back(color[0]);
-    node.push_back(color[1]);
-    node.push_back(color[2]);
-    node.push_back(color[3]);
+    node.push_back(static_cast<unsigned>(color[0]));
+    node.push_back(static_cast<unsigned>(color[1]));
+    node.push_back(static_cast<unsigned>(color[2]));
+    node.push_back(static_cast<unsigned>(color[3]));
     return node;
 }
 inline bool convert<verna::TextureId>::decode(const Node& node,
@@ -33,12 +33,14 @@ inline bool convert<verna::TextureId>::decode(const Node& node,
         return true;
     }
     if (node.IsSequence()) {
-        uint8_t r, g, b, a;
-        r = node[0].as<uint8_t>();
-        g = node[1].as<uint8_t>();
-        b = node[2].as<uint8_t>();
-        a = node[3].as<uint8_t>();
-        rhs = verna::LoadTextureFromColor(r, g, b, a);
+        unsigned r, g, b, a;
+        r = node[0].as<unsigned>();
+        g = node[1].as<unsigned>();
+        b = node[2].as<unsigned>();
+        a = node[3].as<unsigned>();
+        rhs = verna::LoadTextureFromColor(
+            static_cast<uint8_t>(r), static_cast<uint8_t>(g),
+            static_cast<uint8_t>(b), static_cast<uint8_t>(a));
         return rhs.IsValid();
     }
     auto name = node.as<std::string>(std::string());
