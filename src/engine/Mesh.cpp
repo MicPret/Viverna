@@ -85,7 +85,7 @@ std::vector<Mesh> LoadMeshesOBJ(const std::filesystem::path& mesh_path) {
         std::stringstream linestream(line);
         std::string token;
         linestream >> token;
-        if (token == "#")
+        if (token.empty() || token == "#" || token == " ")
             continue;
         if (token == "v") {
             Vec3f v;
@@ -131,7 +131,7 @@ std::vector<Mesh> LoadMeshesOBJ(const std::filesystem::path& mesh_path) {
             }
         } else if (token == "o" || token == "g") {
             // object/group
-            if (!positions.empty()) {
+            if (!tris.empty()) {
                 Mesh mesh = MakeMesh(positions, tex_coords, normals, tris);
                 mesh_mapper.Add(mesh.id);
                 std::string name = mesh_path.string();
@@ -139,12 +139,9 @@ std::vector<Mesh> LoadMeshesOBJ(const std::filesystem::path& mesh_path) {
                     name += "##" + group_name;
                 mesh_names.push_back(std::move(name));
                 result.push_back(std::move(mesh));
-                positions.clear();
-                tex_coords.clear();
-                normals.clear();
                 tris.clear();
-                group_name.clear();
             }
+            group_name.clear();
             while (linestream >> token)
                 group_name += " " + token;
             if (!group_name.empty())
@@ -161,7 +158,7 @@ std::vector<Mesh> LoadMeshesOBJ(const std::filesystem::path& mesh_path) {
             return {};
         }
     }
-    if (!positions.empty()) {
+    if (!tris.empty()) {
         Mesh mesh = MakeMesh(positions, tex_coords, normals, tris);
         mesh_mapper.Add(mesh.id);
         std::string name = mesh_path.string();
