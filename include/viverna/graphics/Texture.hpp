@@ -3,6 +3,7 @@
 
 #include "Image.hpp"
 
+#include <array>
 #include <cstdint>
 #include <filesystem>
 
@@ -45,6 +46,12 @@ void FreeTexture(TextureId texture);
  * @return Path of the loaded texture
  */
 std::filesystem::path GetTexturePath(TextureId texture);
+
+std::array<uint8_t, 4> GetTextureColor(TextureId texture,
+                                       unsigned width,
+                                       unsigned height,
+                                       unsigned pixel_x,
+                                       unsigned pixel_y);
 
 }  // namespace verna
 
