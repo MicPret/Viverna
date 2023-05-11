@@ -155,7 +155,7 @@ std::vector<Mesh> LoadMeshesOBJ(const std::filesystem::path& mesh_path) {
         } else {
             VERNA_LOGE("Unrecognized token while parsing " + path.string()
                        + ": " + token);
-            return {};
+            // return {};
         }
     }
     if (!tris.empty()) {
