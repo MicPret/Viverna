@@ -2,6 +2,10 @@
 
 namespace verna {
 YAML::Emitter& operator<<(YAML::Emitter& out, const TextureId& v) {
+    if (!v.IsValid()) {
+        out << 0;
+        return out;
+    }
     auto path = verna::GetTexturePath(v);
     if (!path.empty())
         out << path.string();

@@ -13,6 +13,8 @@ struct convert<verna::TextureId> {
 };
 
 inline Node convert<verna::TextureId>::encode(const verna::TextureId& rhs) {
+    if (!rhs.IsValid())
+        return Node(0);
     auto path = verna::GetTexturePath(rhs);
     if (!path.empty())
         return Node(path.string());
@@ -26,6 +28,10 @@ inline Node convert<verna::TextureId>::encode(const verna::TextureId& rhs) {
 }
 inline bool convert<verna::TextureId>::decode(const Node& node,
                                               verna::TextureId& rhs) {
+    if (node.as<int>(1) == 0) {
+        rhs = verna::TextureId();
+        return true;
+    }
     if (node.IsSequence()) {
         uint8_t r, g, b, a;
         r = node[0].as<uint8_t>();
