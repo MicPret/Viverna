@@ -96,12 +96,12 @@ void OnAppUpdate(VivernaState& app_state, DeltaTime<float, Seconds> dt) {
     editor::EndGUI();
 }
 
-verna::Entity NewRenderable(World& world_, Mesh&& mesh) {
+Entity NewRenderable(World& world_, Mesh&& mesh) {
+    static TextureId diffuse = LoadTextureFromColor(0.7f, 0.7f, 0.7f, 1.0f);
+    static TextureId specular = LoadTextureFromColor(0.3f, 0.3f, 0.3f, 1.0f);
     Material mat;
-    mat.textures[Material::DIFFUSE_INDEX] =
-        LoadTextureFromColor(0.7f, 0.7f, 0.7f, 1.0f);
-    mat.textures[Material::SPECULAR_INDEX] =
-        LoadTextureFromColor(0.3f, 0.3f, 0.3f, 1.0f);
+    mat.textures[Material::DIFFUSE_INDEX] = diffuse;
+    mat.textures[Material::SPECULAR_INDEX] = specular;
     mat.parameters[Material::SHININESS_INDEX] = 20.06f;
     EntityName name;
     name.str = "New entity";
