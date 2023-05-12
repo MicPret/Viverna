@@ -267,13 +267,11 @@ BatchId NewBatchInNewBucket(ShaderId shader) {
 void SendDataToVbo(const RenderBatch& batch) {
     const GLsizeiptr vbo_bytes =
         static_cast<GLsizeiptr>(batch.vertices.size() * sizeof(Vertex));
-    if (vbo_bytes <= vbo_size) {
-        glBufferSubData(GL_ARRAY_BUFFER, 0, vbo_bytes, batch.vertices.data());
-    } else {
+    if (vbo_bytes > vbo_size) {
         vbo_size = std::max(vbo_size * 3 / 2, vbo_bytes);
-        glBufferData(GL_ARRAY_BUFFER, vbo_size, batch.vertices.data(),
-                     GL_DYNAMIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, vbo_size, nullptr, GL_DYNAMIC_DRAW);
     }
+    glBufferSubData(GL_ARRAY_BUFFER, 0, vbo_bytes, batch.vertices.data());
 }
 
 void SendDataToEbo(const RenderBatch& batch) {
