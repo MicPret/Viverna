@@ -74,4 +74,10 @@ DeltaTime<float, Seconds> World::GetDeltaTime() const {
     return delta_time;
 }
 
+void World::RemoveEntity(Entity e) {
+    EntityEvent event(e, EntityEvent::REMOVE);
+    for (System& s : systems)
+        s.Notify(event);
+}
+
 }  // namespace verna
