@@ -27,6 +27,7 @@
 namespace editor {
 
 static void RenameButton(verna::World& world, verna::Entity entity);
+static bool RemoveButton(verna::World& world, verna::Entity entity);
 static void SerializeButton(verna::World& world,
                             const std::vector<verna::Entity>& entities);
 static void TransformGUI(verna::World& world, verna::Entity entity);
@@ -95,7 +96,17 @@ void EntityTab(verna::World& world,
             ImGui::SameLine();
             auto e = entities[selected_id];
             RenameButton(world, e);
-            TransformGUI(world, e);
+            ImGui::SameLine();
+            if (RemoveButton(world, e)) {
+                for (size_t i = 0; i < entities.size(); i++) {
+                    if (entities[i] == e) {
+                        entities.erase(entities.begin() + i);
+                        break;
+                    }
+                }
+                selected_id = -1;
+            } else
+                TransformGUI(world, e);
         }
         // New Entity button
         if (ImGui::Button("New Entity")) {
@@ -199,6 +210,14 @@ void RenameButton(verna::World& world, verna::Entity entity) {
             world.SetComponent(entity, verna::EntityName(std::move(s)));
         }
     }
+}
+
+bool RemoveButton(verna::World& world, verna::Entity entity) {
+    if (ImGui::Button("Remove")) {
+        world.RemoveEntity(entity);
+        return true;
+    }
+    return false;
 }
 
 void SerializeButton(verna::World& world,
