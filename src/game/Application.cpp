@@ -43,7 +43,7 @@ void OnAppPause(VivernaState& app_state) {
         for (TextureId t : m.textures)
             FreeTexture(t);
     FreeShader(shader);
-    world.Clear();
+    world.ClearAll();
 }
 void OnAppUpdate(VivernaState& app_state, DeltaTime<float, Seconds> dt) {
     NextFrame();
