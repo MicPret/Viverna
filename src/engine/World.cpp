@@ -4,11 +4,21 @@
 
 namespace verna {
 
-void World::Clear() {
+void World::ClearData() {
     for (auto& b : buffers)
         b->Clear();
-    systems.clear();
+    for (auto& s : systems)
+        s.Notify(EntityEvent(Entity(), EntityEvent::CLEAR_DATA));
     next_id = 0;
+}
+
+void World::ClearSystems() {
+    systems.clear();
+}
+
+void World::ClearAll() {
+    ClearData();
+    ClearSystems();
 }
 
 void World::AddSystem(const System& system) {

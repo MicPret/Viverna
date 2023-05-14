@@ -24,9 +24,15 @@ bool Deserialize(const YAML::Node& node,
                  World& out_world,
                  std::vector<Entity>& out_entities) {
     YAML::Node scene_node = node["scene"];
-    YAML::Node entities_node = node["entities"];
-    if (!scene_node || !entities_node)
+    if (!scene_node) {
+        VERNA_LOGE("Scene node not found!");
         return false;
+    }
+    YAML::Node entities_node = node["entities"];
+    if (!entities_node) {
+        VERNA_LOGE("Entities node not found!");
+        return false;
+    }
     Scene scene = scene_node.as<Scene>(Scene());
     scene.Setup();
     Scene::GetActive() = scene;
@@ -38,8 +44,11 @@ bool LoadViv(std::string_view viv_file,
              World& out_world,
              std::vector<Entity>& out_entities) {
     std::filesystem::path folder = "scenes";
-    auto raw = LoadRawAsset(folder / viv_file);
-    YAML::Node node = YAML::Load(std::string(raw.data(), raw.size()));
+    auto path = folder / viv_file;
+    VERNA_LOGI("Loading " + path.string());
+    auto raw = LoadRawAsset(path);
+    auto yaml_string = std::string(raw.data(), raw.size());
+    YAML::Node node = YAML::Load(yaml_string);
     return Deserialize(node, out_scene, out_world, out_entities);
 }
 }  // namespace verna

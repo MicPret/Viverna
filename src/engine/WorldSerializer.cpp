@@ -34,25 +34,41 @@ YAML::Emitter& SerializeEntities(YAML::Emitter& emitter,
 bool DeserializeEntities(const YAML::Node& node,
                          World& out_world,
                          std::vector<Entity>& out_entities) {
-    if (!node.IsMap())
+    if (!node.IsMap()) {
+        VERNA_LOGE("Entities node is not a map!");
         return false;
+    }
     out_world.Clear();
     out_entities.clear();
     for (YAML::const_iterator it = node.begin(); it != node.end(); ++it) {
         EntityName name;
         name.str = it->first.as<std::string>(std::string());
         YAML::Node map = it->second;
-        if (!map.IsMap())
+        if (!map.IsMap()) {
+            VERNA_LOGE(name.str + " node is not a map!");
             return false;
+        }
 
         YAML::Node material_node = map["material"];
-        YAML::Node mesh_node = map["mesh"];
-        YAML::Node shader_node = map["shader"];
-        YAML::Node transform_node = map["transform"];
-        bool failure =
-            !material_node || !mesh_node || !shader_node || !transform_node;
-        if (failure)
+        if (!material_node) {
+            VERNA_LOGE("Material node not found!");
             return false;
+        }
+        YAML::Node mesh_node = map["mesh"];
+        if (!mesh_node) {
+            VERNA_LOGE("Mesh node not found!");
+            return false;
+        }
+        YAML::Node shader_node = map["shader"];
+        if (!shader_node) {
+            VERNA_LOGE("Shader node not found!");
+            return false;
+        }
+        YAML::Node transform_node = map["transform"];
+        if (!transform_node) {
+            VERNA_LOGE("Transform node not found!");
+            return false;
+        }
         Material material = material_node.as<Material>(Material());
         std::string mesh_name = mesh_node.as<std::string>(std::string());
         Mesh mesh;  // TODO optimize
@@ -84,8 +100,10 @@ bool DeserializeEntities(const YAML::Node& node,
         ShaderId shader = shader_node.as<ShaderId>(ShaderId());
         Transform transform = transform_node.as<Transform>(Transform());
 
-        Entity e = out_world.NewEntity<Material, Mesh, ShaderId, Transform>();
-        out_world.SetComponents(e, material, mesh, shader, transform);
+        Entity e =
+            out_world
+                .NewEntity<EntityName, Material, Mesh, ShaderId, Transform>();
+        out_world.SetComponents(e, name, material, mesh, shader, transform);
         out_entities.push_back(e);
     }
 

@@ -18,7 +18,10 @@ class World {
     SystemId AddSystem(const Family& family, SystemUpdate update_func);
     void RemoveSystem(SystemId system_id);
     void RemoveEntity(Entity e);
-    void Clear();
+    void ClearData();
+    void ClearSystems();
+    // Same as ClearData + ClearSystems
+    void ClearAll();
     void RunSystems(DeltaTime<float, Seconds> dt);
     DeltaTime<float, Seconds> GetDeltaTime() const;
     template <typename... Comps>

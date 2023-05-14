@@ -11,6 +11,7 @@ struct EntityEvent {
     constexpr EntityEvent(Entity e, event_t ev) : entity(e), event(ev) {}
     static constexpr event_t ADD = 0;
     static constexpr event_t REMOVE = 1;
+    static constexpr event_t CLEAR_DATA = 2;
 };
 }  // namespace verna
 
