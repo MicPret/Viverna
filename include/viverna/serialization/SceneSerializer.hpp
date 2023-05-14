@@ -21,12 +21,20 @@ inline Node convert<verna::Scene>::encode(const verna::Scene& rhs) {
     return node;
 }
 inline bool convert<verna::Scene>::decode(const Node& node, verna::Scene& rhs) {
-    if (!node.IsMap())
+    if (!node.IsMap()) {
+        VERNA_LOGE("Scene node is not a map!");
         return false;
+    }
     Node camera = node["camera"];
-    Node dirlight = node["direction_light"];
-    if (!camera || !dirlight)
+    if (!camera) {
+        VERNA_LOGE("Camera node not found!");
         return false;
+    }
+    Node dirlight = node["direction_light"];
+    if (!dirlight) {
+        VERNA_LOGE("Direction light node not found!");
+        return false;
+    }
     rhs.GetCamera() = camera.as<verna::Camera>();
     rhs.GetDirectionLight() = dirlight.as<verna::DirectionLight>();
     return true;
