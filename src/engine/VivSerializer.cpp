@@ -1,6 +1,9 @@
 #include <viverna/serialization/VivSerializer.hpp>
+#include <viverna/core/Assets.hpp>
 #include <viverna/serialization/SceneSerializer.hpp>
 #include <viverna/serialization/WorldSerializer.hpp>
+
+#include <filesystem>
 
 namespace verna {
 
@@ -28,5 +31,15 @@ bool Deserialize(const YAML::Node& node,
     scene.Setup();
     Scene::GetActive() = scene;
     return DeserializeEntities(node, out_world, out_entities);
+}
+
+bool LoadViv(std::string_view viv_file,
+             Scene& out_scene,
+             World& out_world,
+             std::vector<Entity>& out_entities) {
+    std::filesystem::path folder = "scenes";
+    auto raw = LoadRawAsset(folder / viv_file);
+    YAML::Node node = YAML::Load(std::string(raw.data(), raw.size()));
+    return Deserialize(node, out_scene, out_world, out_entities);
 }
 }  // namespace verna

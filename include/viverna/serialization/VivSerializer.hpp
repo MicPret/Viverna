@@ -6,6 +6,7 @@
 
 #include <yaml-cpp/yaml.h>
 
+#include <string_view>
 #include <vector>
 
 namespace verna {
@@ -17,6 +18,11 @@ bool Deserialize(const YAML::Node& node,
                  Scene& out_scene,
                  World& out_world,
                  std::vector<Entity>& out_entities);
+
+bool LoadViv(std::string_view viv_file,
+             Scene& out_scene,
+             World& out_world,
+             std::vector<Entity>& out_entities);
 }  // namespace verna
 
 #endif
