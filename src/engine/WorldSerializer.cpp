@@ -84,7 +84,7 @@ bool DeserializeEntities(const YAML::Node& node,
             if (index == std::string::npos)
                 index = mesh_name.rfind(".OBJ##");
             if (index != std::string::npos) {
-                std::string obj_name = mesh_name.substr(0, index);
+                std::string obj_name = mesh_name.substr(0, index + 4);
                 auto meshes = LoadMeshesOBJ(obj_name);
                 for (const Mesh& m : meshes) {
                     if (GetMeshName(m.id) == mesh_name) {
