@@ -167,7 +167,7 @@ void AssetsTab(verna::World& world,
         if (ImGui::Selectable(label, is_selected))
             last_selected_mesh = static_cast<int>(i);
     }
-    if (ImGui::Button("Load") && last_selected_mesh >= 0) {
+    if (ImGui::Button("Load##mesh") && last_selected_mesh >= 0) {
         auto meshes = verna::LoadMeshesOBJ(dirs[last_selected_mesh]);
         for (const verna::Mesh& m : meshes) {
             verna::Entity e = entity_generator(world, entities);
@@ -192,6 +192,23 @@ void AssetsTab(verna::World& world,
         if (ImGui::Selectable(label, is_selected))
             last_selected_texture = static_cast<int>(i);
     }
+    dirs = verna::GetAssetsInDirectory("scenes");
+    ImGui::SeparatorText("Scenes");
+    static int last_selected_scene = -1;
+    for (size_t i = 0; i < dirs.size(); i++) {
+        is_selected = (last_selected_scene == static_cast<int>(i));
+        const char* label = dirs[i].string().c_str();
+        if (ImGui::Selectable(label, is_selected))
+            last_selected_scene = static_cast<int>(i);
+    }
+    if (ImGui::Button("Load##scene") && last_selected_scene >= 0) {
+        auto viv_name = dirs[last_selected_scene].string();
+        auto& scene = verna::Scene::GetActive();
+        if (!verna::LoadViv(viv_name, scene, world, entities)) {
+            VERNA_LOGE("Failed to load " + dirs[last_selected_scene].string());
+        }
+    }
+
     ImGui::EndTabItem();
 }
 
