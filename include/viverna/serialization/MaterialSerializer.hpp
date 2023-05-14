@@ -27,8 +27,8 @@ inline bool convert<verna::Material>::decode(const Node& node,
                                              verna::Material& rhs) {
     if (!node.IsMap())
         return false;
-    const Node& tex_node = node["textures"];
-    const Node& par_node = node["parameters"];
+    Node tex_node = node["textures"];
+    Node par_node = node["parameters"];
     if (!tex_node.IsSequence() || !par_node.IsSequence())
         return false;
     size_t size = std::min(tex_node.size(), rhs.textures.size());

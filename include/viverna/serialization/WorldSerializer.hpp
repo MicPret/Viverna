@@ -8,6 +8,9 @@ namespace verna {
 YAML::Emitter& SerializeEntities(YAML::Emitter& emitter,
                                  const World& world,
                                  const std::vector<Entity>& entities);
+bool DeserializeEntities(const YAML::Node& node,
+                         World& out_world,
+                         std::vector<Entity>& out_entities);
 }  // namespace verna
 
 #endif
