@@ -38,7 +38,7 @@ bool DeserializeEntities(const YAML::Node& node,
         VERNA_LOGE("Entities node is not a map!");
         return false;
     }
-    out_world.Clear();
+    out_world.ClearData();
     out_entities.clear();
     for (YAML::const_iterator it = node.begin(); it != node.end(); ++it) {
         EntityName name;
