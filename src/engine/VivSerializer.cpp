@@ -36,7 +36,7 @@ bool Deserialize(const YAML::Node& node,
     Scene scene = scene_node.as<Scene>(Scene());
     scene.Setup();
     Scene::GetActive() = scene;
-    return DeserializeEntities(node, out_world, out_entities);
+    return DeserializeEntities(entities_node, out_world, out_entities);
 }
 
 bool LoadViv(std::string_view viv_file,
