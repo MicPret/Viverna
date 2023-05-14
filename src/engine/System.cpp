@@ -52,6 +52,10 @@ void System::ResolveEvents() {
             case EntityEvent::REMOVE:
                 remove.push_back(entity_queue[i].entity);
                 break;
+            case EntityEvent::CLEAR_DATA:
+                all.clear();
+                remove.clear();
+                break;
         }
     }
     for (size_t i = 0; i < remove.size(); i++)
