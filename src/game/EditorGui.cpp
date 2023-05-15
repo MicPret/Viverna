@@ -9,6 +9,7 @@
 #include <viverna/graphics/Material.hpp>
 #include <viverna/graphics/Mesh.hpp>
 #include <viverna/graphics/Window.hpp>
+#include <viverna/maths/MathUtils.hpp>
 #include <viverna/serialization/VivSerializer.hpp>
 
 #include <yaml-cpp/emitter.h>
@@ -253,6 +254,11 @@ void TransformGUI(verna::World& world, verna::Entity entity) {
     ImGui::DragFloat3("Position", &transform.position.x, 0.01f, -100.0f,
                       100.0f);
     ImGui::DragFloat3("Scale", &transform.scale.x, 0.01f, 0.01f, 100.0f);
+    ImGui::DragFloat4("Rotation", &transform.rotation.x, 0.01f, -1.0f, 1.0f);
+    verna::Vec4f tmp(transform.rotation.x, transform.rotation.y,
+                     transform.rotation.z, transform.rotation.w);
+    tmp = tmp.Normalized();
+    transform.rotation = verna::Quaternion(tmp.x, tmp.y, tmp.z, tmp.w);
     world.SetComponent(entity, transform);
 }
 
