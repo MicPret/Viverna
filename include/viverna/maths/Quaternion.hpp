@@ -53,8 +53,16 @@ struct Quaternion {
      * @return Whether the quaternion is a unit-length one
      */
     constexpr bool IsUnitLength() const {
-        constexpr float epsilon = 2e-6;
+        constexpr float epsilon = 2e-6f;
         return maths::AreAlmostEqual(SquaredMagnitude(), 1.0f, epsilon);
+    }
+
+    constexpr bool IsAlmostEqual(const Quaternion& other,
+                                 float epsilon = 2e-6f) const {
+        Vec3f a(x, y, z);
+        Vec3f b(other.x, other.y, other.z);
+        return maths::AreAlmostEqual(w, other.w, epsilon)
+               && a.IsAlmostEqual(b, epsilon);
     }
 
     /**
