@@ -57,13 +57,13 @@ void OnAppUpdate(VivernaState& app_state, DeltaTime<float, Seconds> dt) {
 
     world.RunSystems(dt);
 
-    Transform target_transform;
-    Mesh target_mesh;
     if (selected_id >= 0) {
-        world.GetComponents(renderables[selected_id], target_transform,
-                            target_mesh);
-        auto bounds = target_mesh.bounds;
-        bounds.ApplyTransform(target_transform);
+        Mesh mesh;
+        Transform transform;
+        world.GetComponents(renderables[selected_id], mesh, transform);
+        auto bounds = mesh.bounds;
+        // TODO optimize
+        bounds.Recalculate(mesh, transform);
         Render(bounds);
     }
 
