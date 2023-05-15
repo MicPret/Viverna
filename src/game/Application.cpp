@@ -58,12 +58,20 @@ void OnAppUpdate(VivernaState& app_state, DeltaTime<float, Seconds> dt) {
     world.RunSystems(dt);
 
     if (selected_id >= 0) {
+        static int old_id = -1;
+        static Mesh::id_type old_mesh_id;
+        static Transform old_transform;
+        static BoundingBox bounds;
         Mesh mesh;
         Transform transform;
         world.GetComponents(renderables[selected_id], mesh, transform);
-        auto bounds = mesh.bounds;
-        // TODO optimize
-        bounds.Recalculate(mesh, transform);
+        if (old_id != selected_id || !old_transform.IsAlmostEqual(transform)
+            || old_mesh_id != mesh.id) {
+            bounds.Recalculate(mesh, transform);
+            old_id = selected_id;
+            old_mesh_id = mesh.id;
+            old_transform = transform;
+        }
         Render(bounds);
     }
 
