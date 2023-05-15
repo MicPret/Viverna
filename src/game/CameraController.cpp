@@ -24,10 +24,10 @@ void UpdateCamera(verna::Camera& camera,
         float dy = static_cast<float>(mouse_y)
                        / static_cast<float>(verna::WindowHeight()) * 2.0f
                    - 1.0f;
-        camera.rotation =
-            verna::Quaternion(verna::Vec3f::UnitY(), dx * verna::maths::Pi())
-            * verna::Quaternion(verna::Vec3f::UnitX(),
-                                dy * verna::maths::Pi() * 0.49f);
+        camera.rotation = verna::Quaternion(verna::Vec3f::UnitY(),
+                                            dx * (2.0f * verna::maths::Pi()))
+                          * verna::Quaternion(verna::Vec3f::UnitX(),
+                                              dy * verna::maths::Pi() * 0.49f);
     }
 
     verna::Vec3f forward = camera.Forward();
