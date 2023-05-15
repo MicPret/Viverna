@@ -31,6 +31,8 @@ YAML::Emitter& SerializeEntities(YAML::Emitter& emitter,
     return emitter;
 }
 
+static void FreeResources(World& world);
+
 bool DeserializeEntities(const YAML::Node& node,
                          World& out_world,
                          std::vector<Entity>& out_entities) {
@@ -38,6 +40,7 @@ bool DeserializeEntities(const YAML::Node& node,
         VERNA_LOGE("Entities node is not a map!");
         return false;
     }
+    FreeResources(out_world);
     out_world.ClearData();
     out_entities.clear();
     for (YAML::const_iterator it = node.begin(); it != node.end(); ++it) {
@@ -108,5 +111,15 @@ bool DeserializeEntities(const YAML::Node& node,
     }
 
     return true;
+}
+
+void FreeResources(World& world) {
+    auto materials = world.GetComponentArray<Material>();
+    for (const auto& m : materials)
+        for (TextureId t : m.textures)
+            FreeTexture(t);
+    auto shaders = world.GetComponentArray<ShaderId>();
+    for (auto s : shaders)
+        FreeShader(s);
 }
 }  // namespace verna
