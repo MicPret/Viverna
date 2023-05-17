@@ -18,7 +18,7 @@ struct Vec2f {
      * @brief Initializes every component with the same value n
      *
      */
-    constexpr Vec2f(float n) : x(n), y(n) {}
+    explicit constexpr Vec2f(float n) : x(n), y(n) {}
     constexpr float Dot(Vec2f v) const { return x * v.x + y * v.y; }
     constexpr float SquaredMagnitude() const { return Dot(*this); }
     constexpr float Magnitude() const {
