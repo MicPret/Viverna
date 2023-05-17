@@ -23,20 +23,31 @@ constexpr bool operator!=(TextureId a, TextureId b) {
     return !(a == b);
 }
 
+struct TextureLoadConfig {
+    using flag_t = uint8_t;
+    flag_t flags = 0;
+    static constexpr flag_t KeepInCpuMemory = 1;
+    // Other stuff like compression format
+};
+
 /**
  * @brief Loads a texture from its asset file
  *
  * @param texture_path Filepath of a texture asset, excluding "assets/textures"
+ * @param config Loading configuration (i.e. keep image data in CPU RAM)
  * @return Texture identifier, must be freed with FreeTexture
  */
-TextureId LoadTexture(const std::filesystem::path& texture_path);
-TextureId LoadTextureFromColor(float red, float green, float blue, float alpha);
-TextureId LoadTextureFromColor(uint8_t red,
-                               uint8_t green,
-                               uint8_t blue,
-                               uint8_t alpha);
-TextureId LoadTextureFromImage(ImageId img);
-TextureId LoadTextureFromImageInfo(const Image& img_info);
+TextureId LoadTexture(const std::filesystem::path& texture_path,
+                      TextureLoadConfig config = TextureLoadConfig());
+
+TextureId LoadTextureFromColor(Color4u8 color,
+                               TextureLoadConfig config = TextureLoadConfig());
+
+TextureId LoadTextureFromColor(const Color4f& color,
+                               TextureLoadConfig config = TextureLoadConfig());
+
+TextureId LoadTextureFromImage(const Image& img);
+
 void FreeTexture(TextureId texture);
 /**
  * @brief Retrieves the filepath of the loaded texture, as passed in
@@ -47,11 +58,7 @@ void FreeTexture(TextureId texture);
  */
 std::filesystem::path GetTexturePath(TextureId texture);
 
-std::array<uint8_t, 4> GetTextureColor(TextureId texture,
-                                       unsigned width,
-                                       unsigned height,
-                                       unsigned pixel_x,
-                                       unsigned pixel_y);
+Color4u8 GetTextureColor(TextureId texture, int pixel_x, int pixel_y);
 
 }  // namespace verna
 

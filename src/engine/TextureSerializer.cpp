@@ -10,12 +10,12 @@ YAML::Emitter& operator<<(YAML::Emitter& out, const TextureId& v) {
     if (!path.empty())
         out << path.string();
     else {
-        auto color = verna::GetTextureColor(v, 1, 1, 0, 0);
+        auto color = verna::GetTextureColor(v, 0, 0);
         out << YAML::Flow << YAML::BeginSeq;
-        out << static_cast<unsigned>(color[0])
-            << static_cast<unsigned>(color[1])
-            << static_cast<unsigned>(color[2])
-            << static_cast<unsigned>(color[3]);
+        out << static_cast<unsigned>(color.red)
+            << static_cast<unsigned>(color.green)
+            << static_cast<unsigned>(color.blue)
+            << static_cast<unsigned>(color.alpha);
         out << YAML::EndSeq;
     }
     return out;

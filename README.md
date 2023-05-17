@@ -1,8 +1,6 @@
-# Viverna Engine
+![Logo](docs/img/logo_horizontal.png "Draft logo")
 
----
-###### (put some logo here)
----
+# Viverna Engine
 
 Viverna is a simple C++17 framework I wrote for building cross-platform games for Windows, Linux and Android. As of now, it uses OpenGL 4.6 on Windows/Linux and OpenGL ES 3.2 on Android.
 
@@ -30,7 +28,7 @@ To use Viverna, you'll need the following:
 ### Build
 
 - Desktop
-    1. `cmake --preset desktopDebug` or `cmake --preset desktopRelease`
+    1. `cmake --preset desktopDebug` or `cmake --preset desktopRelease`; you might have to specify the generator with the `-G` flag (`cmake --preset desktopDebug -G "Ninja"`)
     2. `cmake --build build`
     3. Your executable will be in the `build` folder
 - Android
@@ -45,8 +43,7 @@ To use Viverna, you'll need the following:
 
 Remember you need OpenGL 4.6 on desktop and OpenGL ES 3.2 on Android and have fun!
 
-![Screenshot of Snake demo](screenshot.png)
-###### *This screenshot is from the demo you can find on branch demo/snake*
+![Screenshot of Snake demo](docs/img/screenshot_snake.png "This screenshot is from the demo on branch demo/snake")
 
 ---
 

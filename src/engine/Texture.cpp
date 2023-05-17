@@ -15,6 +15,7 @@
 
 #include <array>
 #include <cstdint>
+#include <utility>
 #include <vector>
 
 namespace verna {
@@ -23,75 +24,77 @@ static ResourceTracker<TextureId::id_type> texture_tracker("Texture");
 #endif
 static SparseSet<TextureId::id_type> textures_mapper;
 static std::vector<std::string> texture_names;
+static std::vector<Image> images;
 
 static GLuint GenTexture(const void* pixels, int width, int height);
 static TextureId LoadTextureFromBuffer(const void* buffer,
                                        int width,
                                        int height);
 
-TextureId LoadTexture(const std::filesystem::path& texture_path) {
+TextureId LoadTexture(const std::filesystem::path& texture_path,
+                      TextureLoadConfig config) {
     std::string name = texture_path.string();
     for (size_t i = 0; i < texture_names.size(); i++) {
-        if (name != texture_names[i])
-            continue;
-        const auto& ids = textures_mapper.GetDense();
-        return TextureId(ids[i]);
+        if (name == texture_names[i]) {
+            const auto& ids = textures_mapper.GetDense();
+            return TextureId(ids[i]);
+        }
     }
 
+    TextureId result;
     std::filesystem::path fullpath = "textures" / texture_path;
-    ImageId img = LoadImage(fullpath);
+    Image img = Image::Load(fullpath);
     if (!img.IsValid()) {
         VERNA_LOGE("LoadImage failed: " + fullpath.string());
-        return TextureId();
+        return result;
     }
-    auto output = LoadTextureFromImage(img);
-    FreeImage(img);
-    if (output.IsValid()) {
-        textures_mapper.Add(output.id);
+    result = LoadTextureFromImage(img);
+    if (result.IsValid()) {
+        textures_mapper.Add(result.id);
         texture_names.push_back(name);
+        if (config.flags & TextureLoadConfig::KeepInCpuMemory)
+            images.push_back(std::move(img));
+        else
+            images.emplace_back();
     } else {
         VERNA_LOGE("LoadTextureFromImage failed: " + fullpath.string());
     }
-    return output;
+    return result;
 }
 
-TextureId LoadTextureFromColor(float red,
-                               float green,
-                               float blue,
-                               float alpha) {
-    uint8_t r8 = static_cast<uint8_t>(red * 255.0f);
-    uint8_t g8 = static_cast<uint8_t>(green * 255.0f);
-    uint8_t b8 = static_cast<uint8_t>(blue * 255.0f);
-    uint8_t a8 = static_cast<uint8_t>(alpha * 255.0f);
-    return LoadTextureFromColor(r8, g8, b8, a8);
+TextureId LoadTextureFromColor(Color4f color, TextureLoadConfig config) {
+    Color4u8 col_u8;
+    col_u8.red = static_cast<uint8_t>(color.red * 255.0f);
+    col_u8.green = static_cast<uint8_t>(color.green * 255.0f);
+    col_u8.blue = static_cast<uint8_t>(color.blue * 255.0f);
+    col_u8.alpha = static_cast<uint8_t>(color.alpha * 255.0f);
+    return LoadTextureFromColor(col_u8, config);
 }
 
-TextureId LoadTextureFromColor(uint8_t red,
-                               uint8_t green,
-                               uint8_t blue,
-                               uint8_t alpha) {
-    constexpr int width = 2;
-    constexpr int height = width;
-    constexpr int size = width * height;
-    constexpr int num_channels = 4;
-    std::array<uint8_t, num_channels * size> data;
-    for (int i = 0; i < size; i++) {
-        auto index = i * size;
-        data[index] = red;
-        data[index + 1] = green;
-        data[index + 2] = blue;
-        data[index + 3] = alpha;
+TextureId LoadTextureFromColor(Color4u8 color, TextureLoadConfig config) {
+    TextureId result;
+    if (config.flags & TextureLoadConfig::KeepInCpuMemory) {
+        Image img = Image::LoadFromColor(color, 1, 1);
+        if (!img.IsValid()) {
+            VERNA_LOGE("Image::LoadFromColor failed!");
+            return result;
+        }
+        result = LoadTextureFromImage(img);
+        textures_mapper.Add(result.id);
+        texture_names.emplace_back();
+        images.push_back(std::move(img));
+    } else {
+        result = LoadTextureFromBuffer(color.Data(), 1, 1);
     }
-    return LoadTextureFromBuffer(data.data(), width, height);
+    return result;
 }
 
-TextureId LoadTextureFromImage(ImageId img) {
-    return LoadTextureFromImageInfo(GetImageInfo(img));
-}
-
-TextureId LoadTextureFromImageInfo(const Image& img_info) {
-    return LoadTextureFromBuffer(img_info.pixels, img_info.width,
-                                 img_info.height);
+TextureId LoadTextureFromImage(const Image& img) {
+    if (!img.IsValid()) {
+        VERNA_LOGE("LoadTextureFromImage received an invalid Image!");
+        return TextureId();
+    }
+    return LoadTextureFromBuffer(img.Pixels(), img.Width(), img.Height());
 }
 
 void FreeTexture(TextureId texture) {
@@ -102,6 +105,7 @@ void FreeTexture(TextureId texture) {
         textures_mapper.Remove(texture.id);
         texture_names[index].clear();
         texture_names[index].shrink_to_fit();
+        images[index].Clear();
     }
     glDeleteTextures(1, &texture.id);
 #ifndef NDEBUG
@@ -112,15 +116,16 @@ void FreeTexture(TextureId texture) {
 static TextureId LoadTextureFromBuffer(const void* buffer,
                                        int width,
                                        int height) {
+    TextureId result;
     if (width <= 0 || height <= 0 || buffer == nullptr) {
         VERNA_LOGE("LoadTextureFromBuffer failed!");
-        return TextureId();
+        return result;
     }
-    auto texture = GenTexture(buffer, width, height);
+    result.id = GenTexture(buffer, width, height);
 #ifndef NDEBUG
-    texture_tracker.Push(texture);
+    texture_tracker.Push(result.id);
 #endif
-    return TextureId(texture);
+    return result;
 }
 
 static GLuint GenTexture(const void* pixels, int width, int height) {
@@ -136,7 +141,6 @@ static GLuint GenTexture(const void* pixels, int width, int height) {
     glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, width, height);
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RGBA,
                     GL_UNSIGNED_BYTE, pixels);
-
     return texture;
 }
 
@@ -147,25 +151,28 @@ std::filesystem::path GetTexturePath(TextureId texture) {
                : std::filesystem::path();
 }
 
-std::array<uint8_t, 4> GetTextureColor(TextureId texture,
-                                       unsigned width,
-                                       unsigned height,
-                                       unsigned pixel_x,
-                                       unsigned pixel_y) {
-    unsigned data_size = width * height * 4;
-    std::vector<GLubyte> pixels;
-    pixels.resize(data_size);
+Color4u8 GetTextureColor(TextureId texture, int pixel_x, int pixel_y) {
+    SparseSet<TextureId::id_type>::index_t index;
+    if (textures_mapper.GetIndex(texture.id, index)) {
+        const Image& img = images[index];
+        if (img.IsValid()) {
+            auto pixels = img.Pixels();
+            int x = pixel_x % img.Width();
+            int y = pixel_y % img.Height();
+            auto pixel_coord = y * img.Width() + x;
+            return pixels[pixel_coord];
+        }
+    }
+
+    Color4u8 res;
     GLuint fbo;
     glGenFramebuffers(1, &fbo);
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
                            texture.id, 0);
-    glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
-
+    glReadPixels(pixel_x, pixel_y, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, res.Data());
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glDeleteFramebuffers(1, &fbo);
-    unsigned index = pixel_y * width * 4 + pixel_x * 4;
-    return {pixels[index], pixels[index + 1], pixels[index + 2],
-            pixels[index + 3]};
+    return res;
 }
 }  // namespace verna

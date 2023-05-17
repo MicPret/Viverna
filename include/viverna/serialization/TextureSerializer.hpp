@@ -18,12 +18,12 @@ inline Node convert<verna::TextureId>::encode(const verna::TextureId& rhs) {
     auto path = verna::GetTexturePath(rhs);
     if (!path.empty())
         return Node(path.string());
-    auto color = verna::GetTextureColor(rhs, 1, 1, 0, 0);
+    auto color = verna::GetTextureColor(rhs, 0, 0);
     Node node;
-    node.push_back(static_cast<unsigned>(color[0]));
-    node.push_back(static_cast<unsigned>(color[1]));
-    node.push_back(static_cast<unsigned>(color[2]));
-    node.push_back(static_cast<unsigned>(color[3]));
+    node.push_back(static_cast<unsigned>(color.red));
+    node.push_back(static_cast<unsigned>(color.green));
+    node.push_back(static_cast<unsigned>(color.blue));
+    node.push_back(static_cast<unsigned>(color.alpha));
     return node;
 }
 inline bool convert<verna::TextureId>::decode(const Node& node,
@@ -38,9 +38,9 @@ inline bool convert<verna::TextureId>::decode(const Node& node,
         g = node[1].as<unsigned>();
         b = node[2].as<unsigned>();
         a = node[3].as<unsigned>();
-        rhs = verna::LoadTextureFromColor(
-            static_cast<uint8_t>(r), static_cast<uint8_t>(g),
-            static_cast<uint8_t>(b), static_cast<uint8_t>(a));
+        Color4u8 col(static_cast<uint8_t>(r), static_cast<uint8_t>(g),
+                     static_cast<uint8_t>(b), static_cast<uint8_t>(a));
+        rhs = verna::LoadTextureFromColor(col);
         return rhs.IsValid();
     }
     auto name = node.as<std::string>(std::string());

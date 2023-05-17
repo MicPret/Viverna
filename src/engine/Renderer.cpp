@@ -146,7 +146,7 @@ void InitLights() {
     constexpr GLenum none = GL_NONE;
     glDrawBuffers(1, &none);
     glReadBuffer(GL_NONE);
-    auto status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    [[maybe_unused]] auto status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
     VERNA_LOGE_IF(
         status != GL_FRAMEBUFFER_COMPLETE,
         "Incomplete fbo for direction light: " + std::to_string(status));
