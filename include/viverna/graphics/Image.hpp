@@ -1,48 +1,43 @@
 #ifndef VERNA_IMAGE_HPP
 #define VERNA_IMAGE_HPP
 
-#include <cstdint>
+#include "Color4.hpp"
+#include <viverna/maths/Vec2i.hpp>
+
 #include <filesystem>
 
 namespace verna {
 
 /**
- * @brief Image identifier
- *
- */
-struct ImageId {
-    using id_type = uint32_t;
-    id_type id;
-    constexpr ImageId() : id(0u) {}
-    constexpr ImageId(id_type id_) : id(id_) {}
-    constexpr bool IsValid() const { return id != 0; }
-};
-constexpr bool operator==(ImageId a, ImageId b) {
-    return a.id == b.id;
-}
-constexpr bool operator!=(ImageId a, ImageId b) {
-    return !(a == b);
-}
-
-/**
  * @brief Image info
  *
  */
-struct Image {
-    uint8_t* pixels = nullptr;
-    int width = 0;
-    int height = 0;
-};
+class Image {
+   public:
+    using color_t = Color4u8;
+    Image();
+    Image(const Image& other);
+    Image(Image&& other);
+    Image& operator=(const Image& other);
+    Image& operator=(Image&& other);
+    ~Image();
+    bool IsValid() const;
+    int Width() const;
+    int Height() const;
+    int Area() const;
+    Vec2i Size() const;
+    const color_t* Pixels() const;
+    void Clear();
+    static Image Load(const std::filesystem::path& image_path);
+    static Image LoadFromColor(color_t color, int width, int height);
 
-/**
- * @brief Loads an Image from the asset folder
- *
- * @param image_path Path of the specified image, excluding "assets/"
- * @return Image identifier, must be freed with FreeImage
- */
-ImageId LoadImage(const std::filesystem::path& image_path);
-void FreeImage(ImageId image_id);
-Image GetImageInfo(ImageId image_id);
+   private:
+    int width;
+    int height;
+    color_t* pixels;
+    void ClearPixels();
+    static Image LoadFromBuffer(const uint8_t* buffer, size_t size);
+};
 
 }  // namespace verna
 

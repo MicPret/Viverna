@@ -12,122 +12,169 @@
 #error Platform not supported!
 #endif
 
-#include <vector>
+#include <algorithm>
+#include <cstdlib>
+#include <utility>
 
 namespace verna {
-static std::vector<Image> loaded_images;
-static std::vector<ImageId> loaded_ids;
-static ImageId::id_type next_id = 1;
 
-static Image LoadImageFromBuffer(const std::vector<char>& buffer);
-static void FreeImageImpl(Image& img);
-static size_t GetImageIndex(ImageId img_id);
+Image::Image() : width(0), height(0), pixels(nullptr) {}
 
-ImageId LoadImage(const std::filesystem::path& image_path) {
-    auto raw = LoadRawAsset(image_path);
-    auto img = LoadImageFromBuffer(raw);
-    if (img.pixels == nullptr) {
-        VERNA_LOGE("LoadImageFromBuffer failed: " + image_path.string());
-        return ImageId();
-    }
-    ImageId output(next_id++);
-    loaded_images.push_back(img);
-    loaded_ids.push_back(output);
-    return output;
-}
-
-void FreeImage(ImageId image_id) {
-    size_t index = GetImageIndex(image_id);
-    if (index >= loaded_ids.size()) {
-        VERNA_LOGW("FreeImage failed: no image found with ID "
-                   + std::to_string(image_id.id));
+Image::Image(const Image& other) : width(other.width), height(other.height) {
+    if (!other.IsValid())
         return;
-    }
-    FreeImageImpl(loaded_images[index]);
-    loaded_ids.erase(loaded_ids.begin() + index);
-    loaded_images.erase(loaded_images.begin() + index);
+    size_t area = static_cast<size_t>(other.Area());
+    void* data = std::malloc(sizeof(color_t) * area);
+    pixels = static_cast<color_t*>(data);
+    std::copy_n(other.pixels, area, pixels);
 }
 
-Image GetImageInfo(ImageId image_id) {
-    size_t index = GetImageIndex(image_id);
-    if (index >= loaded_ids.size()) {
-        VERNA_LOGE("GetImageInfo failed: no image found with ID "
-                   + std::to_string(image_id.id));
-        return Image();
-    }
-    return loaded_images[index];
+Image::Image(Image&& other) :
+    width(other.width), height(other.height), pixels(other.pixels) {
+    other.pixels = nullptr;
+    other.width = 0;
+    other.height = 0;
 }
 
-static size_t GetImageIndex(ImageId img_id) {
-    size_t i;
-    for (i = 0; i < loaded_ids.size(); i++)
-        if (loaded_ids[i] == img_id)
-            break;
-    return i;
+Image& Image::operator=(const Image& other) {
+    size_t new_size = static_cast<size_t>(other.Area());
+    void* p = std::realloc(pixels, sizeof(color_t) * new_size);
+    pixels = static_cast<color_t*>(p);
+    std::copy_n(other.pixels, new_size, pixels);
+    width = other.width;
+    height = other.height;
+    return *this;
+}
+
+Image& Image::operator=(Image&& other) {
+    ClearPixels();
+    width = other.width;
+    height = other.height;
+    pixels = other.pixels;
+    other.pixels = nullptr;
+    return *this;
+}
+
+Image::~Image() {
+    Clear();
+}
+
+int Image::Width() const {
+    return width;
+}
+
+int Image::Height() const {
+    return height;
+}
+
+int Image::Area() const {
+    return width * height;
+}
+
+Vec2i Image::Size() const {
+    return Vec2i(width, height);
+}
+
+const Image::color_t* Image::Pixels() const {
+    return pixels;
+}
+
+bool Image::IsValid() const {
+    return (pixels != nullptr) && (width > 0) && (height > 0);
+}
+
+void Image::Clear() {
+    ClearPixels();
+    width = 0;
+    height = 0;
+}
+
+void Image::ClearPixels() {
+    std::free(pixels);
+    pixels = nullptr;
+}
+
+Image Image::Load(const std::filesystem::path& image_path) {
+    auto raw = LoadRawAsset(image_path);
+    auto ptr = reinterpret_cast<const uint8_t*>(raw.data());
+    auto result = LoadFromBuffer(ptr, raw.size());
+    VERNA_LOGE_IF(!result.IsValid(),
+                  "LoadImageFromBuffer failed: " + image_path.string());
+    return result;
+}
+
+Image Image::LoadFromColor(color_t color, int width, int height) {
+    Image result;
+    if (width <= 0 || height <= 0)
+        return result;
+    int size = width * height;
+    void* p = std::malloc(sizeof(color_t) * size);
+    if (p != nullptr) {
+        result.width = width;
+        result.height = height;
+        result.pixels = static_cast<color_t*>(p);
+        for (int i = 0; i < size; i++)
+            result.pixels[i] = color;
+    }
+    return result;
 }
 
 #if defined(VERNA_ANDROID)
-Image LoadImageFromBuffer(const std::vector<char>& buffer) {
+Image Image::LoadFromBuffer(const uint8_t* buffer, size_t size) {
+    Image result;
     AImageDecoder* decoder;
-    int result =
-        AImageDecoder_createFromBuffer(buffer.data(), buffer.size(), &decoder);
-    if (result != ANDROID_IMAGE_DECODER_SUCCESS) {
+    int err_code = AImageDecoder_createFromBuffer(buffer, size, &decoder);
+    if (err_code != ANDROID_IMAGE_DECODER_SUCCESS) {
         VERNA_LOGE("AImageDecoder_createFromBuffer failed!");
         AImageDecoder_delete(decoder);
-        return Image();
+        return result;
     }
-    result = AImageDecoder_setAndroidBitmapFormat(
+    err_code = AImageDecoder_setAndroidBitmapFormat(
         decoder, ANDROID_BITMAP_FORMAT_RGBA_8888);
-    if (result != ANDROID_IMAGE_DECODER_SUCCESS) {
+    if (err_code != ANDROID_IMAGE_DECODER_SUCCESS) {
         VERNA_LOGE("AImageDecoder_setAndroidBitmapFormat failed: "
-                   + std::to_string(result));
+                   + std::to_string(err_code));
         AImageDecoder_delete(decoder);
-        return Image();
+        return result;
     }
     auto header_info = AImageDecoder_getHeaderInfo(decoder);
-    Image output;
-    output.height = AImageDecoderHeaderInfo_getHeight(header_info);
-    output.width = AImageDecoderHeaderInfo_getWidth(header_info);
+    result.height = AImageDecoderHeaderInfo_getHeight(header_info);
+    result.width = AImageDecoderHeaderInfo_getWidth(header_info);
     constexpr size_t bytes_per_pixel = 4;
-    size_t stride = std::max(bytes_per_pixel * output.width,
+    size_t stride = std::max(bytes_per_pixel * result.width,
                              AImageDecoder_getMinimumStride(decoder));
-    size_t buffer_size = stride * output.height;
+    size_t buffer_size = stride * result.height;
     void* pixel_buffer = std::malloc(buffer_size);
-    output.pixels = static_cast<uint8_t*>(pixel_buffer);
-    result =
-        AImageDecoder_decodeImage(decoder, output.pixels, stride, buffer_size);
+    err_code =
+        AImageDecoder_decodeImage(decoder, pixel_buffer, stride, buffer_size);
     AImageDecoder_delete(decoder);
-    if (result != ANDROID_IMAGE_DECODER_SUCCESS) {
+    if (err_code != ANDROID_IMAGE_DECODER_SUCCESS) {
         VERNA_LOGE("AImageDecoder_setAndroidBitmapFormat failed: "
-                   + std::to_string(result));
+                   + std::to_string(err_code));
         std::free(pixel_buffer);
-        return Image();
+        result.width = 0;
+        result.height = 0;
+    } else {
+        result.pixels = static_cast<Image::color_t*>(pixel_buffer);
     }
-    return output;
-}
-void FreeImageImpl(Image& img) {
-    std::free(img.pixels);
-    img = Image();
+    return result;
 }
 #elif defined(VERNA_DESKTOP)
-static bool StbiSetFlip();
-Image LoadImageFromBuffer(const std::vector<char>& buffer) {
-    [[maybe_unused]] static bool init = StbiSetFlip();
-    auto b = reinterpret_cast<const stbi_uc*>(buffer.data());
-    Image output;
-    int comp;
-    output.pixels = stbi_load_from_memory(b, buffer.size(), &output.width,
-                                          &output.height, &comp, 4);
-    VERNA_LOGE_IF(output.pixels == nullptr, "stbi_load_from_memory failed!");
-    return output;
-}
-void FreeImageImpl(Image& img) {
-    stbi_image_free(img.pixels);
-    img = Image();
-}
-bool StbiSetFlip() {
+Image Image::LoadFromBuffer(const uint8_t* buffer, size_t size) {
     stbi_set_flip_vertically_on_load(true);
-    return true;
+    auto buf = reinterpret_cast<const stbi_uc*>(buffer);
+    Image result;
+    int comp;
+    auto loaded = stbi_load_from_memory(buf, size, &result.width,
+                                        &result.height, &comp, 4);
+    if (loaded == nullptr) {
+        VERNA_LOGE("stbi_load_from_memory failed!");
+        result.width = 0;
+        result.height = 0;
+    } else {
+        result.pixels = reinterpret_cast<Image::color_t*>(loaded);
+    }
+    return result;
 }
 #endif
 
