@@ -62,7 +62,7 @@ TextureId LoadTexture(const std::filesystem::path& texture_path,
     return result;
 }
 
-TextureId LoadTextureFromColor(Color4f color, TextureLoadConfig config) {
+TextureId LoadTextureFromColor(const Color4f& color, TextureLoadConfig config) {
     Color4u8 col_u8;
     col_u8.red = static_cast<uint8_t>(color.red * 255.0f);
     col_u8.green = static_cast<uint8_t>(color.green * 255.0f);
