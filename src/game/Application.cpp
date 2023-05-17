@@ -105,8 +105,10 @@ void OnAppUpdate(VivernaState& app_state, DeltaTime<float, Seconds> dt) {
 }
 
 Entity NewRenderable(World& world_, Mesh&& mesh) {
-    static TextureId diffuse = LoadTextureFromColor(0.7f, 0.7f, 0.7f, 1.0f);
-    static TextureId specular = LoadTextureFromColor(0.3f, 0.3f, 0.3f, 1.0f);
+    static TextureId diffuse =
+        LoadTextureFromColor(Color4f(0.7f, 0.7f, 0.7f, 1.0f));
+    static TextureId specular =
+        LoadTextureFromColor(Color4f(0.3f, 0.3f, 0.3f, 1.0f));
     Material mat;
     mat.textures[Material::DIFFUSE_INDEX] = diffuse;
     mat.textures[Material::SPECULAR_INDEX] = specular;
