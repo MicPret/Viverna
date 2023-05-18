@@ -5,13 +5,15 @@
 #include <viverna/core/Debug.hpp>
 #include <viverna/data/SparseSet.hpp>
 
+#include <vector>
+
 namespace verna {
 
 class BaseComponentBuffer {
    public:
     BaseComponentBuffer() = default;
     virtual ~BaseComponentBuffer() = default;
-    const auto& GetEntityIds() const { return sparse_set.GetDense(); }
+    std::vector<Entity> GetEntities() const;
     virtual TypeId GetType() const = 0;
     bool Contains(Entity e) const;
     void Clear();

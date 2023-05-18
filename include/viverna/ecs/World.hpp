@@ -14,6 +14,7 @@ class World {
    public:
     bool HasComponent(Entity e, TypeId comp_type) const;
     bool Matches(Entity e, const Family& family) const;
+    std::vector<Entity> GetEntitiesWithComponent(TypeId comp_type) const;
     void AddSystem(const System& system);
     SystemId AddSystem(const Family& family, SystemUpdate update_func);
     void RemoveSystem(SystemId system_id);
@@ -37,20 +38,7 @@ class World {
     template <typename C>
     bool HasComponent(Entity e) const;
     template <typename C>
-    auto& GetComponentArray() {
-        TypeId type = GetTypeId<C>();
-        SparseSet<TypeId>::index_t i;
-        ComponentBuffer<C>* b;
-        if (component_types.GetIndex(type, i)) {
-            BaseComponentBuffer* base_b = buffers[i].get();
-            b = static_cast<ComponentBuffer<C>*>(base_b);
-        } else {
-            component_types.Add(type);
-            b = new ComponentBuffer<C>();
-            buffers.emplace_back(b);
-        }
-        return b->GetComponents();
-    }
+    std::vector<Entity> GetEntitiesWithComponent() const;
 
    private:
     SparseSet<TypeId> component_types;
@@ -117,6 +105,11 @@ void World::SetComponents(Entity e, const Comps&... comps) {
 template <typename C>
 bool World::HasComponent(Entity e) const {
     return HasComponent(e, GetTypeId<C>());
+}
+
+template <typename C>
+std::vector<Entity> World::GetEntitiesWithComponent() const {
+    return GetEntitiesWithComponent(GetTypeId<C>());
 }
 }  // namespace verna
 

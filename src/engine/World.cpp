@@ -29,9 +29,9 @@ void World::AddSystem(const System& system) {
         uint32_t index;
         if (!component_types.GetIndex(type, index))
             return;
-        const auto& entity_ids = buffers[index]->GetEntityIds();
-        for (size_t i = 0; i < entity_ids.size(); i++)
-            set.insert(Entity(entity_ids[i]));
+        auto entities = buffers[index]->GetEntities();
+        for (size_t i = 0; i < entities.size(); i++)
+            set.insert(entities[i]);
     }
     systems.back().ReassignEntities(std::vector(set.begin(), set.end()));
 }
@@ -43,9 +43,9 @@ SystemId World::AddSystem(const Family& family, SystemUpdate update_func) {
         uint32_t index;
         if (!component_types.GetIndex(type, index))
             return System::InvalidId();
-        const auto& entity_ids = buffers[index]->GetEntityIds();
-        for (size_t i = 0; i < entity_ids.size(); i++)
-            set.insert(Entity(entity_ids[i]));
+        auto entities = buffers[index]->GetEntities();
+        for (size_t i = 0; i < entities.size(); i++)
+            set.insert(entities[i]);
     }
     system.ReassignEntities(std::vector(set.begin(), set.end()));
     return system.Id();
@@ -88,6 +88,15 @@ void World::RemoveEntity(Entity e) {
     EntityEvent event(e, EntityEvent::REMOVE);
     for (System& s : systems)
         s.Notify(event);
+}
+
+std::vector<Entity> World::GetEntitiesWithComponent(TypeId comp_type) const {
+    SparseSet<TypeId>::index_t i;
+    if (component_types.GetIndex(comp_type, i)) {
+        const auto& buffer = buffers[i];
+        return buffer->GetEntities();
+    }
+    return {};
 }
 
 }  // namespace verna
