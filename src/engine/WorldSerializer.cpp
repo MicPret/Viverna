@@ -114,12 +114,16 @@ bool DeserializeEntities(const YAML::Node& node,
 }
 
 void FreeResources(World& world) {
-    auto materials = world.GetComponentArray<Material>();
-    for (const auto& m : materials)
-        for (TextureId t : m.textures)
+    auto entities = world.GetEntitiesWithComponent<Material>();
+    for (Entity e : entities) {
+        auto material = world.GetComponent<Material>(e);
+        for (TextureId t : material.textures)
             FreeTexture(t);
-    auto shaders = world.GetComponentArray<ShaderId>();
-    for (auto s : shaders)
-        FreeShader(s);
+    }
+    entities = world.GetEntitiesWithComponent<ShaderId>();
+    for (Entity e : entities) {
+        auto shader = world.GetComponent<ShaderId>(e);
+        FreeShader(shader);
+    }
 }
 }  // namespace verna
