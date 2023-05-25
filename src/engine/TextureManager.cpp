@@ -76,6 +76,12 @@ TextureId TextureManager::LoadTextureFromColor(const Color4f& color,
 
 TextureId TextureManager::LoadTextureFromColor(Color4u8 color,
                                                TextureLoadConfig config) {
+    const auto& dense = mapper.GetDense();
+    for (size_t i = 0; i < dense.size(); i++) {
+        TextureId t(dense[i]);
+        if (IsColorTexture(t) && GetTextureColor(t, 0, 0) == color)
+            return t;
+    }
     TextureId result;
     auto keep_in_ram = config.flags & TextureLoadConfig::KeepInCpuMemory;
     if (keep_in_ram == 0) {
@@ -186,6 +192,13 @@ Color4u8 TextureManager::GetTextureColor(TextureId texture,
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glDeleteFramebuffers(1, &fbo);
     return res;
+}
+
+bool TextureManager::IsColorTexture(TextureId texture) const {
+    SparseSet<TextureId::id_type>::index_t index;
+    if (!mapper.GetIndex(texture.id, index))
+        return false;
+    return names[index].empty();
 }
 
 void TextureManager::AddElement(TextureId::id_type id) {

@@ -29,6 +29,7 @@ class TextureManager {
     void FreeLoadedTextures();
     std::filesystem::path GetTexturePath(TextureId texture) const;
     Color4u8 GetTextureColor(TextureId texture, int pixel_x, int pixel_y) const;
+    bool IsColorTexture(TextureId texture) const;
 
    private:
     SparseSet<TextureId::id_type> mapper;
