@@ -122,13 +122,6 @@ void TextureManager::FreeTexture(TextureId texture) {
     SparseSet<TextureId::id_type>::index_t index;
     if (mapper.GetIndex(texture.id, index)) {
         auto id_string = std::to_string(texture.id);
-#ifndef NDEBUG
-        auto name = names[index];
-        if (name.empty())
-            name = "COLOR#" + id_string;
-        name += " (" + id_string + ')';
-        VERNA_LOGI("Freeing texture: " + name);
-#endif
         RemoveElement(texture.id);
         glDeleteTextures(1, &texture.id);
     } else {
@@ -143,14 +136,6 @@ void TextureManager::FreeLoadedTextures() {
     SparseSet<TextureId::id_type>::index_t index;
     for (TextureId::id_type t : dense) {
         if (mapper.GetIndex(t, index)) {
-#ifndef NDEBUG
-            auto id_string = std::to_string(t);
-            auto name = names[index];
-            if (name.empty())
-                name = "COLOR#" + id_string;
-            name += " (" + id_string + ')';
-            VERNA_LOGI("Freeing texture: " + name);
-#endif
             to_free_set.insert(t);
         }
     }

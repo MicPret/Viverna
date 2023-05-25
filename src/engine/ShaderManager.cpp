@@ -130,7 +130,6 @@ void ShaderManager::FreeShader(ShaderId shader_program) {
         return;
     for (size_t i = 0; i < shaders.size(); i++) {
         if (shaders[i] == shader_program) {
-            VERNA_LOGI("Freeing shader: " + names[i]);
             shaders.erase(shaders.begin() + i);
             names.erase(names.begin() + i);
             glDeleteProgram(shader_program.id);
@@ -143,7 +142,6 @@ void ShaderManager::FreeShader(ShaderId shader_program) {
 
 void ShaderManager::FreeLoadedShaders() {
     for (size_t i = 0; i < shaders.size(); i++) {
-        VERNA_LOGI("Freeing shader: " + names[i]);
         glDeleteProgram(shaders[i].id);
     }
     shaders.clear();
