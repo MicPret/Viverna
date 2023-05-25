@@ -1,5 +1,7 @@
 #include <viverna/ecs/World.hpp>
 
+#include <algorithm>
+#include <iterator>
 #include <set>
 
 namespace verna {
@@ -97,6 +99,22 @@ std::vector<Entity> World::GetEntitiesWithComponent(TypeId comp_type) const {
         return buffer->GetEntities();
     }
     return {};
+}
+
+std::vector<Entity> World::GetEntitiesInFamily(const Family& family) const {
+    if (family.Empty())
+        return {};
+    constexpr auto entity_comp = [](Entity a, Entity b) { return a.id < b.id; };
+    auto result = GetEntitiesWithComponent(*family.begin());
+    for (auto it = family.begin() + 1; it != family.end(); ++it) {
+        auto entities = GetEntitiesWithComponent(*it);
+        std::vector<Entity> temp;
+        std::set_intersection(result.begin(), result.end(), entities.begin(),
+                              entities.end(), std::back_inserter(temp),
+                              entity_comp);
+        result = std::move(temp);
+    }
+    return result;
 }
 
 }  // namespace verna

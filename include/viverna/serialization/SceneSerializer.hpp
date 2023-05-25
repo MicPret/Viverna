@@ -3,9 +3,13 @@
 
 #include "CameraSerializer.hpp"
 #include "DirectionLightSerializer.hpp"
+#include "WorldSerializer.hpp"
 #include <viverna/core/Scene.hpp>
+#include <viverna/ecs/Entity.hpp>
 
 #include <yaml-cpp/yaml.h>
+
+#include <vector>
 
 namespace YAML {
 template <>
@@ -16,8 +20,8 @@ struct convert<verna::Scene> {
 
 inline Node convert<verna::Scene>::encode(const verna::Scene& rhs) {
     Node node;
-    node["camera"] = rhs.GetCamera();
-    node["direction_light"] = rhs.GetDirectionLight();
+    node["camera"] = rhs.camera;
+    node["direction_light"] = rhs.direction_light;
     return node;
 }
 inline bool convert<verna::Scene>::decode(const Node& node, verna::Scene& rhs) {
@@ -35,15 +39,18 @@ inline bool convert<verna::Scene>::decode(const Node& node, verna::Scene& rhs) {
         VERNA_LOGE("Direction light node not found!");
         return false;
     }
-    rhs.GetCamera() = camera.as<verna::Camera>();
-    rhs.GetDirectionLight() = dirlight.as<verna::DirectionLight>();
+    rhs.camera = camera.as<verna::Camera>();
+    rhs.direction_light = dirlight.as<verna::DirectionLight>();
     return true;
 }
 
 }  // namespace YAML
 
 namespace verna {
-YAML::Emitter& operator<<(YAML::Emitter& out, const Scene& m);
+YAML::Emitter& SerializeScene(YAML::Emitter& emitter, Scene& scene);
+bool DeserializeScene(const YAML::Node& node,
+                      Scene& out_scene,
+                      std::vector<Entity>& out_entities);
 }  // namespace verna
 
 #endif

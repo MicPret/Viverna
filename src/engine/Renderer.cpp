@@ -4,6 +4,7 @@
 #include <viverna/core/Scene.hpp>
 #include <viverna/core/Transform.hpp>
 #include <viverna/graphics/Material.hpp>
+#include <viverna/graphics/ShaderManager.hpp>
 #include <viverna/graphics/Texture.hpp>
 #include <viverna/graphics/Vertex.hpp>
 #include <viverna/graphics/Window.hpp>
@@ -50,6 +51,7 @@ GLsizeiptr vbo_size, ebo_size;
 
 gpu::FrameData frame_data;
 
+ShaderManager shaders;
 ShaderId wireframe_shader;
 ShaderId dirlight_shader;
 GLuint dirlight_depthmap;
@@ -160,13 +162,13 @@ void TermLights() {
 }
 
 void LoadPrivateShaders() {
-    wireframe_shader = LoadShader("wireframe");
-    dirlight_shader = LoadShader("dirlight_depth");
+    wireframe_shader = shaders.LoadShader("wireframe");
+    dirlight_shader = shaders.LoadShader("dirlight_depth");
 }
 
 void FreePrivateShaders() {
-    FreeShader(wireframe_shader);
-    FreeShader(dirlight_shader);
+    shaders.FreeShader(wireframe_shader);
+    shaders.FreeShader(dirlight_shader);
 }
 
 void GenBuffers() {
@@ -301,7 +303,7 @@ void BindTextures(const RenderBatch& batch) {
 
 void PrepareDraw() {
     const Scene& scene = Scene::GetActive();
-    const DirectionLight& dirlight = scene.GetDirectionLight();
+    const DirectionLight& dirlight = scene.direction_light;
 
     Vec3f lightdir = dirlight.direction.Normalized();
     Mat4f view = Mat4f::LookAt(-lightdir, Vec3f(),
@@ -334,7 +336,7 @@ void PrepareDraw() {
     frame_data.direction_light.specular = Vec4f(dirlight.specular, 0.0f);
     frame_data.direction_light.direction = Vec4f(dirlight.direction, 0.0f);
     frame_data.direction_light.pv_matrix = proj * view;
-    frame_data.camera_data = gpu::CameraData(scene.GetCamera());
+    frame_data.camera_data = gpu::CameraData(scene.camera);
 
     ubo::SendData(gpu::FrameData::BLOCK_BINDING, &frame_data);
 }
@@ -393,7 +395,6 @@ void InitializeRenderer(VivernaState& state) {
     glDepthMask(GL_TRUE);
     glCullFace(GL_BACK);
 
-    Scene::GetActive().Setup();
     InitLights();
 
     state.SetFlag(VivernaState::RENDERER_INITIALIZED_FLAG, true);
