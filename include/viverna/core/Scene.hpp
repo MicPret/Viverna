@@ -22,6 +22,7 @@ struct Scene {
     bool LoadFile(const std::filesystem::path& scene_file);
     bool LoadFile(const std::filesystem::path& scene_file,
                   std::vector<Entity>& out_entities);
+    void SaveFile(const std::filesystem::path& new_file);
     void ReleaseResources();
     static Scene& GetActive();
 };
