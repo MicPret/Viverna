@@ -137,7 +137,14 @@ void TextureManager::FreeLoadedTextures() {
     SparseSet<TextureId::id_type>::index_t index;
     for (TextureId::id_type t : dense) {
         if (mapper.GetIndex(t, index)) {
+#ifndef NDEBUG
+            auto id_string = std::to_string(t);
+            auto name = names[index];
+            if (name.empty())
+                name = "COLOR#" + id_string;
+            name += " (" + id_string + ')';
             VERNA_LOGI("Freeing texture: " + names[index]);
+#endif
             to_free_set.insert(t);
         }
     }
