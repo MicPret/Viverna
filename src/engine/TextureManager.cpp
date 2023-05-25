@@ -121,7 +121,7 @@ void TextureManager::FreeTexture(TextureId texture) {
         if (name.empty())
             name = "COLOR#" + id_string;
         name += " (" + id_string + ')';
-        VERNA_LOGI("Freeing texture: " + names[index]);
+        VERNA_LOGI("Freeing texture: " + name);
 #endif
         RemoveElement(texture.id);
         glDeleteTextures(1, &texture.id);
