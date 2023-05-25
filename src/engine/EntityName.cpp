@@ -4,7 +4,7 @@
 
 namespace verna {
 
-EntityName::EntityName(std::string_view name) : str(name) {}
+EntityName::EntityName(const std::string& name) : str(name) {}
 EntityName::EntityName(std::string&& name) : str(std::move(name)) {}
 
 const std::string* EntityName::operator->() const {
