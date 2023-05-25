@@ -20,7 +20,8 @@ namespace verna {
 
 Image::Image() : width(0), height(0), pixels(nullptr) {}
 
-Image::Image(const Image& other) : width(other.width), height(other.height) {
+Image::Image(const Image& other) :
+    width(other.width), height(other.height), pixels(nullptr) {
     if (!other.IsValid())
         return;
     size_t area = static_cast<size_t>(other.Area());
