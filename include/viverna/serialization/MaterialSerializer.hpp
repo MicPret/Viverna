@@ -45,18 +45,22 @@ inline bool convert<verna::MaterialSerializer>::decode(
     verna::MaterialSerializer& rhs) {
     if (!node.IsMap())
         return false;
-    Node tex_node = node["textures"];
+    Node textures_node = node["textures"];
     Node par_node = node["parameters"];
-    if (!tex_node.IsSequence() || !par_node.IsSequence())
+    if (!textures_node.IsSequence() || !par_node.IsSequence())
         return false;
-    size_t size = std::min(tex_node.size(), rhs.material.textures.size());
+    size_t size = std::min(textures_node.size(), rhs.material.textures.size());
     verna::TextureSerializer tex_serializer(rhs.texture_manager);
     for (size_t i = 0; i < size; i++) {
-        bool success =
-            convert<verna::TextureSerializer>::decode(tex_node, tex_serializer);
-        if (!success)
+        Node t_node = textures_node[i];
+        if (static_cast<bool>(t_node)
+            && convert<verna::TextureSerializer>::decode(t_node,
+                                                         tex_serializer))
+            rhs.material.textures[i] = tex_serializer.texture;
+        else {
+            VERNA_LOGE("Failed to decode material textures!");
             return false;
-        rhs.material.textures[i] = tex_serializer.texture;
+        }
     }
     size = std::min(par_node.size(), rhs.material.parameters.size());
     for (size_t i = 0; i < size; i++)
