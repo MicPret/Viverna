@@ -143,7 +143,7 @@ void TextureManager::FreeLoadedTextures() {
             if (name.empty())
                 name = "COLOR#" + id_string;
             name += " (" + id_string + ')';
-            VERNA_LOGI("Freeing texture: " + names[index]);
+            VERNA_LOGI("Freeing texture: " + name);
 #endif
             to_free_set.insert(t);
         }
