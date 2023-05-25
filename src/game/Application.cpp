@@ -18,32 +18,34 @@ namespace verna {
 static verna::Entity NewRenderable(World& world_, Mesh&& mesh);
 
 static Scene* scene;
-static World world;
 static ShaderId shader;
 static std::vector<Entity> renderables;
 static int selected_id = -1;
+TextureId diffuse;
+TextureId specular;
 
 void OnAppResume(VivernaState& app_state) {
     editor::InitGUI();
     scene = &Scene::GetActive();
-    Camera& camera = scene->GetCamera();
+    Camera& camera = scene->camera;
     camera.position = Vec3f(0.0f, 0.0f, -3.0f);
-    DirectionLight& light = scene->GetDirectionLight();
+    DirectionLight& light = scene->direction_light;
     light.direction = Vec3f(0.2f, -0.8f, 0.4f).Normalized();
-    shader = LoadShader("blinn-phong");
+
+    shader = scene->shader_manager.LoadShader("blinn-phong");
+    diffuse = scene->texture_manager.LoadTextureFromColor(
+        Color4f(0.7f, 0.7f, 0.7f, 1.0f), {});
+    specular = scene->texture_manager.LoadTextureFromColor(
+        Color4f(0.3f, 0.3f, 0.3f, 1.0f), {});
+
     renderables.push_back(NewRenderable(
-        world, verna::LoadPrimitiveMesh(PrimitiveMeshType::Cube)));
-    world.AddSystem(Family::From<Mesh, Material, Transform, ShaderId>(),
-                    editor::Render);
+        scene->world, verna::LoadPrimitiveMesh(PrimitiveMeshType::Cube)));
+    scene->world.AddSystem(Family::From<Mesh, Material, Transform, ShaderId>(),
+                           editor::Render);
 }
 void OnAppPause(VivernaState& app_state) {
     editor::TermGUI();
-    auto& materials = world.GetComponentArray<Material>();
-    for (const Material& m : materials)
-        for (TextureId t : m.textures)
-            FreeTexture(t);
-    FreeShader(shader);
-    world.ClearAll();
+    scene->ReleaseResources();
 }
 void OnAppUpdate(VivernaState& app_state, DeltaTime<float, Seconds> dt) {
     NextFrame();
@@ -55,7 +57,7 @@ void OnAppUpdate(VivernaState& app_state, DeltaTime<float, Seconds> dt) {
         return;
     }
 
-    world.RunSystems(dt);
+    scene->world.RunSystems(dt);
 
     if (selected_id >= 0) {
         static int old_id = -1;
@@ -64,7 +66,7 @@ void OnAppUpdate(VivernaState& app_state, DeltaTime<float, Seconds> dt) {
         static BoundingBox bounds;
         Mesh mesh;
         Transform transform;
-        world.GetComponents(renderables[selected_id], mesh, transform);
+        scene->world.GetComponents(renderables[selected_id], mesh, transform);
         if (old_id != selected_id || !old_transform.IsAlmostEqual(transform)
             || old_mesh_id != mesh.id) {
             bounds.Recalculate(mesh, transform);
@@ -77,7 +79,7 @@ void OnAppUpdate(VivernaState& app_state, DeltaTime<float, Seconds> dt) {
 
     static float camera_speed = 2.0f;
     bool space_pressed = space.Pressed();
-    editor::UpdateCamera(scene->GetCamera(), camera_speed, dt.count(),
+    editor::UpdateCamera(scene->camera, camera_speed, dt.count(),
                          space_pressed);
 
     Draw();
@@ -92,10 +94,10 @@ void OnAppUpdate(VivernaState& app_state, DeltaTime<float, Seconds> dt) {
                 entities_.push_back(e);
                 return e;
             };
-            editor::EntityTab(world, renderables, selected_id,
+            editor::EntityTab(scene->world, renderables, selected_id,
                               entity_generator);
-            editor::AssetsTab(world, renderables, entity_generator);
-            editor::LightingTab(scene->GetDirectionLight());
+            editor::AssetsTab(scene->world, renderables, entity_generator);
+            editor::LightingTab(scene->direction_light);
             editor::CameraTab(camera_speed);
             editor::EndTabs();
         }
@@ -105,10 +107,6 @@ void OnAppUpdate(VivernaState& app_state, DeltaTime<float, Seconds> dt) {
 }
 
 Entity NewRenderable(World& world_, Mesh&& mesh) {
-    static TextureId diffuse =
-        LoadTextureFromColor(Color4f(0.7f, 0.7f, 0.7f, 1.0f));
-    static TextureId specular =
-        LoadTextureFromColor(Color4f(0.3f, 0.3f, 0.3f, 1.0f));
     Material mat;
     mat.textures[Material::DIFFUSE_INDEX] = diffuse;
     mat.textures[Material::SPECULAR_INDEX] = specular;

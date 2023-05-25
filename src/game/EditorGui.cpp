@@ -10,7 +10,6 @@
 #include <viverna/graphics/Mesh.hpp>
 #include <viverna/graphics/Window.hpp>
 #include <viverna/maths/MathUtils.hpp>
-#include <viverna/serialization/VivSerializer.hpp>
 
 #include <yaml-cpp/emitter.h>
 
@@ -205,7 +204,7 @@ void AssetsTab(verna::World& world,
     if (ImGui::Button("Load##scene") && last_selected_scene >= 0) {
         auto viv_name = dirs[last_selected_scene].string();
         auto& scene = verna::Scene::GetActive();
-        if (!verna::LoadViv(viv_name, scene, world, entities)) {
+        if (!scene.LoadFile(viv_name)) {
             VERNA_LOGE("Failed to load " + dirs[last_selected_scene].string());
         }
     }
@@ -241,11 +240,7 @@ bool RemoveButton(verna::World& world, verna::Entity entity) {
 void SerializeButton(verna::World& world,
                      const std::vector<verna::Entity>& entities) {
     if (ImGui::Button("Serialize")) {
-        YAML::Emitter emitter;
-        verna::Serialize(emitter, verna::Scene::GetActive(), world, entities);
-        VERNA_LOGI(emitter.c_str());
-        std::ofstream file("scene.viv");
-        file << "# viv 0.3\n" << emitter.c_str();
+        verna::Scene::GetActive().SaveFile("scene.viv");
     }
 }
 
@@ -272,7 +267,8 @@ void MaterialGUI(verna::World& world, verna::Entity entity) {
         if (!texture.IsValid())
             continue;
         label = "Texture #" + std::to_string(i) + ": ";
-        auto path = verna::GetTexturePath(texture);
+        auto path =
+            verna::Scene::GetActive().texture_manager.GetTexturePath(texture);
         label += path.empty() ? std::to_string(texture.id) : path.string();
 
         ImGui::TextUnformatted(label.c_str());
