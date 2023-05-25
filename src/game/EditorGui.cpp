@@ -28,7 +28,7 @@ namespace editor {
 
 static void RenameButton(verna::World& world, verna::Entity entity);
 static bool RemoveButton(verna::World& world, verna::Entity entity);
-static void SerializeButton(verna::World& world,
+static void SaveSceneButton(verna::World& world,
                             const std::vector<verna::Entity>& entities);
 static void TransformGUI(verna::World& world, verna::Entity entity);
 static void MaterialGUI(verna::World& world, verna::Entity entity);
@@ -113,7 +113,7 @@ void EntityTab(verna::World& world,
             selected_id = static_cast<int>(entities_size);
             entity_generator(world, entities);
         }
-        SerializeButton(world, entities);
+        SaveSceneButton(world, entities);
         // Material
         if (selected_id >= 0) {
             auto e = entities[selected_id];
@@ -237,9 +237,9 @@ bool RemoveButton(verna::World& world, verna::Entity entity) {
     return false;
 }
 
-void SerializeButton(verna::World& world,
+void SaveSceneButton(verna::World& world,
                      const std::vector<verna::Entity>& entities) {
-    if (ImGui::Button("Serialize")) {
+    if (ImGui::Button("Save")) {
         verna::Scene::GetActive().SaveFile("scene.viv");
     }
 }
