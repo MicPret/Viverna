@@ -1,4 +1,5 @@
 #include <game/gui/EditorGui.hpp>
+#include <game/NewCube.hpp>
 
 #include <viverna/core/Assets.hpp>
 #include <viverna/core/Input.hpp>
@@ -26,6 +27,7 @@
 
 namespace editor {
 
+static bool NewCubeButton(verna::World& world, verna::Entity& out_entity);
 static void RenameButton(verna::World& world, verna::Entity entity);
 static bool RemoveButton(verna::World& world, verna::Entity entity);
 static void SaveSceneButton(verna::World& world,
@@ -75,8 +77,7 @@ void EndTabs() {
 
 void EntityTab(verna::World& world,
                std::vector<verna::Entity>& entities,
-               int& selected_id,
-               NewEntityFunc entity_generator) {
+               int& selected_id) {
     if (ImGui::BeginTabItem("Entities")) {
         // Get entities' names
         std::vector<std::string> names;
@@ -109,9 +110,9 @@ void EntityTab(verna::World& world,
                 TransformGUI(world, e);
         }
         // New Entity button
-        if (ImGui::Button("New Entity")) {
-            selected_id = static_cast<int>(entities_size);
-            entity_generator(world, entities);
+        verna::Entity new_e;
+        if (NewCubeButton(world, new_e)) {
+            entities.push_back(new_e);
         }
         SaveSceneButton(world, entities);
         // Material
@@ -152,9 +153,7 @@ void CameraTab(float& camera_speed) {
     ImGui::EndTabItem();
 }
 
-void AssetsTab(verna::World& world,
-               std::vector<verna::Entity>& entities,
-               NewEntityFunc entity_generator) {
+void AssetsTab(verna::World& world, std::vector<verna::Entity>& entities) {
     if (!ImGui::BeginTabItem("Assets"))
         return;
     auto dirs = verna::GetAssetsInDirectory("meshes");
@@ -170,8 +169,9 @@ void AssetsTab(verna::World& world,
     if (ImGui::Button("Load##mesh") && last_selected_mesh >= 0) {
         auto meshes = verna::LoadMeshesOBJ(dirs[last_selected_mesh]);
         for (const verna::Mesh& m : meshes) {
-            verna::Entity e = entity_generator(world, entities);
+            verna::Entity e = NewCube(world);
             world.SetComponent(e, m);
+            entities.push_back(e);
         }
     }
     dirs = verna::GetAssetsInDirectory("shaders");
@@ -212,7 +212,15 @@ void AssetsTab(verna::World& world,
     ImGui::EndTabItem();
 }
 
-// local funcs
+// static functions
+
+bool NewCubeButton(verna::World& world, verna::Entity& out_entity) {
+    if (!ImGui::Button("New Cube"))
+        return false;
+    out_entity = NewCube(world);
+    return true;
+}
+
 void RenameButton(verna::World& world, verna::Entity entity) {
     static bool rename_pressed = false;
     if (ImGui::Button("Rename"))

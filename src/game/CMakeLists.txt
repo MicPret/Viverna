@@ -12,4 +12,5 @@ target_sources(${PROJECT_NAME} PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/CameraController.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/EditorGui.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/MeshRenderer.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/NewCube.cpp"
 )

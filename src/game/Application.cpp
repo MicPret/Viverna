@@ -1,5 +1,6 @@
 #include <game/core/Application.hpp>
 #include <game/CameraController.hpp>
+#include <game/NewCube.hpp>
 #include <game/systems/MeshRenderer.hpp>
 #include <game/gui/EditorGui.hpp>
 
@@ -14,8 +15,6 @@
 #include <vector>
 
 namespace verna {
-
-static verna::Entity NewRenderable(World& world_, Mesh&& mesh);
 
 static Scene* scene;
 static ShaderId shader;
@@ -38,8 +37,8 @@ void OnAppResume(VivernaState& app_state) {
     specular = scene->texture_manager.LoadTextureFromColor(
         Color4f(0.3f, 0.3f, 0.3f, 1.0f), {});
 
-    renderables.push_back(NewRenderable(
-        scene->world, verna::LoadPrimitiveMesh(PrimitiveMeshType::Cube)));
+    auto first_entity = editor::NewCube(scene->world);
+    renderables.push_back(first_entity);
     scene->world.AddSystem(Family::From<Mesh, Material, Transform, ShaderId>(),
                            editor::Render);
 }
@@ -86,17 +85,8 @@ void OnAppUpdate(VivernaState& app_state, DeltaTime<float, Seconds> dt) {
     editor::BeginGUI();
     if (editor::BeginWindow("Viverna")) {
         if (editor::BeginTabs()) {
-            auto entity_generator = [](World& world_,
-                                       std::vector<Entity>& entities_) {
-                Entity e = NewRenderable(
-                    world_,
-                    verna::LoadPrimitiveMesh(verna::PrimitiveMeshType::Cube));
-                entities_.push_back(e);
-                return e;
-            };
-            editor::EntityTab(scene->world, renderables, selected_id,
-                              entity_generator);
-            editor::AssetsTab(scene->world, renderables, entity_generator);
+            editor::EntityTab(scene->world, renderables, selected_id);
+            editor::AssetsTab(scene->world, renderables);
             editor::LightingTab(scene->direction_light);
             editor::CameraTab(camera_speed);
             editor::EndTabs();
@@ -104,19 +94,5 @@ void OnAppUpdate(VivernaState& app_state, DeltaTime<float, Seconds> dt) {
     }
     editor::EndWindow();
     editor::EndGUI();
-}
-
-Entity NewRenderable(World& world_, Mesh&& mesh) {
-    Material mat;
-    mat.textures[Material::DIFFUSE_INDEX] = diffuse;
-    mat.textures[Material::SPECULAR_INDEX] = specular;
-    mat.parameters[Material::SHININESS_INDEX] = 20.06f;
-    EntityName name;
-    name.str = "New entity";
-
-    Entity e =
-        world_.NewEntity<Mesh, Material, Transform, ShaderId, EntityName>();
-    world_.SetComponents(e, mesh, mat, Transform(), shader, name);
-    return e;
 }
 }  // namespace verna
