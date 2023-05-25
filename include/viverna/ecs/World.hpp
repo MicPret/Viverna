@@ -14,7 +14,10 @@ class World {
    public:
     bool HasComponent(Entity e, TypeId comp_type) const;
     bool Matches(Entity e, const Family& family) const;
-    std::vector<Entity> GetEntitiesWithComponent(TypeId comp_type) const;
+    [[nodiscard]] std::vector<Entity> GetEntitiesWithComponent(
+        TypeId comp_type) const;
+    [[nodiscard]] std::vector<Entity> GetEntitiesInFamily(
+        const Family& family) const;
     void AddSystem(const System& system);
     SystemId AddSystem(const Family& family, SystemUpdate update_func);
     void RemoveSystem(SystemId system_id);
@@ -36,9 +39,9 @@ class World {
     template <typename... Comps>
     void SetComponents(Entity e, const Comps&... comps);
     template <typename C>
-    bool HasComponent(Entity e) const;
+    [[nodiscard]] bool HasComponent(Entity e) const;
     template <typename C>
-    std::vector<Entity> GetEntitiesWithComponent() const;
+    [[nodiscard]] std::vector<Entity> GetEntitiesWithComponent() const;
 
    private:
     SparseSet<TypeId> component_types;

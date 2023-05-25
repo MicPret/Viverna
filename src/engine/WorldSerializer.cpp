@@ -1,29 +1,45 @@
 #include <viverna/serialization/WorldSerializer.hpp>
 #include <viverna/core/Debug.hpp>
 #include <viverna/ecs/EntityName.hpp>
+#include <viverna/ecs/Family.hpp>
 #include <viverna/graphics/Mesh.hpp>
 #include <viverna/serialization/MaterialSerializer.hpp>
 #include <viverna/serialization/ShaderSerializer.hpp>
 #include <viverna/serialization/TransformSerializer.hpp>
 
+#include <algorithm>
+#include <vector>
+#include <utility>
+
 namespace verna {
-YAML::Emitter& SerializeEntities(YAML::Emitter& emitter,
-                                 const World& world,
-                                 const std::vector<Entity>& entities) {
+
+static constexpr bool EntityComp(Entity a, Entity b) {
+    return a.id < b.id;
+}
+
+YAML::Emitter& SerializeWorld(YAML::Emitter& emitter,
+                              ShaderManager& shader_man,
+                              TextureManager& texture_man,
+                              const World& world) {
+    auto family =
+        Family::From<EntityName, Material, Mesh, ShaderId, Transform>();
+    auto intersection = world.GetEntitiesInFamily(family);
+
     EntityName name;
-    Material material;
+    MaterialSerializer mat_serializer(texture_man);
     Mesh mesh;
-    ShaderId shader;
+    ShaderSerializer shader_serializer(shader_man);
     Transform transform;
     emitter << YAML::BeginMap;
-    for (size_t i = 0; i < entities.size(); i++) {
-        world.GetComponents(entities[i], name, material, mesh, shader,
-                            transform);
+    for (size_t i = 0; i < intersection.size(); i++) {
+        world.GetComponents(intersection[i], name, mat_serializer.material,
+                            mesh, shader_serializer.shader, transform);
+
         emitter << YAML::Key << name.str;
         emitter << YAML::Value << YAML::BeginMap;
-        emitter << YAML::Key << "material" << YAML::Value << material;
+        emitter << YAML::Key << "material" << YAML::Value << mat_serializer;
         emitter << YAML::Key << "mesh" << YAML::Value << GetMeshName(mesh.id);
-        emitter << YAML::Key << "shader" << YAML::Value << shader;
+        emitter << YAML::Key << "shader" << YAML::Value << shader_serializer;
         emitter << YAML::Key << "transform" << YAML::Value << transform;
         emitter << YAML::EndMap;
     }
@@ -31,18 +47,19 @@ YAML::Emitter& SerializeEntities(YAML::Emitter& emitter,
     return emitter;
 }
 
-static void FreeResources(World& world);
-
-bool DeserializeEntities(const YAML::Node& node,
-                         World& out_world,
-                         std::vector<Entity>& out_entities) {
+bool DeserializeWorld(const YAML::Node& node,
+                      ShaderManager& shader_man,
+                      TextureManager& texture_man,
+                      World& out_world,
+                      std::vector<Entity>& out_entities) {
     if (!node.IsMap()) {
         VERNA_LOGE("Entities node is not a map!");
         return false;
     }
-    FreeResources(out_world);
     out_world.ClearData();
     out_entities.clear();
+    MaterialSerializer mat_serializer(texture_man);
+    ShaderSerializer shader_serializer(shader_man);
     for (YAML::const_iterator it = node.begin(); it != node.end(); ++it) {
         EntityName name;
         name.str = it->first.as<std::string>(std::string());
@@ -72,7 +89,13 @@ bool DeserializeEntities(const YAML::Node& node,
             VERNA_LOGE("Transform node not found!");
             return false;
         }
-        Material material = material_node.as<Material>(Material());
+        bool success;
+        success = YAML::convert<MaterialSerializer>::decode(material_node,
+                                                            mat_serializer);
+        if (!success) {
+            VERNA_LOGE("Failed to parse Material node!");
+            return false;
+        }
         std::string mesh_name = mesh_node.as<std::string>(std::string());
         Mesh mesh;  // TODO optimize
         if (mesh_name == "CUBE")
@@ -100,30 +123,23 @@ bool DeserializeEntities(const YAML::Node& node,
             VERNA_LOGE("Failed to deserialize the following mesh: "
                        + mesh_name);
         }
-        ShaderId shader = shader_node.as<ShaderId>(ShaderId());
+        success = YAML::convert<ShaderSerializer>::decode(shader_node,
+                                                          shader_serializer);
+        if (!success) {
+            VERNA_LOGE("Failed to parse Shader node!");
+            return false;
+        };
         Transform transform = transform_node.as<Transform>(Transform());
 
         Entity e =
             out_world
                 .NewEntity<EntityName, Material, Mesh, ShaderId, Transform>();
-        out_world.SetComponents(e, name, material, mesh, shader, transform);
+        out_world.SetComponents(e, name, mat_serializer.material, mesh,
+                                shader_serializer.shader, transform);
         out_entities.push_back(e);
     }
 
     return true;
 }
 
-void FreeResources(World& world) {
-    auto entities = world.GetEntitiesWithComponent<Material>();
-    for (Entity e : entities) {
-        auto material = world.GetComponent<Material>(e);
-        for (TextureId t : material.textures)
-            FreeTexture(t);
-    }
-    entities = world.GetEntitiesWithComponent<ShaderId>();
-    for (Entity e : entities) {
-        auto shader = world.GetComponent<ShaderId>(e);
-        FreeShader(shader);
-    }
-}
 }  // namespace verna

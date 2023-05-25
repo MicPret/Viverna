@@ -1,28 +1,29 @@
 #ifndef VERNA_SCENE_HPP
 #define VERNA_SCENE_HPP
 
+#include <viverna/ecs/World.hpp>
 #include <viverna/graphics/Camera.hpp>
+#include <viverna/graphics/TextureManager.hpp>
+#include <viverna/graphics/ShaderManager.hpp>
 #include <viverna/graphics/DirectionLight.hpp>
 
+#include <filesystem>
 #include <vector>
 
 namespace verna {
-class Scene {
+struct Scene {
    public:
-    Scene() = default;
-    void Setup();
-    static void SetActive(Scene& scene);
-    static Scene& GetActive();
-    constexpr const Camera& GetCamera() const { return camera; }
-    constexpr Camera& GetCamera() { return camera; }
-    constexpr const DirectionLight& GetDirectionLight() const {
-        return dir_light;
-    }
-    constexpr DirectionLight& GetDirectionLight() { return dir_light; }
-
-   private:
     Camera camera;
-    DirectionLight dir_light;
+    DirectionLight direction_light;
+    TextureManager texture_manager;
+    ShaderManager shader_manager;
+    World world;
+
+    bool LoadFile(const std::filesystem::path& scene_file);
+    bool LoadFile(const std::filesystem::path& scene_file,
+                  std::vector<Entity>& out_entities);
+    void ReleaseResources();
+    static Scene& GetActive();
 };
 }  // namespace verna
 

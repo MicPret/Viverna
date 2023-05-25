@@ -12,6 +12,10 @@ size_t Family::Size() const {
     return types.size();
 }
 
+bool Family::Empty() const {
+    return Size() == 0;
+}
+
 bool Family::Contains(TypeId type) const {
     for (size_t i = 0; i < types.size(); i++)
         if (type == types[i])

@@ -10,6 +10,7 @@ class Family {
    public:
     explicit Family(std::initializer_list<TypeId> types_);
     size_t Size() const;
+    bool Empty() const;
     bool Contains(TypeId type) const;
     bool operator==(const Family& other) const;
     auto begin() { return types.begin(); }
