@@ -204,7 +204,7 @@ void AssetsTab(verna::World& world,
     if (ImGui::Button("Load##scene") && last_selected_scene >= 0) {
         auto viv_name = dirs[last_selected_scene].string();
         auto& scene = verna::Scene::GetActive();
-        if (!scene.LoadFile(viv_name)) {
+        if (!scene.LoadFile(viv_name, entities)) {
             VERNA_LOGE("Failed to load " + dirs[last_selected_scene].string());
         }
     }
