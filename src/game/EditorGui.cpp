@@ -30,9 +30,9 @@ namespace editor {
 static bool NewCubeButton(verna::World& world, verna::Entity& out_entity);
 static void RenameButton(verna::World& world, verna::Entity entity);
 static bool RemoveButton(verna::World& world, verna::Entity entity);
-static void SaveSceneButton(verna::World& world,
-                            const std::vector<verna::Entity>& entities);
+static void SaveSceneButton(verna::Scene& scene);
 static void TransformGUI(verna::World& world, verna::Entity entity);
+static void TransformGUI(verna::Transform& transform);
 static void MaterialGUI(verna::World& world, verna::Entity entity);
 
 void InitGUI() {
@@ -114,7 +114,7 @@ void EntityTab(verna::World& world,
         if (NewCubeButton(world, new_e)) {
             entities.push_back(new_e);
         }
-        SaveSceneButton(world, entities);
+        SaveSceneButton(verna::Scene::GetActive());
         // Material
         if (selected_id >= 0) {
             auto e = entities[selected_id];
@@ -144,12 +144,28 @@ void LightingTab(verna::DirectionLight& dirlight) {
 }
 
 void CameraTab(float& camera_speed) {
+    constexpr float speed_min = 1.0f;
+    constexpr float speed_max = 20.0f;
+    verna::KeyListener up(verna::Key::Up);
+    verna::KeyListener down(verna::Key::Down);
+    if (up.Pressed())
+        camera_speed = std::min(camera_speed + 0.1f, speed_max);
+    if (down.Pressed())
+        camera_speed = std::max(camera_speed - 0.1f, speed_min);
     if (!ImGui::BeginTabItem("Camera"))
         return;
     verna::KeyListener space(verna::Key::Space);
     bool space_pressed = space.Pressed();
     ImGui::Checkbox("Press space to enable camera rotation", &space_pressed);
-    ImGui::SliderFloat("Camera speed", &camera_speed, 1.0f, 10.0f);
+    ImGui::SliderFloat("Camera speed", &camera_speed, speed_min, speed_max);
+    auto& cam = verna::Scene::GetActive().camera;
+    ImGui::DragFloat3("Position", &cam.position.x, 0.01f, -100.0f, 100.0f);
+    if (ImGui::DragFloat4("Rotation", &cam.rotation.x, 0.01f, -1.0f, 1.0f)) {
+        verna::Vec4f tmp(cam.rotation.x, cam.rotation.y, cam.rotation.z,
+                         cam.rotation.w);
+        tmp = tmp.Normalized();
+        cam.rotation = verna::Quaternion(tmp.x, tmp.y, tmp.z, tmp.w);
+    }
     ImGui::EndTabItem();
 }
 
@@ -245,15 +261,19 @@ bool RemoveButton(verna::World& world, verna::Entity entity) {
     return false;
 }
 
-void SaveSceneButton(verna::World& world,
-                     const std::vector<verna::Entity>& entities) {
+void SaveSceneButton(verna::Scene& scene) {
     if (ImGui::Button("Save")) {
-        verna::Scene::GetActive().SaveFile("scene.viv");
+        scene.SaveFile("scene.viv");
     }
 }
 
 void TransformGUI(verna::World& world, verna::Entity entity) {
     auto transform = world.GetComponent<verna::Transform>(entity);
+    TransformGUI(transform);
+    world.SetComponent(entity, transform);
+}
+
+void TransformGUI(verna::Transform& transform) {
     ImGui::DragFloat3("Position", &transform.position.x, 0.01f, -100.0f,
                       100.0f);
     ImGui::DragFloat3("Scale", &transform.scale.x, 0.01f, 0.01f, 100.0f);
@@ -262,7 +282,6 @@ void TransformGUI(verna::World& world, verna::Entity entity) {
                      transform.rotation.z, transform.rotation.w);
     tmp = tmp.Normalized();
     transform.rotation = verna::Quaternion(tmp.x, tmp.y, tmp.z, tmp.w);
-    world.SetComponent(entity, transform);
 }
 
 void MaterialGUI(verna::World& world, verna::Entity entity) {
