@@ -30,6 +30,9 @@ namespace editor {
 static bool NewCubeButton(verna::World& world, verna::Entity& out_entity);
 static void RenameButton(verna::World& world, verna::Entity entity);
 static bool RemoveButton(verna::World& world, verna::Entity entity);
+static bool DuplicateButton(verna::World& world,
+                            verna::Entity entity,
+                            verna::Entity& out_entity);
 static void SaveSceneButton(verna::Scene& scene);
 static void TransformGUI(verna::World& world, verna::Entity entity);
 static void TransformGUI(verna::Transform& transform);
@@ -78,8 +81,10 @@ void EndTabs() {
 void EntityTab(verna::World& world,
                std::vector<verna::Entity>& entities,
                int& selected_id) {
-    if (!ImGui::BeginTabItem("Entities"))
+    if (!ImGui::BeginTabItem("Entities")) {
+        selected_id = -1;
         return;
+    }
     // Get entities' names
     std::vector<std::string> names;
     std::vector<const char*> labels;
@@ -106,7 +111,12 @@ void EntityTab(verna::World& world,
                 }
             }
             selected_id = -1;
-        } else
+        }
+        verna::Entity new_e;
+        ImGui::SameLine();
+        if (DuplicateButton(world, e, new_e))
+            entities.push_back(new_e);
+        else
             TransformGUI(world, e);
     }
     // New Entity button
@@ -253,11 +263,30 @@ void RenameButton(verna::World& world, verna::Entity entity) {
 }
 
 bool RemoveButton(verna::World& world, verna::Entity entity) {
-    if (ImGui::Button("Remove")) {
-        world.RemoveEntity(entity);
-        return true;
-    }
-    return false;
+    if (!ImGui::Button("Remove"))
+        return false;
+    world.RemoveEntity(entity);
+    return true;
+}
+
+bool DuplicateButton(verna::World& world,
+                     verna::Entity entity,
+                     verna::Entity& out_entity) {
+    if (!ImGui::Button("Duplicate"))
+        return false;
+    verna::EntityName name;
+    verna::Material mat;
+    verna::Mesh mesh;
+    verna::ShaderId shader;
+    verna::Transform transform;
+
+    world.GetComponents(entity, name, mat, mesh, shader, transform);
+
+    out_entity =
+        world.NewEntity<verna::EntityName, verna::Material, verna::Mesh,
+                        verna::ShaderId, verna::Transform>();
+    world.SetComponents(out_entity, name, mat, mesh, shader, transform);
+    return true;
 }
 
 void SaveSceneButton(verna::Scene& scene) {
