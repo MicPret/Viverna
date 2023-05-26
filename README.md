@@ -44,6 +44,7 @@ To use Viverna, you'll need the following:
 Remember you need OpenGL 4.6 on desktop and OpenGL ES 3.2 on Android and have fun!
 
 ![Screenshot of Snake demo](docs/img/screenshot_snake.png "This screenshot is from the demo on branch demo/snake")
+![Screenshot of Editor demo](docs/img/screenshot_editor.png "This screenshot is from the demo on branch demo/editor (does not include assets)")
 
 ---
 
@@ -54,3 +55,4 @@ This project depends on the following libraries:
 - [GLFW](https://github.com/glfw/glfw)
 - [glad2](https://github.com/Dav1dde/glad)
 - [stb_image](https://github.com/nothings/stb)
+- [Dear ImGui](https://github.com/ocornut/imgui "Used on demo/editor")
