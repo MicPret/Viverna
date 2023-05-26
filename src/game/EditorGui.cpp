@@ -78,50 +78,49 @@ void EndTabs() {
 void EntityTab(verna::World& world,
                std::vector<verna::Entity>& entities,
                int& selected_id) {
-    if (ImGui::BeginTabItem("Entities")) {
-        // Get entities' names
-        std::vector<std::string> names;
-        std::vector<const char*> labels;
-        auto entities_size = entities.size();
-        names.resize(entities_size);
-        labels.resize(entities_size);
-        for (size_t i = 0; i < entities_size; i++) {
-            names[i] = world.GetComponent<verna::EntityName>(entities[i]).str;
-            labels[i] = names[i].c_str();
-        }
-        // Entity list
-        ImGui::ListBox("##entities", &selected_id, labels.data(),
-                       labels.size());
-        // Rename + Transform
-        if (selected_id >= 0) {
-            ImGui::SameLine();
-            auto e = entities[selected_id];
-            RenameButton(world, e);
-            ImGui::SameLine();
-            if (RemoveButton(world, e)) {
-                for (size_t i = 0; i < entities.size(); i++) {
-                    if (entities[i] == e) {
-                        entities.erase(entities.begin() + i);
-                        break;
-                    }
-                }
-                selected_id = -1;
-            } else
-                TransformGUI(world, e);
-        }
-        // New Entity button
-        verna::Entity new_e;
-        if (NewCubeButton(world, new_e)) {
-            entities.push_back(new_e);
-        }
-        SaveSceneButton(verna::Scene::GetActive());
-        // Material
-        if (selected_id >= 0) {
-            auto e = entities[selected_id];
-            MaterialGUI(world, e);
-        }
-        ImGui::EndTabItem();
+    if (!ImGui::BeginTabItem("Entities"))
+        return;
+    // Get entities' names
+    std::vector<std::string> names;
+    std::vector<const char*> labels;
+    auto entities_size = entities.size();
+    names.resize(entities_size);
+    labels.resize(entities_size);
+    for (size_t i = 0; i < entities_size; i++) {
+        names[i] = world.GetComponent<verna::EntityName>(entities[i]).str;
+        labels[i] = names[i].c_str();
     }
+    // Entity list
+    ImGui::ListBox("##entities", &selected_id, labels.data(), labels.size());
+    // Rename + Transform
+    if (selected_id >= 0) {
+        ImGui::SameLine();
+        auto e = entities[selected_id];
+        RenameButton(world, e);
+        ImGui::SameLine();
+        if (RemoveButton(world, e)) {
+            for (size_t i = 0; i < entities.size(); i++) {
+                if (entities[i] == e) {
+                    entities.erase(entities.begin() + i);
+                    break;
+                }
+            }
+            selected_id = -1;
+        } else
+            TransformGUI(world, e);
+    }
+    // New Entity button
+    verna::Entity new_e;
+    if (NewCubeButton(world, new_e)) {
+        entities.push_back(new_e);
+    }
+    SaveSceneButton(verna::Scene::GetActive());
+    // Material
+    if (selected_id >= 0) {
+        auto e = entities[selected_id];
+        MaterialGUI(world, e);
+    }
+    ImGui::EndTabItem();
 }
 
 void LightingTab(verna::DirectionLight& dirlight) {
@@ -178,8 +177,8 @@ void AssetsTab(verna::World& world, std::vector<verna::Entity>& entities) {
     bool is_selected;
     for (size_t i = 0; i < dirs.size(); i++) {
         is_selected = (last_selected_mesh == static_cast<int>(i));
-        const char* label = dirs[i].string().c_str();
-        if (ImGui::Selectable(label, is_selected))
+        auto label = dirs[i].string();
+        if (ImGui::Selectable(label.c_str(), is_selected))
             last_selected_mesh = static_cast<int>(i);
     }
     if (ImGui::Button("Load##mesh") && last_selected_mesh >= 0) {
@@ -195,8 +194,8 @@ void AssetsTab(verna::World& world, std::vector<verna::Entity>& entities) {
     static int last_selected_shader = -1;
     for (size_t i = 0; i < dirs.size(); i++) {
         is_selected = (last_selected_shader == static_cast<int>(i));
-        const char* label = dirs[i].string().c_str();
-        if (ImGui::Selectable(label, is_selected))
+        auto label = dirs[i].string();
+        if (ImGui::Selectable(label.c_str(), is_selected))
             last_selected_shader = static_cast<int>(i);
     }
     dirs = verna::GetAssetsInDirectory("textures");
@@ -204,8 +203,8 @@ void AssetsTab(verna::World& world, std::vector<verna::Entity>& entities) {
     static int last_selected_texture = -1;
     for (size_t i = 0; i < dirs.size(); i++) {
         is_selected = (last_selected_texture == static_cast<int>(i));
-        const char* label = dirs[i].string().c_str();
-        if (ImGui::Selectable(label, is_selected))
+        auto label = dirs[i].string();
+        if (ImGui::Selectable(label.c_str(), is_selected))
             last_selected_texture = static_cast<int>(i);
     }
     dirs = verna::GetAssetsInDirectory("scenes");
@@ -213,8 +212,8 @@ void AssetsTab(verna::World& world, std::vector<verna::Entity>& entities) {
     static int last_selected_scene = -1;
     for (size_t i = 0; i < dirs.size(); i++) {
         is_selected = (last_selected_scene == static_cast<int>(i));
-        const char* label = dirs[i].string().c_str();
-        if (ImGui::Selectable(label, is_selected))
+        auto label = dirs[i].string();
+        if (ImGui::Selectable(label.c_str(), is_selected))
             last_selected_scene = static_cast<int>(i);
     }
     if (ImGui::Button("Load##scene") && last_selected_scene >= 0) {
@@ -287,9 +286,10 @@ void TransformGUI(verna::Transform& transform) {
 void MaterialGUI(verna::World& world, verna::Entity entity) {
     auto material = world.GetComponent<verna::Material>(entity);
 
-    std::string s;
+    static int last_selected_texture = -1;
     std::string label;
     for (size_t i = 0; i < material.textures.size(); i++) {
+        int mat_index = static_cast<int>(i);
         auto texture = material.textures[i];
         if (!texture.IsValid())
             continue;
@@ -298,10 +298,47 @@ void MaterialGUI(verna::World& world, verna::Entity entity) {
             verna::Scene::GetActive().texture_manager.GetTexturePath(texture);
         label += path.empty() ? std::to_string(texture.id) : path.string();
 
-        ImGui::TextUnformatted(label.c_str());
+        constexpr float tex_size = 64.0f;
+        static float selectable_w = ImGui::GetWindowWidth();
+        bool is_selected = (last_selected_texture == mat_index);
+        if (ImGui::Selectable(label.c_str(), is_selected,
+                              ImGuiSelectableFlags_None,
+                              ImVec2(selectable_w, 0.0f))) {
+            last_selected_texture = mat_index;
+            is_selected = true;
+        }
+        // ImGui::TextUnformatted(label.c_str());
         ImGui::SameLine();
         ImGui::Image(reinterpret_cast<ImTextureID>(texture.id),
-                     ImVec2(64.0f, 64.0f));
+                     ImVec2(tex_size, tex_size));
+        if (is_selected) {
+            ImGui::SameLine();
+            auto dirs = verna::GetAssetsInDirectory("textures");
+            static int selected_new_texture = -1;
+            for (size_t j = 0; j < dirs.size(); j++) {
+                int new_index = static_cast<int>(j);
+                bool new_selected = (selected_new_texture == new_index);
+                label = dirs[j].string();
+                auto lab_size = ImGui::CalcTextSize(label.c_str());
+                if (ImGui::Selectable(label.c_str(), new_selected,
+                                      ImGuiSelectableFlags_None, lab_size)) {
+                    selected_new_texture = new_index;
+                    new_selected = true;
+                }
+                if (new_selected) {
+                    ImGui::SameLine();
+                    if (ImGui::Button("Load##texture")) {
+                        auto& scene = verna::Scene::GetActive();
+                        verna::TextureLoadConfig config(
+                            verna::TextureLoadConfig::KeepInCpuMemory);
+                        material.textures[i] =
+                            scene.texture_manager.LoadTexture(dirs[j], config);
+                        world.SetComponent(entity, material);
+                        break;
+                    }
+                }
+            }
+        }
     }
     bool modified = false;
     for (size_t i = 0; i < material.parameters.size(); i++) {
