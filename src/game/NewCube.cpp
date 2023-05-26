@@ -12,14 +12,14 @@ static verna::Material DefaultMaterial();
 static verna::ShaderId DefaultShader();
 
 verna::Entity NewCube(verna::World& world) {
-    verna::Material mat = DefaultMaterial();
     verna::EntityName name("New entity");
+    verna::Material mat = DefaultMaterial();
     verna::Mesh cube = verna::LoadPrimitiveMesh(verna::PrimitiveMeshType::Cube);
     verna::ShaderId shader = DefaultShader();
 
-    auto e = world.NewEntity<verna::EntityName, verna::Mesh, verna::Material,
-                             verna::Transform, verna::ShaderId>();
-    world.SetComponents(e, name, cube, mat, verna::Transform(), shader);
+    auto e = world.NewEntity<verna::EntityName, verna::Material, verna::Mesh,
+                             verna::ShaderId, verna::Transform>();
+    world.SetComponents(e, name, mat, cube, shader, verna::Transform());
     return e;
 }
 
