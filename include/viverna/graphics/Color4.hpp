@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <type_traits>
 
+namespace verna {
 template <typename T>
 struct Color4 {
     using channel_t = T;
@@ -28,5 +29,6 @@ constexpr bool operator==(Color4u8 a, Color4u8 b) {
     return (a.red == b.red) && (a.green == b.green) && (a.blue == b.blue)
            && (a.alpha == b.alpha);
 }
+}  // namespace verna
 
 #endif
