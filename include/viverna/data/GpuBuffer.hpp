@@ -25,7 +25,7 @@ class GpuBuffer {
     void SetContent(const void* data, size_t bytes);
     // No need to call it before other GpuBuffer methods
     void Bind();
-    constexpr bool Bound() const { return id == bound_id; }
+    bool Bound() const;
 
    private:
     id_type id;

@@ -118,4 +118,8 @@ void GpuBuffer::Bind() {
     bound_id = id;
 }
 
+bool GpuBuffer::Bound() const {
+    return id == bound_id;
+}
+
 }  // namespace verna
