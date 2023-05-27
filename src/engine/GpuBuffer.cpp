@@ -48,13 +48,13 @@ bool GpuBuffer::Initialize(buf_type buffer_type, size_t init_capacity) {
     glGenBuffers(1, &id);
     if (id == 0)
         return false;
+    type = buffer_type;
     Bind();
     glBufferData(buffer_type, init_capacity, nullptr, GL_DYNAMIC_DRAW);
     auto err = glGetError();
     switch (err) {
         case GL_NO_ERROR:
             capacity = init_capacity;
-            type = buffer_type;
             break;
         case GL_INVALID_ENUM:
             VERNA_LOGE("Failed to initialize GpuBuffer: wrong buffer_type!");
