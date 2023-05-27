@@ -33,6 +33,7 @@ GpuBuffer::GpuBuffer(GpuBuffer&& other) :
 GpuBuffer& GpuBuffer::operator=(GpuBuffer&& other) {
     Terminate();
     new (this) GpuBuffer(std::move(other));
+    return *this;
 }
 
 GpuBuffer::~GpuBuffer() {
