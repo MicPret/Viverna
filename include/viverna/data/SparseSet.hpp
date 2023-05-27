@@ -34,7 +34,7 @@ void SparseSet<K>::Add(K k) {
 
 template <typename K>
 bool SparseSet<K>::Contains(K k) const {
-    if (sparse.size() < k)
+    if (k >= sparse.size())
         return false;
     auto i = sparse[k];
     return i < Size() && dense[i] == k;
@@ -42,7 +42,7 @@ bool SparseSet<K>::Contains(K k) const {
 
 template <typename K>
 bool SparseSet<K>::GetIndex(K k, index_t& out_index) const {
-    if (sparse.size() < k)
+    if (k >= sparse.size())
         return false;
     out_index = sparse[k];
     return out_index < Size() && dense[out_index] == k;

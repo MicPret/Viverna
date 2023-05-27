@@ -1,14 +1,26 @@
 #include <viverna/ecs/World.hpp>
 
+#include <algorithm>
+#include <iterator>
 #include <set>
 
 namespace verna {
 
-void World::Clear() {
+void World::ClearData() {
     for (auto& b : buffers)
         b->Clear();
-    systems.clear();
+    for (auto& s : systems)
+        s.Notify(EntityEvent(Entity(), EntityEvent::CLEAR_DATA));
     next_id = 0;
+}
+
+void World::ClearSystems() {
+    systems.clear();
+}
+
+void World::ClearAll() {
+    ClearData();
+    ClearSystems();
 }
 
 void World::AddSystem(const System& system) {
@@ -19,9 +31,9 @@ void World::AddSystem(const System& system) {
         uint32_t index;
         if (!component_types.GetIndex(type, index))
             return;
-        const auto& entity_ids = buffers[index]->GetEntityIds();
-        for (size_t i = 0; i < entity_ids.size(); i++)
-            set.insert(Entity(entity_ids[i]));
+        auto entities = buffers[index]->GetEntities();
+        for (size_t i = 0; i < entities.size(); i++)
+            set.insert(entities[i]);
     }
     systems.back().ReassignEntities(std::vector(set.begin(), set.end()));
 }
@@ -33,9 +45,9 @@ SystemId World::AddSystem(const Family& family, SystemUpdate update_func) {
         uint32_t index;
         if (!component_types.GetIndex(type, index))
             return System::InvalidId();
-        const auto& entity_ids = buffers[index]->GetEntityIds();
-        for (size_t i = 0; i < entity_ids.size(); i++)
-            set.insert(Entity(entity_ids[i]));
+        auto entities = buffers[index]->GetEntities();
+        for (size_t i = 0; i < entities.size(); i++)
+            set.insert(entities[i]);
     }
     system.ReassignEntities(std::vector(set.begin(), set.end()));
     return system.Id();
@@ -72,6 +84,37 @@ bool World::Matches(Entity e, const Family& family) const {
 
 DeltaTime<float, Seconds> World::GetDeltaTime() const {
     return delta_time;
+}
+
+void World::RemoveEntity(Entity e) {
+    EntityEvent event(e, EntityEvent::REMOVE);
+    for (System& s : systems)
+        s.Notify(event);
+}
+
+std::vector<Entity> World::GetEntitiesWithComponent(TypeId comp_type) const {
+    SparseSet<TypeId>::index_t i;
+    if (component_types.GetIndex(comp_type, i)) {
+        const auto& buffer = buffers[i];
+        return buffer->GetEntities();
+    }
+    return {};
+}
+
+std::vector<Entity> World::GetEntitiesInFamily(const Family& family) const {
+    if (family.Empty())
+        return {};
+    constexpr auto entity_comp = [](Entity a, Entity b) { return a.id < b.id; };
+    auto result = GetEntitiesWithComponent(*family.begin());
+    for (auto it = family.begin() + 1; it != family.end(); ++it) {
+        auto entities = GetEntitiesWithComponent(*it);
+        std::vector<Entity> temp;
+        std::set_intersection(result.begin(), result.end(), entities.begin(),
+                              entities.end(), std::back_inserter(temp),
+                              entity_comp);
+        result = std::move(temp);
+    }
+    return result;
 }
 
 }  // namespace verna

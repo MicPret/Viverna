@@ -50,7 +50,7 @@ file(COPY
         "${CMAKE_CURRENT_SOURCE_DIR}/assets"
     DESTINATION
         ${VIVERNA_ASSETS_DESTINATION})
-target_compile_options(${VIVERNA_TARGET_NAME} PRIVATE "-Wall;-fno-exceptions;-fno-rtti")
+target_compile_options(${VIVERNA_TARGET_NAME} PRIVATE "-Wall;-fno-rtti")
 set_target_properties(${VIVERNA_TARGET_NAME} PROPERTIES
     CXX_STANDARD 17
     CXX_STANDARD_REQUIRED ON
@@ -73,6 +73,7 @@ add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src")
 # link
 target_link_libraries(${VIVERNA_TARGET_NAME} PUBLIC
     stb
+    yaml-cpp
 )
 if(CMAKE_SYSTEM_NAME STREQUAL Android)
     target_link_libraries(${VIVERNA_TARGET_NAME} PUBLIC

@@ -1,6 +1,7 @@
 #include <viverna/graphics/Mesh.hpp>
 #include <viverna/core/Assets.hpp>
 #include <viverna/core/Debug.hpp>
+#include <viverna/data/SparseSet.hpp>
 #include <viverna/maths/Quaternion.hpp>
 
 #include <sstream>
@@ -8,14 +9,16 @@
 
 namespace verna {
 
+static Mesh::id_type last_id = 0;
+static SparseSet<Mesh::id_type> mesh_mapper;
+static std::vector<std::string> mesh_names;
+
 static Vec3f CalculateNormal(const Vec3f& a, const Vec3f& b, const Vec3f& c);
 void Mesh::RecalculateNormals() {
     if (vertices.size() < 3 || indices.size() < 3) {
         VERNA_LOGE("RecalculateNormals failed: there is no triangle!");
         return;
     }
-
-    // TODO test!!!
     for (auto& v : vertices)
         v.normal = Vec3f();
     size_t max_i = indices.size() - 2;
@@ -35,6 +38,12 @@ void Mesh::RecalculateNormals() {
 
 void Mesh::RecalculateBounds() {
     bounds.Recalculate(*this);
+}
+
+std::string GetMeshName(Mesh::id_type mesh_id) {
+    SparseSet<Mesh::id_type>::index_t index;
+    return mesh_mapper.GetIndex(mesh_id, index) ? mesh_names[index]
+                                                : std::string();
 }
 
 // OBJ
@@ -67,6 +76,7 @@ std::vector<Mesh> LoadMeshesOBJ(const std::filesystem::path& mesh_path) {
     std::vector<Vec2f> tex_coords;
     std::vector<Vec3f> normals;
     std::vector<ObjTri> tris;
+    std::string group_name;
     positions.reserve(8);
     tex_coords.reserve(8);
     normals.reserve(8);
@@ -75,7 +85,7 @@ std::vector<Mesh> LoadMeshesOBJ(const std::filesystem::path& mesh_path) {
         std::stringstream linestream(line);
         std::string token;
         linestream >> token;
-        if (token == "#")
+        if (token.empty() || token == "#" || token == " ")
             continue;
         if (token == "v") {
             Vec3f v;
@@ -121,13 +131,21 @@ std::vector<Mesh> LoadMeshesOBJ(const std::filesystem::path& mesh_path) {
             }
         } else if (token == "o" || token == "g") {
             // object/group
-            if (positions.empty())
-                continue;
-            result.push_back(MakeMesh(positions, tex_coords, normals, tris));
-            positions.clear();
-            tex_coords.clear();
-            normals.clear();
-            tris.clear();
+            if (!tris.empty()) {
+                Mesh mesh = MakeMesh(positions, tex_coords, normals, tris);
+                mesh_mapper.Add(mesh.id);
+                std::string name = mesh_path.string();
+                if (!group_name.empty())
+                    name += "##" + group_name;
+                mesh_names.push_back(std::move(name));
+                result.push_back(std::move(mesh));
+                tris.clear();
+            }
+            group_name.clear();
+            while (linestream >> token)
+                group_name += " " + token;
+            if (!group_name.empty())
+                group_name = group_name.substr(1);
         } else if (token == "s") {
             // smooth shading
             linestream >> token;
@@ -137,16 +155,20 @@ std::vector<Mesh> LoadMeshesOBJ(const std::filesystem::path& mesh_path) {
         } else {
             VERNA_LOGE("Unrecognized token while parsing " + path.string()
                        + ": " + token);
-            return {};
+            // return {};
         }
     }
-    if (!positions.empty()) {
-        result.push_back(MakeMesh(positions, tex_coords, normals, tris));
-        positions.clear();
-        tex_coords.clear();
-        normals.clear();
-        tris.clear();
+    if (!tris.empty()) {
+        Mesh mesh = MakeMesh(positions, tex_coords, normals, tris);
+        mesh_mapper.Add(mesh.id);
+        std::string name = mesh_path.string();
+        if (!group_name.empty())
+            name += "##" + group_name;
+        mesh_names.push_back(std::move(name));
+        result.push_back(std::move(mesh));
     }
+    for (Mesh& m : result)
+        m.RecalculateBounds();
 
     return result;
 }
@@ -156,6 +178,9 @@ Mesh MakeMesh(const std::vector<Vec3f>& positions,
               const std::vector<Vec3f>& normals,
               const std::vector<ObjTri>& tris) {
     Mesh m;
+    if (tris.empty())
+        return m;
+    m.id = ++last_id;
     m.vertices.reserve(positions.size());
     m.indices.reserve(tris.size() * 3);
     for (size_t i = 0; i < tris.size(); i++) {
@@ -205,6 +230,9 @@ Mesh LoadPrimitiveMesh(PrimitiveMeshType type) {
 
 static Mesh LoadPrimitiveCube() {
     Mesh output;
+    output.id = ++last_id;
+    mesh_mapper.Add(output.id);
+    mesh_names.push_back("CUBE");
     constexpr size_t N_VERTICES = 24;
     output.vertices.resize(N_VERTICES);
     // front
@@ -272,6 +300,9 @@ static Mesh LoadPrimitiveCube() {
 
 static Mesh LoadPrimitivePyramid() {
     Mesh output;
+    output.id = ++last_id;
+    mesh_mapper.Add(output.id);
+    mesh_names.push_back("PYRAMID");
     constexpr size_t N_VERTICES = 16;
     constexpr size_t N_INDICES = 18;
     output.vertices.resize(N_VERTICES);
@@ -332,6 +363,9 @@ static Mesh LoadPrimitivePyramid() {
 static Mesh LoadPrimitiveSphere() {
     constexpr unsigned SECTIONS = 8;
     Mesh sphere;
+    sphere.id = ++last_id;
+    mesh_mapper.Add(sphere.id);
+    mesh_names.push_back("SPHERE");
     sphere.vertices.resize(SECTIONS * SECTIONS + 2);
     Vertex vtx;
     vtx.position = Vec3f::UnitY();

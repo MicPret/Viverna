@@ -40,10 +40,11 @@ struct Camera {
     Vec3f ToWorldCoords(unsigned screen_x,
                         unsigned screen_y,
                         float camera_dist) const;
-    constexpr void Reset() {
+    constexpr void ResetTransform() {
         rotation = Quaternion();
         position = Vec3f();
     }
+    void SetAspectRatioFromWindowSize();
 };
 }  // namespace verna
 

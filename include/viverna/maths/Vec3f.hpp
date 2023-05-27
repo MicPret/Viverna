@@ -8,6 +8,7 @@ namespace verna {
 struct Vec3f;
 constexpr Vec3f operator*(float scalar, const Vec3f& vector);
 constexpr Vec3f operator+(const Vec3f& a, const Vec3f& b);
+constexpr Vec3f operator-(const Vec3f& a, const Vec3f& b);
 
 struct Vec3f {
     float x;
@@ -41,11 +42,18 @@ struct Vec3f {
         return maths::Sqrt(SquaredMagnitude());
     }
     constexpr float IsUnitVector() const {
-        constexpr float epsilon = 2e-6;
+        constexpr float epsilon = 2e-6f;
         return maths::AreAlmostEqual(Magnitude(), 1.0f, epsilon);
     }
     constexpr Vec3f Normalized() const;
     constexpr Vec2f Xy() const { return Vec2f(x, y); }
+    constexpr bool IsAlmostEqual(const Vec3f& other,
+                                 float epsilon = 2e-6f) const {
+        Vec3f diff = *this - other;
+        float sum =
+            maths::Abs(diff.x) + maths::Abs(diff.y) + maths::Abs(diff.z);
+        return sum < epsilon;
+    }
 
     static constexpr Vec3f UnitX() { return Vec3f(1.0f, 0.0f, 0.0f); }
     static constexpr Vec3f UnitY() { return Vec3f(0.0f, 1.0f, 0.0f); }

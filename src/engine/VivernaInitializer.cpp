@@ -2,6 +2,7 @@
 #include <viverna/core/Assets.hpp>
 #include <viverna/core/Debug.hpp>
 #include <viverna/core/Input.hpp>
+#include <viverna/core/Scene.hpp>
 #include <viverna/graphics/Renderer.hpp>
 #include <viverna/graphics/RendererAPI.hpp>
 #include <viverna/graphics/Window.hpp>
@@ -43,11 +44,16 @@ void InitializeViverna(VivernaState& state) {
         }
     }
 
+    Scene::GetActive().camera.SetAspectRatioFromWindowSize();
+    VERNA_LOGI("Default Scene initialized!");
+
     state.SetFlag(VivernaState::RUNNING_FLAG, true);
     state.epoch = Clock::now();
 }
 
 void TerminateViverna(VivernaState& state) {
+    VERNA_LOGI("Releasing resources in active Scene...");
+    Scene::GetActive().ReleaseResources();
     if (GetError(state)) {
         VERNA_LOGE("An error was raised before terminating the engine");
         state.SetFlag(VivernaState::ERROR_FLAG, false);

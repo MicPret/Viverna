@@ -3,7 +3,9 @@
 #include <viverna/core/Debug.hpp>
 #include <viverna/core/Scene.hpp>
 #include <viverna/core/Transform.hpp>
+#include <viverna/data/GpuBuffer.hpp>
 #include <viverna/graphics/Material.hpp>
+#include <viverna/graphics/ShaderManager.hpp>
 #include <viverna/graphics/Texture.hpp>
 #include <viverna/graphics/Vertex.hpp>
 #include <viverna/graphics/Window.hpp>
@@ -45,11 +47,13 @@ void* native_window = nullptr;
 ShaderBucketMapper shader_to_bucket;
 std::vector<RenderBatch> render_batches;
 
-GLuint vao, vbo, ebo;
-GLsizeiptr vbo_size, ebo_size;
+GLuint vao;
+GpuBuffer vbo;
+GpuBuffer ebo;
 
 gpu::FrameData frame_data;
 
+ShaderManager shaders;
 ShaderId wireframe_shader;
 ShaderId dirlight_shader;
 GLuint dirlight_depthmap;
@@ -146,7 +150,7 @@ void InitLights() {
     constexpr GLenum none = GL_NONE;
     glDrawBuffers(1, &none);
     glReadBuffer(GL_NONE);
-    auto status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    [[maybe_unused]] auto status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
     VERNA_LOGE_IF(
         status != GL_FRAMEBUFFER_COMPLETE,
         "Incomplete fbo for direction light: " + std::to_string(status));
@@ -160,13 +164,13 @@ void TermLights() {
 }
 
 void LoadPrivateShaders() {
-    wireframe_shader = LoadShader("wireframe");
-    dirlight_shader = LoadShader("dirlight_depth");
+    wireframe_shader = shaders.LoadShader("wireframe");
+    dirlight_shader = shaders.LoadShader("dirlight_depth");
 }
 
 void FreePrivateShaders() {
-    FreeShader(wireframe_shader);
-    FreeShader(dirlight_shader);
+    shaders.FreeShader(wireframe_shader);
+    shaders.FreeShader(dirlight_shader);
 }
 
 void GenBuffers() {
@@ -176,17 +180,13 @@ void GenBuffers() {
     constexpr GLsizeiptr vbo_size_start =
         sizeof(Vertex) * 8 * RenderBatch::MAX_MESHES;
     constexpr GLsizeiptr ebo_size_start =
-        sizeof(decltype(RenderBatch::indices[0])) * 6 * 6
+        sizeof(decltype(RenderBatch::indices)::value_type) * 6 * 6
         * RenderBatch::MAX_MESHES;
 
-    vbo_size = vbo_size_start;
-    ebo_size = ebo_size_start;
-    glGenBuffers(1, &vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, vbo_size, nullptr, GL_DYNAMIC_DRAW);
-    glGenBuffers(1, &ebo);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, ebo_size, nullptr, GL_DYNAMIC_DRAW);
+    vbo.Initialize(GL_ARRAY_BUFFER, vbo_size_start);
+    ebo.Initialize(GL_ELEMENT_ARRAY_BUFFER, ebo_size_start);
+    vbo.Bind();
+    ebo.Bind();
     ubo::GenerateUBO();
     ubo::AddBlock(gpu::FrameData::BLOCK_BINDING, sizeof(gpu::FrameData));
     ubo::AddBlock(gpu::DrawData::BLOCK_BINDING, sizeof(gpu::DrawData));
@@ -207,11 +207,9 @@ void GenBuffers() {
 
 void DeleteBuffers() {
     glDeleteVertexArrays(1, &vao);
-    glDeleteBuffers(1, &vbo);
-    glDeleteBuffers(1, &ebo);
+    vbo.Terminate();
+    ebo.Terminate();
     ubo::TerminateUBO();
-    vbo_size = 0;
-    ebo_size = 0;
 }
 
 void ClearBatches() {
@@ -265,28 +263,15 @@ BatchId NewBatchInNewBucket(ShaderId shader) {
 }
 
 void SendDataToVbo(const RenderBatch& batch) {
-    const GLsizeiptr vbo_bytes =
-        static_cast<GLsizeiptr>(batch.vertices.size() * sizeof(Vertex));
-    if (vbo_bytes <= vbo_size) {
-        glBufferSubData(GL_ARRAY_BUFFER, 0, vbo_bytes, batch.vertices.data());
-    } else {
-        vbo_size = std::max(vbo_size * 3 / 2, vbo_bytes);
-        glBufferData(GL_ARRAY_BUFFER, vbo_size, batch.vertices.data(),
-                     GL_DYNAMIC_DRAW);
-    }
+    auto bytes =
+        batch.vertices.size() * sizeof(decltype(batch.vertices)::value_type);
+    vbo.SetContent(batch.vertices.data(), bytes);
 }
 
 void SendDataToEbo(const RenderBatch& batch) {
-    const GLsizeiptr ebo_bytes = static_cast<GLsizeiptr>(
-        batch.indices.size() * sizeof(decltype(RenderBatch::indices[0])));
-    if (ebo_bytes <= ebo_size) {
-        glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, ebo_bytes,
-                        batch.indices.data());
-    } else {
-        ebo_size = std::max(ebo_size * 3 / 2, ebo_bytes);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, ebo_size, batch.indices.data(),
-                     GL_DYNAMIC_DRAW);
-    }
+    auto bytes =
+        batch.indices.size() * sizeof(decltype(batch.indices)::value_type);
+    ebo.SetContent(batch.indices.data(), bytes);
 }
 
 void BindTextures(const RenderBatch& batch) {
@@ -304,7 +289,7 @@ void BindTextures(const RenderBatch& batch) {
 
 void PrepareDraw() {
     const Scene& scene = Scene::GetActive();
-    const DirectionLight& dirlight = scene.GetDirectionLight();
+    const DirectionLight& dirlight = scene.direction_light;
 
     Vec3f lightdir = dirlight.direction.Normalized();
     Mat4f view = Mat4f::LookAt(-lightdir, Vec3f(),
@@ -337,7 +322,7 @@ void PrepareDraw() {
     frame_data.direction_light.specular = Vec4f(dirlight.specular, 0.0f);
     frame_data.direction_light.direction = Vec4f(dirlight.direction, 0.0f);
     frame_data.direction_light.pv_matrix = proj * view;
-    frame_data.camera_data = gpu::CameraData(scene.GetCamera());
+    frame_data.camera_data = gpu::CameraData(scene.camera);
 
     ubo::SendData(gpu::FrameData::BLOCK_BINDING, &frame_data);
 }
@@ -396,7 +381,6 @@ void InitializeRenderer(VivernaState& state) {
     glDepthMask(GL_TRUE);
     glCullFace(GL_BACK);
 
-    Scene::GetActive().Setup();
     InitLights();
 
     state.SetFlag(VivernaState::RENDERER_INITIALIZED_FLAG, true);

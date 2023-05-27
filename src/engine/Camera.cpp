@@ -30,4 +30,11 @@ Vec3f Camera::ToWorldCoords(unsigned screen_x,
     Vec3f output = origin + (camera_dist * ray_dir);
     return output;
 }
+
+void Camera::SetAspectRatioFromWindowSize() {
+    auto width = static_cast<float>(WindowWidth());
+    auto height = static_cast<float>(WindowHeight());
+    aspect_ratio = width / height;
+}
+
 }  // namespace verna

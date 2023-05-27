@@ -36,6 +36,13 @@ struct Transform {
         return t_r * s;
     }
 
+    constexpr bool IsAlmostEqual(const Transform& other,
+                                 float epsilon = 2e-6f) const {
+        return position.IsAlmostEqual(other.position, epsilon)
+               && rotation.IsAlmostEqual(other.rotation, epsilon)
+               && scale.IsAlmostEqual(other.scale, epsilon);
+    }
+
     void LookAt(const Vec3f& target);
 
     constexpr Vec3f Apply(const Vec3f& v) const {
