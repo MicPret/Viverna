@@ -80,7 +80,7 @@ void GpuBuffer::Terminate() {
     new (this) GpuBuffer();
 }
 
-void GpuBuffer::PushBack(void* data, size_t bytes) {
+void GpuBuffer::PushBack(const void* data, size_t bytes) {
     VERNA_CHECK_GPUB_INIT();
     Bind();
     auto total_size = size + bytes;
@@ -90,16 +90,16 @@ void GpuBuffer::PushBack(void* data, size_t bytes) {
         auto new_cap = std::max(capacity * 3 / 2, total_size);
         void* tmp = operator new(new_cap, std::nothrow);
         glGetBufferSubData(type, 0, size, tmp);
-        std::copy_n(reinterpret_cast<uint8_t*>(data), bytes,
-                    reinterpret_cast<uint8_t*>(tmp));
+        std::copy_n(reinterpret_cast<const uint8_t*>(data), bytes,
+                    reinterpret_cast<uint8_t*>(tmp) + size);
         glBufferData(type, new_cap, tmp, GL_DYNAMIC_DRAW);
-        operator delete(data);
+        operator delete(tmp);
         capacity = new_cap;
     }
     size = total_size;
 }
 
-void GpuBuffer::SetContent(void* data, size_t bytes) {
+void GpuBuffer::SetContent(const void* data, size_t bytes) {
     VERNA_CHECK_GPUB_INIT();
     Bind();
     if (capacity < bytes) {

@@ -17,10 +17,12 @@ class GpuBuffer {
     bool Initialize(buf_type buffer_type, size_t start_capacity);
     void Terminate();
     constexpr bool IsInitialized() const { return id != 0; }
-    constexpr size_t Size() const { return size; }
-    constexpr size_t Capacity() const { return capacity; }
-    void PushBack(void* data, size_t bytes);
-    void SetContent(void* data, size_t bytes);
+    constexpr auto Id() const { return id; }
+    constexpr auto Type() const { return type; }
+    constexpr auto Size() const { return size; }
+    constexpr auto Capacity() const { return capacity; }
+    void PushBack(const void* data, size_t bytes);
+    void SetContent(const void* data, size_t bytes);
     // No need to call it before other GpuBuffer methods
     void Bind();
     constexpr bool Bound() const { return id == bound_id; }
