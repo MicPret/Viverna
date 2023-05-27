@@ -29,6 +29,7 @@ target_sources(${PROJECT_NAME} PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/Entity.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/EntityName.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Family.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/GpuBuffer.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Image.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Mesh.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Renderer.cpp"
