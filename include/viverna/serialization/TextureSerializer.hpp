@@ -54,8 +54,8 @@ inline bool convert<verna::TextureSerializer>::decode(
         g = node[1].as<unsigned>();
         b = node[2].as<unsigned>();
         a = node[3].as<unsigned>();
-        Color4u8 col(static_cast<uint8_t>(r), static_cast<uint8_t>(g),
-                     static_cast<uint8_t>(b), static_cast<uint8_t>(a));
+        verna::Color4u8 col(static_cast<uint8_t>(r), static_cast<uint8_t>(g),
+                            static_cast<uint8_t>(b), static_cast<uint8_t>(a));
         rhs.texture = rhs.texture_manager.LoadTextureFromColor(col, config);
         return rhs.texture.IsValid();
     }
