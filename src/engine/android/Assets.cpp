@@ -112,5 +112,6 @@ std::vector<std::filesystem::path> GetAssetsInDirectory(
 
         AAssetDir_close(asset_dir);
     }
+    return result;
 }
 }  // namespace verna
