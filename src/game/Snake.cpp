@@ -1,6 +1,7 @@
 #include <game/core/Snake.hpp>
 
 #include <viverna/core/Input.hpp>
+#include <viverna/core/Scene.hpp>
 #include <viverna/graphics/Camera.hpp>
 #include <viverna/graphics/Renderer.hpp>
 #include <viverna/maths/MathUtils.hpp>
@@ -18,26 +19,18 @@ Snake::Snake(float distance_) : distance(distance_) {
 
 void Snake::Setup() {
     mesh = verna::LoadPrimitiveMesh(verna::PrimitiveMeshType::Sphere);
-    transforms.resize(2);
-    transforms[0].position = distance * verna::Vec3f::UnitZ();
-    transforms[0].LookAt(transforms[0].position + verna::Vec3f::UnitY());
-    transforms[0].scale = verna::Vec3f(0.5f);
-    transforms[1] = transforms[0];
-    transforms[1].position =
-        transforms[0].position - 0.1f * transforms[0].Forward();
-    colliders.resize(2);
-    colliders[0].Recalculate(mesh, transforms[0]);
-    colliders[1].Recalculate(mesh, transforms[1]);
-
+    Restart();
+    auto& tex_man = verna::Scene::GetActive().texture_manager;
     material.textures[verna::Material::DIFFUSE_INDEX] =
-        verna::LoadTexture("snake.png");
+        tex_man.LoadTexture("snake.png", {});
     material.textures[verna::Material::SPECULAR_INDEX] =
-        verna::LoadTextureFromColor(0.0f, 0.0f, 0.0f, 1.0f);
+        tex_man.LoadTextureFromColor(verna::Color4u8(0, 0, 0, 255), {});
 }
 
 void Snake::Dispose() {
-    verna::FreeTexture(material.textures[verna::Material::DIFFUSE_INDEX]);
-    verna::FreeTexture(material.textures[verna::Material::SPECULAR_INDEX]);
+    auto& tex_man = verna::Scene::GetActive().texture_manager;
+    tex_man.FreeTexture(material.textures[verna::Material::DIFFUSE_INDEX]);
+    tex_man.FreeTexture(material.textures[verna::Material::SPECULAR_INDEX]);
     transforms.clear();
     colliders.clear();
 }
@@ -75,6 +68,19 @@ void Snake::MoveTowards(float dt, const verna::Vec3f& target) {
             interp);
         transforms[i].LookAt(transforms[i].position + direction);
     }
+}
+
+void Snake::Restart() {
+    transforms.resize(2);
+    transforms[0].position = distance * verna::Vec3f::UnitZ();
+    transforms[0].LookAt(transforms[0].position + verna::Vec3f::UnitY());
+    transforms[0].scale = verna::Vec3f(0.5f);
+    transforms[1] = transforms[0];
+    transforms[1].position =
+        transforms[0].position - 0.1f * transforms[0].Forward();
+    colliders.resize(2);
+    colliders[0].Recalculate(mesh, transforms[0]);
+    colliders[1].Recalculate(mesh, transforms[1]);
 }
 
 void Snake::Adjust() {

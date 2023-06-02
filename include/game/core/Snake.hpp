@@ -27,6 +27,7 @@ class Snake {
     bool Hits(BufferView<verna::BoundingBox> boxes) const;
     void GrowTail();
     bool HitsItself() const;
+    void Restart();
 
    private:
     static constexpr float mov_speed = 2.8f;

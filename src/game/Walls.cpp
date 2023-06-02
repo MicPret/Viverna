@@ -12,9 +12,8 @@ Walls::Walls(float distance) {
 
 void Walls::Setup() {
     float distance = transforms[0].position.z;
-    const auto& active_scene = verna::Scene::GetActive();
-    verna::Vec3f upper_left =
-        active_scene.GetCamera().ToWorldCoords(0, 0, distance);
+    auto& scene = verna::Scene::GetActive();
+    verna::Vec3f upper_left = scene.camera.ToWorldCoords(0, 0, distance);
     float dx = -upper_left.x;
     float dy = upper_left.y;
     float width = dx * 2.0f;
@@ -35,18 +34,23 @@ void Walls::Setup() {
     for (size_t i = 0; i < colliders.size(); i++)
         colliders[i].Recalculate(mesh, transforms[i]);
     bg_material.textures[verna::Material::DIFFUSE_INDEX] =
-        verna::LoadTexture("bg.png");
+        scene.texture_manager.LoadTexture("bg.png", {});
     wall_material.textures[verna::Material::DIFFUSE_INDEX] =
-        verna::LoadTexture("wall.png");
-    auto black = verna::LoadTextureFromColor(0.0f, 0.0f, 0.0f, 1.0f);
+        scene.texture_manager.LoadTexture("wall.png", {});
+    auto black = scene.texture_manager.LoadTextureFromColor(
+        verna::Color4u8(0, 0, 0, 255), {});
     bg_material.textures[verna::Material::SPECULAR_INDEX] = black;
     wall_material.textures[verna::Material::SPECULAR_INDEX] = black;
 }
 
 void Walls::Dispose() {
-    verna::FreeTexture(bg_material.textures[verna::Material::DIFFUSE_INDEX]);
-    verna::FreeTexture(wall_material.textures[verna::Material::DIFFUSE_INDEX]);
-    verna::FreeTexture(wall_material.textures[verna::Material::SPECULAR_INDEX]);
+    auto& scene = verna::Scene::GetActive();
+    scene.texture_manager.FreeTexture(
+        bg_material.textures[verna::Material::DIFFUSE_INDEX]);
+    scene.texture_manager.FreeTexture(
+        wall_material.textures[verna::Material::DIFFUSE_INDEX]);
+    scene.texture_manager.FreeTexture(
+        wall_material.textures[verna::Material::SPECULAR_INDEX]);
 }
 
 void Walls::Render(verna::ShaderId shader) {

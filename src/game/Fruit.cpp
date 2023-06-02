@@ -1,5 +1,6 @@
 #include <game/core/Fruit.hpp>
 
+#include <viverna/core/Scene.hpp>
 #include <viverna/graphics/Renderer.hpp>
 #include <viverna/physics/Collision.hpp>
 
@@ -11,16 +12,18 @@ Fruit::Fruit(float distance) {
 
 void Fruit::Setup() {
     mesh = verna::LoadPrimitiveMesh(verna::PrimitiveMeshType::Sphere);
+    auto& tex_man = verna::Scene::GetActive().texture_manager;
     material.textures[verna::Material::DIFFUSE_INDEX] =
-        verna::LoadTexture("fruit.png");
+        tex_man.LoadTexture("fruit.png", {});
     material.textures[verna::Material::SPECULAR_INDEX] =
-        verna::LoadTextureFromColor(0.0f, 0.0f, 0.0f, 1.0f);
+        tex_man.LoadTextureFromColor(verna::Color4u8(0, 0, 0, 255), {});
     collider.Recalculate(mesh, transform);
 }
 
 void Fruit::Dispose() {
-    verna::FreeTexture(material.textures[verna::Material::DIFFUSE_INDEX]);
-    verna::FreeTexture(material.textures[verna::Material::SPECULAR_INDEX]);
+    auto& tex_man = verna::Scene::GetActive().texture_manager;
+    tex_man.FreeTexture(material.textures[verna::Material::DIFFUSE_INDEX]);
+    tex_man.FreeTexture(material.textures[verna::Material::SPECULAR_INDEX]);
 }
 
 void Fruit::Render(verna::ShaderId shader) {
