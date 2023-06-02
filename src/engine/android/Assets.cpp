@@ -86,7 +86,7 @@ std::vector<std::filesystem::path> GetAssetsInDirectory(
     std::stack<std::filesystem::path> dir_stack;
     dir_stack.push(path);
 
-    while (!dirStack.empty()) {
+    while (!dir_stack.empty()) {
         std::filesystem::path current_dir = dir_stack.top();
         dir_stack.pop();
 
