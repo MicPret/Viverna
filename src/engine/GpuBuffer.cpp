@@ -90,7 +90,14 @@ void GpuBuffer::PushBack(const void* data, size_t bytes) {
     else {
         auto new_cap = std::max(capacity * 3 / 2, total_size);
         void* tmp = operator new(new_cap, std::nothrow);
+#ifdef VERNA_DESKTOP
         glGetBufferSubData(type, 0, size, tmp);
+#else
+        void* old = glMapBufferRange(type, 0, size, GL_MAP_READ_BIT);
+        std::copy_n(reinterpret_cast<uint8_t*>(old), size,
+                    reinterpret_cast<uint8_t*>(tmp));
+        glUnmapBuffer(type);
+#endif
         std::copy_n(reinterpret_cast<const uint8_t*>(data), bytes,
                     reinterpret_cast<uint8_t*>(tmp) + size);
         glBufferData(type, new_cap, tmp, GL_DYNAMIC_DRAW);
