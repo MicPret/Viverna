@@ -28,9 +28,9 @@ verna::Entity NewCube(verna::World& world) {
 verna::Material DefaultMaterial() {
     auto& scene = verna::Scene::GetActive();
     auto diffuse = scene.texture_manager.LoadTextureFromColor(
-        Color4f(0.7f, 0.7f, 0.7f, 1.0f), {});
+        verna::Color4f(0.7f, 0.7f, 0.7f, 1.0f), {});
     auto specular = scene.texture_manager.LoadTextureFromColor(
-        Color4f(0.4f, 0.4f, 0.4f, 1.0f), {});
+        verna::Color4f(0.4f, 0.4f, 0.4f, 1.0f), {});
     verna::Material mat;
     mat.textures[verna::Material::DIFFUSE_INDEX] = diffuse;
     mat.textures[verna::Material::SPECULAR_INDEX] = specular;
