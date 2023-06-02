@@ -148,8 +148,8 @@ void TextureManager::FreeLoadedTextures() {
 
 std::filesystem::path TextureManager::GetTexturePath(TextureId texture) const {
     SparseSet<TextureId::id_type>::index_t index;
-    return mapper.GetIndex(texture.id, index) ? names[index]
-                                              : std::filesystem::path();
+    using path_t = std::filesystem::path;
+    return mapper.GetIndex(texture.id, index) ? path_t(names[index]) : path_t();
 }
 
 Color4u8 TextureManager::GetTextureColor(TextureId texture,
